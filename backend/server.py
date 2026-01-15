@@ -761,6 +761,16 @@ async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] =
         user_doc = await db.users.find_one({"wallet_address": wallet_address}, {"_id": 0})
         if not user_doc:
             raise HTTPException(status_code=404, detail="User not found")
+        
+        # Normalize is_admin field to boolean
+        if "is_admin" in user_doc:
+            if isinstance(user_doc["is_admin"], str):
+                user_doc["is_admin"] = user_doc["is_admin"].lower() in ("true", "1", "yes")
+            elif not isinstance(user_doc["is_admin"], bool):
+                user_doc["is_admin"] = False
+        else:
+            user_doc["is_admin"] = False
+        
         return User(**user_doc)
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
