@@ -1,0 +1,48 @@
+;; TON City Builder - Payment Receiver Contract
+;; Simple contract to receive TON payments with memo
+
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    ;; Parse incoming message
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+    
+    ;; Ignore bounced messages
+    if (flags & 1) {
+        return ();
+    }
+    
+    ;; Get sender address
+    slice sender_address = cs~load_msg_addr();
+    
+    ;; Parse message body (memo/comment)
+    int op = 0;
+    if (~ in_msg_body.slice_empty?()) {
+        op = in_msg_body~load_uint(32);
+    }
+    
+    ;; If op is 0 (text comment), parse the text
+    slice comment = "";
+    if (op == 0) {
+        comment = in_msg_body;
+    }
+    
+    ;; Accept the payment
+    ;; The contract will hold all received TON
+    ;; Backend will monitor this contract's transactions
+    
+    accept_message();
+    
+    ;; Log the payment (will be visible in transaction)
+    ;; Format: sender_address, amount (msg_value), comment
+    return ();
+}
+
+;; Get method to check contract balance
+int balance() method_id {
+    return get_balance().pair_first();
+}
+
+;; Get method to check seqno (for wallet compatibility)
+int seqno() method_id {
+    return 0;
+}

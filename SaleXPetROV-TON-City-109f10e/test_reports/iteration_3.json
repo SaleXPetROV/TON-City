@@ -1,0 +1,66 @@
+{
+  "summary": "Completed comprehensive testing of TON City Builder with major updates. Backend APIs working 100% (36/36 tests passed) with all new features: 22 business types, multilingual support (EN/RU/ZH), WebSocket support, income calculator, and zone restrictions. Frontend loads correctly with language selector, income table page, and proper business type display.",
+  
+  "backend_issues": {
+    "critical_bugs": [],
+    "working_endpoints": [
+      "/api/health - Returns healthy status with websocket:true ✅",
+      "/api/stats - Returns game statistics with all required fields ✅",
+      "/api/businesses/types - Returns 22 business types (≥20 required) with income_by_level ✅",
+      "/api/stats/income-table?lang=ru - Returns income table with Russian business names ✅",
+      "/api/stats/income-table?lang=en - Returns income table with English business names ✅",
+      "/api/plots/coords/50/50 - Returns center plot with 100.0 TON price ✅",
+      "/api/plots/coords/0/0 - Returns edge plot with 10.0 TON price ✅",
+      "/api/auth/verify-wallet - Creates user with language preference (Russian) ✅",
+      "/api/businesses/types - Business types have allowed_zones restrictions ✅",
+      "/api/plots/purchase - Initiates purchase transaction correctly ✅",
+      "/api/leaderboard - Returns leaderboard data ✅",
+      "/api/businesses - Returns businesses list ✅"
+    ]
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "Backend: All 36 API tests passing (100% success rate)",
+    "WebSocket support confirmed in /api/health endpoint",
+    "22 business types found (Farm, Power Plant, Quarry, Oil Rig, Mine, Factory, Construction Co., Refinery, Steel Mill, Textile Factory, Shop, Restaurant, Hotel, Hospital, University, Logistics Center, Gas Station, Bank, Exchange, Tech Hub, Data Center, Insurance Co.)",
+    "Income by level structure working (10 levels per business type)",
+    "Business zone restrictions working (allowed_zones field present)",
+    "Multilingual API support: Russian names (Ферма) and English names (Farm)",
+    "Plot pricing correct: center=100 TON, edge=10 TON",
+    "Language preference setting working in wallet verification",
+    "Frontend landing page loads with proper title and sections",
+    "Language selector working: English ↔ Russian translation",
+    "TON Connect button integration present",
+    "Game statistics display working (3 players, 0 plots, 0 businesses)",
+    "Features section with proper descriptions in multiple languages",
+    "Business types preview showing 6 sample businesses with costs",
+    "Economy explanation section with supply chain diagram",
+    "Income table page loads at /income-table route",
+    "Income calculator with business type, zone, and connections selectors",
+    "Tax rate, commissions, and connection bonus info cards",
+    "Zone restrictions working correctly (Farm not allowed in Center zone)",
+    "Business type dropdown shows all 22+ business types",
+    "Responsive design working on desktop viewport",
+    "No JavaScript errors on frontend pages"
+  ],
+
+  "test_report_links": ["/app/backend_test.py"],
+  
+  "success_percentage": {
+    "backend": "100% (36/36 tests passed)",
+    "frontend": "100% (all core functionality working)"
+  },
+
+  "updated_files": ["/app/backend_test.py"],
+  
+  "action_item_for_main_agent": "",
+  
+  "should_call_test_agent_after_fix": "false",
+  "should_main_agent_test_itself": "true"
+}
