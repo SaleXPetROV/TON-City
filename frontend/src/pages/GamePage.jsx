@@ -554,6 +554,11 @@ export default function GamePage() {
               </Group>
             </Layer>
           </Stage>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-text-muted">Загрузка карты... (viewport: {viewportSize.width}x{viewportSize.height})</p>
+            </div>
+          )}
 
           {/* Zoom controls */}
           <div className="absolute bottom-4 left-4 flex flex-col gap-2">
