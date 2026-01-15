@@ -20,7 +20,7 @@ const TUTORIAL_STEPS = [
     },
     icon: Building2,
     color: 'cyber-cyan',
-    image_url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80'
+    image_url: 'https://images.unsplash.com/photo-1493134799591-2c9eed26201a?w=800&q=80'
   },
   {
     id: 'deposit',
@@ -32,7 +32,7 @@ const TUTORIAL_STEPS = [
     },
     icon: Wallet,
     color: 'success',
-    image_url: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&q=80'
+    image_url: 'https://images.unsplash.com/photo-1660139099083-03e0777ac6a7?w=800&q=80'
   },
   {
     id: 'buying-plots',
@@ -44,7 +44,7 @@ const TUTORIAL_STEPS = [
     },
     icon: ShoppingCart,
     color: 'cyber-cyan',
-    image_url: 'https://images.unsplash.com/photo-1494145904049-0dca59b4bbad?w=800&q=80'
+    image_url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80'
   },
   {
     id: 'building',
@@ -56,19 +56,19 @@ const TUTORIAL_STEPS = [
     },
     icon: Building2,
     color: 'neon-purple',
-    image_url: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&q=80'
+    image_url: 'https://images.unsplash.com/photo-1551295022-de5522c94e08?w=800&q=80'
   },
   {
     id: 'connections',
     title: { en: 'Business Connections', ru: 'Связи бизнесов', zh: '商业联系' },
     description: {
-      en: 'Nearby businesses boost each other:\n\n• Each connection = +20% income\n• Maximum 5 connections per business\n• Farm next to Factory = both earn more\n• Factory next to Shop = both earn more\n\nStrategy tip:\nBuild related businesses close together!',
-      ru: 'Соседние бизнесы усиливают друг друга:\n\n• Каждая связь = +20% дохода\n• Максимум 5 связей на бизнес\n• Ферма рядом с Заводом = оба зарабатывают больше\n• Завод рядом с Магазином = оба зарабатывают больше\n\nСовет:\nСтройте связанные бизнесы рядом!',
-      zh: '相邻企业相互增强:\n\n• 每个联系 = +20%收入\n• 每个企业最多5个联系\n• 农场靠近工厂 = 双方都赚更多\n• 工厂靠近商店 = 双方都赚更多\n\n策略提示:\n将相关企业建在一起！'
+      en: 'Nearby businesses boost each other:\n\n• Each connection = +5% income\n• Maximum 5 connections per business\n• Farm next to Factory = both earn more\n• Factory next to Shop = both earn more\n\nStrategy tip:\nBuild related businesses close together!',
+      ru: 'Соседние бизнесы усиливают друг друга:\n\n• Каждая связь = +5% дохода\n• Максимум 5 связей на бизнес\n• Ферма рядом с Заводом = оба зарабатывают больше\n• Завод рядом с Магазином = оба зарабатывают больше\n\nСовет:\nСтройте связанные бизнесы рядом!',
+      zh: '相邻企业相互增强:\n\n• 每个联系 = +5%收入\n• 每个企业最多5个联系\n• 农场靠近工厂 = 双方都赚更多\n• 工厂靠近商店 = 双方都赚更多\n\n策略提示:\n将相关企业建在一起！'
     },
     icon: Zap,
     color: 'success',
-    image_url: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&q=80'
+    image_url: 'https://images.unsplash.com/photo-1480944657103-7fed22359e1d?w=800&q=80'
   },
   {
     id: 'trading',
@@ -80,7 +80,7 @@ const TUTORIAL_STEPS = [
     },
     icon: ArrowUpDown,
     color: 'signal-amber',
-    image_url: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=80'
+    image_url: 'https://images.unsplash.com/photo-1719464521902-4dc9595b182d?w=800&q=80'
   },
   {
     id: 'taxes',
@@ -92,7 +92,7 @@ const TUTORIAL_STEPS = [
     },
     icon: Landmark,
     color: 'signal-amber',
-    image_url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&q=80'
+    image_url: 'https://images.unsplash.com/photo-1765868017260-6e22bbf96095?w=800&q=80'
   },
   {
     id: 'withdrawal',
@@ -104,7 +104,7 @@ const TUTORIAL_STEPS = [
     },
     icon: CreditCard,
     color: 'error',
-    image_url: 'https://images.unsplash.com/photo-1633158829875-e5316a358c6f?w=800&q=80'
+    image_url: 'https://images.unsplash.com/photo-1681826291722-70bd7e9e6fc3?w=800&q=80'
   },
   {
     id: 'strategy',
@@ -116,7 +116,7 @@ const TUTORIAL_STEPS = [
     },
     icon: CheckCircle2,
     color: 'success',
-    image_url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80'
+    image_url: 'https://images.unsplash.com/photo-1523875194681-bedd468c58bf?w=800&q=80'
   }
 ];
 
