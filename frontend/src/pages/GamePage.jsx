@@ -265,9 +265,11 @@ export default function GamePage() {
 
   const centerView = () => {
     setScale(1);
+    const centerX = 50;
+    const centerY = 50;
     setPosition({
-      x: viewportSize.width / 2 - (GRID_SIZE * CELL_SIZE) / 2,
-      y: viewportSize.height / 2 - (GRID_SIZE * CELL_SIZE) / 2,
+      x: viewportSize.width / 2 - (centerX * CELL_SIZE),
+      y: viewportSize.height / 2 - (centerY * CELL_SIZE),
     });
   };
 
