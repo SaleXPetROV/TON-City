@@ -596,12 +596,39 @@ export default function GamePage() {
           
           {/* Available Plots List */}
           <ScrollArea className="flex-1 p-4">
-            <div className="space-y-2">
-              {/* Сгруппируем по зонам */}
+            <div className="space-y-3">
+              {/* Легенда зон */}
+              <div className="mb-4 p-3 bg-void/50 rounded-lg border border-grid-border">
+                <div className="text-xs font-bold text-text-muted mb-2">ЗОНЫ:</div>
+                <div className="space-y-1 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-[#4ECDC4]"></div>
+                    <span>Центр</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-[#45B7D1]"></div>
+                    <span>Бизнес</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-[#96CEB4]"></div>
+                    <span>Жилая</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-[#DDA0DD]"></div>
+                    <span>Промышл.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-[#6B6B6B]"></div>
+                    <span>Окраина</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Доступные участки - по 1 из каждой зоны */}
+              <div className="text-sm font-bold text-text-main mb-2">Доступные участки:</div>
               {['center', 'business', 'residential', 'industrial', 'outskirts'].map(zone => {
-                // Generate sample available plots for each zone
-                const generateZonePlots = (zoneName) => {
-                  const samples = [];
+                // Generate ONE plot for each zone
+                const generateZonePlot = (zoneName) => {
                   const centerX = 50, centerY = 50;
                   
                   // Define zone boundaries
@@ -614,10 +641,9 @@ export default function GamePage() {
                   };
                   
                   const bounds = zoneBounds[zoneName];
-                  let count = 0;
                   
-                  // Generate 5 random plots in this zone that are not owned
-                  while (count < 5 && samples.length < 100) {
+                  // Generate 1 random plot in this zone
+                  for (let i = 0; i < 100; i++) {
                     const angle = Math.random() * Math.PI * 2;
                     const dist = bounds.minDist + Math.random() * (bounds.maxDist - bounds.minDist);
                     const x = Math.round(centerX + dist * Math.cos(angle));
@@ -627,55 +653,52 @@ export default function GamePage() {
                       const plot = plots.find(p => p.x === x && p.y === y);
                       if (!plot || plot.is_available) {
                         const price = parseFloat(calculatePrice(x, y));
-                        samples.push({ x, y, price, zone: zoneName });
-                        count++;
+                        return { x, y, price, zone: zoneName };
                       }
                     }
                   }
                   
-                  return samples;
+                  return null;
                 };
                 
-                const zonePlots = generateZonePlots(zone);
+                const plot = generateZonePlot(zone);
+                if (!plot) return null;
                 
-                if (zonePlots.length === 0) return null;
-                
-                const zoneNames = {
-                  center: { name: 'Центр', price: 100, color: 'text-[#4ECDC4]' },
-                  business: { name: 'Бизнес', price: 50, color: 'text-[#45B7D1]' },
-                  residential: { name: 'Жилая', price: 25, color: 'text-[#96CEB4]' },
-                  industrial: { name: 'Промышл.', price: 15, color: 'text-[#DDA0DD]' },
-                  outskirts: { name: 'Окраина', price: 10, color: 'text-text-muted' }
+                const zoneConfig = {
+                  center: { name: 'Центр', bgColor: 'bg-[#4ECDC4]/20', borderColor: 'border-[#4ECDC4]/50', textColor: 'text-[#4ECDC4]' },
+                  business: { name: 'Бизнес', bgColor: 'bg-[#45B7D1]/20', borderColor: 'border-[#45B7D1]/50', textColor: 'text-[#45B7D1]' },
+                  residential: { name: 'Жилая', bgColor: 'bg-[#96CEB4]/20', borderColor: 'border-[#96CEB4]/50', textColor: 'text-[#96CEB4]' },
+                  industrial: { name: 'Промышл.', bgColor: 'bg-[#DDA0DD]/20', borderColor: 'border-[#DDA0DD]/50', textColor: 'text-[#DDA0DD]' },
+                  outskirts: { name: 'Окраина', bgColor: 'bg-[#6B6B6B]/20', borderColor: 'border-[#6B6B6B]/50', textColor: 'text-[#6B6B6B]' }
                 };
+                
+                const config = zoneConfig[zone];
+                const isSelected = selectedPlot?.x === plot.x && selectedPlot?.y === plot.y;
                 
                 return (
-                  <div key={zone} className="mb-4">
-                    <div className={`text-sm font-bold mb-2 ${zoneNames[zone].color}`}>
-                      {zoneNames[zone].name} — {zoneNames[zone].price} TON
+                  <button
+                    key={zone}
+                    onClick={() => handleCellClick(plot.x, plot.y)}
+                    className={`w-full text-left p-3 rounded-lg transition-all border ${
+                      isSelected
+                        ? 'bg-cyber-cyan/30 border-cyber-cyan scale-105'
+                        : `${config.bgColor} ${config.borderColor} hover:scale-102`
+                    }`}
+                  >
+                    <div className="flex flex-col gap-1">
+                      <div className={`text-xs font-bold ${config.textColor}`}>
+                        {config.name}
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono text-sm text-text-main">
+                          ({plot.x}, {plot.y})
+                        </span>
+                        <span className="text-signal-amber font-bold text-sm">
+                          {plot.price} TON
+                        </span>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      {zonePlots.map((plot, idx) => (
-                        <button
-                          key={`${plot.x}-${plot.y}`}
-                          onClick={() => handleCellClick(plot.x, plot.y)}
-                          className={`w-full text-left p-2 rounded-lg transition-colors ${
-                            selectedPlot?.x === plot.x && selectedPlot?.y === plot.y
-                              ? 'bg-cyber-cyan/20 border border-cyber-cyan/50'
-                              : 'bg-void hover:bg-grid-border/50'
-                          }`}
-                        >
-                          <div className="flex justify-between items-center">
-                            <span className="font-mono text-sm">
-                              ({plot.x}, {plot.y})
-                            </span>
-                            <span className="text-signal-amber font-mono text-sm">
-                              {plot.price} TON
-                            </span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
