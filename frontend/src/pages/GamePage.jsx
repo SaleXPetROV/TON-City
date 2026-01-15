@@ -593,9 +593,44 @@ export default function GamePage() {
             <div className="space-y-2">
               {/* Сгруппируем по зонам */}
               {['center', 'business', 'residential', 'industrial', 'outskirts'].map(zone => {
-                const zonePlots = plots
-                  .filter(p => p.is_available && p.zone === zone)
-                  .slice(0, 5); // Показываем до 5 участков на зону
+                // Generate sample available plots for each zone
+                const generateZonePlots = (zoneName) => {
+                  const samples = [];
+                  const centerX = 50, centerY = 50;
+                  
+                  // Define zone boundaries
+                  const zoneBounds = {
+                    center: { minDist: 0, maxDist: 10 },
+                    business: { minDist: 10, maxDist: 25 },
+                    residential: { minDist: 25, maxDist: 40 },
+                    industrial: { minDist: 40, maxDist: 50 },
+                    outskirts: { minDist: 50, maxDist: 71 }
+                  };
+                  
+                  const bounds = zoneBounds[zoneName];
+                  let count = 0;
+                  
+                  // Generate 5 random plots in this zone that are not owned
+                  while (count < 5 && samples.length < 100) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = bounds.minDist + Math.random() * (bounds.maxDist - bounds.minDist);
+                    const x = Math.round(centerX + dist * Math.cos(angle));
+                    const y = Math.round(centerY + dist * Math.sin(angle));
+                    
+                    if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
+                      const plot = plots.find(p => p.x === x && p.y === y);
+                      if (!plot || plot.is_available) {
+                        const price = parseFloat(calculatePrice(x, y));
+                        samples.push({ x, y, price, zone: zoneName });
+                        count++;
+                      }
+                    }
+                  }
+                  
+                  return samples;
+                };
+                
+                const zonePlots = generateZonePlots(zone);
                 
                 if (zonePlots.length === 0) return null;
                 
