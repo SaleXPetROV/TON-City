@@ -142,7 +142,7 @@ export function TutorialModal({ isOpen, onClose, lang = 'ru' }) {
   
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="glass-panel border-grid-border text-text-main max-w-lg p-0 overflow-hidden">
+      <DialogContent className="glass-panel border-grid-border text-text-main max-w-lg p-0 overflow-hidden" hideCloseButton>
         <VisuallyHidden>
           <DialogTitle>
             {step?.title[lang] || step?.title?.en || 'Tutorial'}
