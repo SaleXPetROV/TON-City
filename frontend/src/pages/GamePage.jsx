@@ -81,14 +81,19 @@ export default function GamePage() {
     const handleResize = () => {
       const container = document.getElementById('map-container');
       if (container) {
+        const width = container.clientWidth || window.innerWidth - 320;
+        const height = container.clientHeight || window.innerHeight - 64; // minus header
         setViewportSize({
-          width: container.clientWidth,
-          height: container.clientHeight,
+          width: Math.max(width, 400),
+          height: Math.max(height, 400),
         });
       }
     };
     
+    // Initial resize with small delay to ensure DOM is ready
+    setTimeout(handleResize, 100);
     handleResize();
+    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
