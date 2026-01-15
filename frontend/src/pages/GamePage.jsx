@@ -470,20 +470,21 @@ export default function GamePage() {
       {/* Main content - карта по центру, список справа */}
       <div className="flex-1 flex">
         {/* Map - по центру */}
-        <div id="map-container" className="flex-1 relative overflow-hidden">
-          <Stage
-            ref={stageRef}
-            width={viewportSize.width - 320}
-            height={viewportSize.height}
-            onWheel={handleWheel}
-            draggable
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-            x={position.x}
-            y={position.y}
-            scaleX={scale}
-            scaleY={scale}
-          >
+        <div id="map-container" className="flex-1 relative overflow-hidden bg-void">
+          {viewportSize.width > 320 ? (
+            <Stage
+              ref={stageRef}
+              width={viewportSize.width - 320}
+              height={viewportSize.height}
+              onWheel={handleWheel}
+              draggable
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              x={position.x}
+              y={position.y}
+              scaleX={scale}
+              scaleY={scale}
+            >
             <Layer>
               {/* Grid cells - only render visible ones */}
               {(() => {
