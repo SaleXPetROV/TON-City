@@ -495,10 +495,25 @@ export default function GamePage() {
               scaleY={scale}
             >
             <Layer>
+              {/* Debug info */}
+              <Text
+                x={10}
+                y={10}
+                text={`Visible: ${visibleCells.startX},${visibleCells.startY} to ${visibleCells.endX},${visibleCells.endY} | Cells: ${(visibleCells.endX - visibleCells.startX) * (visibleCells.endY - visibleCells.startY)}`}
+                fontSize={12}
+                fill="#FFFFFF"
+                listening={false}
+              />
+              
               {/* Grid cells - only render visible ones */}
               {(() => {
                 const { startX, startY, endX, endY } = visibleCells;
                 const cells = [];
+                
+                // Safety check
+                if (endX <= startX || endY <= startY) {
+                  return <Text x={50} y={50} text="No cells to render!" fontSize={20} fill="#FF0000" />;
+                }
                 
                 for (let y = startY; y < endY; y++) {
                   for (let x = startX; x < endX; x++) {
