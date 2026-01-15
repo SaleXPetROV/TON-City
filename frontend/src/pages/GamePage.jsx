@@ -455,37 +455,44 @@ export default function GamePage() {
             scaleY={scale}
           >
             <Layer>
-              {/* Grid cells */}
-              {Array.from({ length: GRID_SIZE }, (_, y) =>
-                Array.from({ length: GRID_SIZE }, (_, x) => {
-                  const plot = plots.find(p => p.x === x && p.y === y);
-                  return (
-                    <Group key={`${x}-${y}`}>
-                      <Rect
-                        x={x * CELL_SIZE}
-                        y={y * CELL_SIZE}
-                        width={CELL_SIZE}
-                        height={CELL_SIZE}
-                        fill={getCellColor(x, y)}
-                        stroke={getCellStroke(x, y)}
-                        strokeWidth={selectedPlot?.x === x && selectedPlot?.y === y ? 2 : 0.5}
-                        onClick={() => handleCellClick(x, y)}
-                        onTap={() => handleCellClick(x, y)}
-                      />
-                      {plot?.business_icon && scale > 0.8 && (
-                        <Text
-                          x={x * CELL_SIZE + CELL_SIZE / 2}
-                          y={y * CELL_SIZE + CELL_SIZE / 2}
-                          text={plot.business_icon}
-                          fontSize={12}
-                          offsetX={6}
-                          offsetY={6}
+              {/* Grid cells - only render visible ones */}
+              {(() => {
+                const { startX, startY, endX, endY } = getVisibleCells();
+                const cells = [];
+                
+                for (let y = startY; y < endY; y++) {
+                  for (let x = startX; x < endX; x++) {
+                    const plot = plots.find(p => p.x === x && p.y === y);
+                    cells.push(
+                      <Group key={`${x}-${y}`}>
+                        <Rect
+                          x={x * CELL_SIZE}
+                          y={y * CELL_SIZE}
+                          width={CELL_SIZE}
+                          height={CELL_SIZE}
+                          fill={getCellColor(x, y)}
+                          stroke={getCellStroke(x, y)}
+                          strokeWidth={selectedPlot?.x === x && selectedPlot?.y === y ? 2 : 0.5}
+                          onClick={() => handleCellClick(x, y)}
+                          onTap={() => handleCellClick(x, y)}
                         />
-                      )}
-                    </Group>
-                  );
-                })
-              )}
+                        {plot?.business_icon && scale > 0.8 && (
+                          <Text
+                            x={x * CELL_SIZE + CELL_SIZE / 2}
+                            y={y * CELL_SIZE + CELL_SIZE / 2}
+                            text={plot.business_icon}
+                            fontSize={12}
+                            offsetX={6}
+                            offsetY={6}
+                          />
+                        )}
+                      </Group>
+                    );
+                  }
+                }
+                
+                return cells;
+              })()}
               
               {/* Center marker */}
               <Rect
