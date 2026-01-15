@@ -34,7 +34,7 @@ db = client[os.environ['DB_NAME']]
 # JWT Configuration
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'ton-city-builder-secret-key-2025')
 ADMIN_SECRET = os.environ.get('ADMIN_SECRET', 'admin-secret-key-2025')
-ADMIN_WALLET = os.environ.get('ADMIN_WALLET', '')  # Admin wallet from .env
+ADMIN_WALLET = os.environ.get('ADMIN_WALLET') or None  # Admin wallet from .env (None if empty)
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 30
 
