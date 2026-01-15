@@ -597,33 +597,6 @@ export default function GamePage() {
           {/* Available Plots List */}
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-3">
-              {/* Легенда зон */}
-              <div className="mb-4 p-3 bg-void/50 rounded-lg border border-grid-border">
-                <div className="text-xs font-bold text-text-muted mb-2">ЗОНЫ:</div>
-                <div className="space-y-1 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-[#4ECDC4]"></div>
-                    <span>Центр</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-[#45B7D1]"></div>
-                    <span>Бизнес</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-[#96CEB4]"></div>
-                    <span>Жилая</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-[#DDA0DD]"></div>
-                    <span>Промышл.</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-[#6B6B6B]"></div>
-                    <span>Окраина</span>
-                  </div>
-                </div>
-              </div>
-
               {/* Доступные участки - по 1 из каждой зоны */}
               <div className="text-sm font-bold text-text-main mb-2">Доступные участки:</div>
               {['center', 'business', 'residential', 'industrial', 'outskirts'].map(zone => {
