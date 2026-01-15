@@ -1753,6 +1753,23 @@ async def get_leaderboard():
     return {"leaderboard": leaders}
 
 
+
+@api_router.get("/wallet-settings/public")
+async def get_public_wallet_settings():
+    """Get public wallet settings (receiver address for deposits)"""
+    settings = await db.game_settings.find_one({"type": "ton_wallet"}, {"_id": 0})
+    if not settings:
+        return {
+            "network": "testnet",
+            "receiver_address": "",
+            "configured": False
+        }
+    return {
+        "network": settings.get("network", "testnet"),
+        "receiver_address": settings.get("receiver_address", ""),
+        "configured": bool(settings.get("receiver_address"))
+    }
+
 # ==================== TON BLOCKCHAIN ROUTES ====================
 
 @api_router.get("/ton/balance/{address}")
