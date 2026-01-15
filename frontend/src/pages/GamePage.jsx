@@ -127,10 +127,7 @@ export default function GamePage() {
       
       // Загрузить адрес получателя для пополнения
       try {
-        const token = localStorage.getItem('ton_city_token');
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/admin/wallet-settings`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/wallet-settings/public`);
         if (response.ok) {
           const settings = await response.json();
           setReceiverAddress(settings.receiver_address || '');
