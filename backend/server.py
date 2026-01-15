@@ -850,7 +850,7 @@ async def verify_wallet(request: WalletVerifyRequest):
             raise HTTPException(status_code=400, detail="Wallet address required")
         
         # Check if this is the admin wallet from .env
-        is_admin_wallet = ADMIN_WALLET and wallet_address == ADMIN_WALLET
+        is_admin_wallet = bool(ADMIN_WALLET and wallet_address == ADMIN_WALLET)
         
         user_doc = await db.users.find_one({"wallet_address": wallet_address}, {"_id": 0})
         
