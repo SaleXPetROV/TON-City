@@ -609,18 +609,6 @@ export default function GamePage() {
           <div className="absolute bottom-4 right-4 glass-panel rounded-lg px-3 py-2 text-sm font-mono text-text-muted">
             {Math.round(scale * 100)}%
           </div>
-          
-          {/* Legend */}
-          <div className="absolute top-4 left-4 glass-panel rounded-lg p-3 text-xs">
-            <div className="font-bold mb-2 text-text-main">Зоны:</div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-[#4ECDC4]"></span> Центр (100 TON)</div>
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-[#45B7D1]"></span> Бизнес (50 TON)</div>
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-[#96CEB4]"></span> Жилая (25 TON)</div>
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-[#DDA0DD]"></span> Промышл. (15 TON)</div>
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-[#2A2A32]"></span> Окраина (10 TON)</div>
-            </div>
-          </div>
         </div>
 
         {/* Right Panel - Список участков */}
