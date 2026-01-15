@@ -53,6 +53,20 @@ export default function GamePage() {
   const [isDragging, setIsDragging] = useState(false);
   const [viewportSize, setViewportSize] = useState({ width: 800, height: 600 });
 
+  // Calculate visible cells for virtualization
+  const getVisibleCells = useCallback(() => {
+    const mapWidth = viewportSize.width - 320; // Subtract right panel width
+    const cellPixelSize = CELL_SIZE * scale;
+    
+    // Calculate viewport bounds in grid coordinates
+    const startX = Math.max(0, Math.floor(-position.x / cellPixelSize));
+    const startY = Math.max(0, Math.floor(-position.y / cellPixelSize));
+    const endX = Math.min(GRID_SIZE, Math.ceil((mapWidth - position.x) / cellPixelSize) + 1);
+    const endY = Math.min(GRID_SIZE, Math.ceil((viewportSize.height - position.y) / cellPixelSize) + 1);
+    
+    return { startX, startY, endX, endY };
+  }, [position, scale, viewportSize]);
+
   // Load initial data
   useEffect(() => {
     if (!wallet?.account) {
