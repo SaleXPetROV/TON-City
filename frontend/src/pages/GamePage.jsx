@@ -298,19 +298,49 @@ export default function GamePage() {
     return (10 + 90 * (1 - distance / maxDistance)).toFixed(2);
   };
 
-  // Get cell color based on ownership
+  // Get zone color based on distance from center
+  const getZoneColor = (x, y) => {
+    const centerX = 50, centerY = 50;
+    const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+    
+    // Define zone colors
+    if (distance < 10) {
+      return '#4ECDC4'; // Center - cyan
+    } else if (distance < 25) {
+      return '#45B7D1'; // Business - blue
+    } else if (distance < 40) {
+      return '#96CEB4'; // Residential - green
+    } else if (distance < 50) {
+      return '#DDA0DD'; // Industrial - purple
+    } else {
+      return '#6B6B6B'; // Outskirts - gray
+    }
+  };
+
+  // Get cell color based on ownership and zone
   const getCellColor = (x, y) => {
     const plot = plots.find(p => p.x === x && p.y === y);
-    if (!plot || plot.is_available) {
-      // Color based on distance from center (price indicator)
-      const price = calculatePrice(x, y);
-      const intensity = (price - 10) / 90;
-      return `rgba(112, 0, 255, ${0.1 + intensity * 0.2})`;
+    
+    // If plot is owned and has business - bright gold
+    if (plot?.business_id) {
+      return 'rgba(255, 214, 0, 0.6)';
     }
-    if (plot.owner === wallet?.account?.address) {
-      return plot.business_id ? 'rgba(255, 214, 0, 0.4)' : 'rgba(0, 240, 255, 0.4)';
+    
+    // If plot is owned but no business - cyan
+    if (plot && !plot.is_available && plot.owner) {
+      if (plot.owner === wallet?.account?.address) {
+        return 'rgba(0, 240, 255, 0.5)'; // My plot - brighter
+      }
+      return 'rgba(0, 240, 255, 0.3)'; // Other player's plot
     }
-    return plot.business_id ? 'rgba(255, 214, 0, 0.2)' : 'rgba(0, 240, 255, 0.2)';
+    
+    // Available or empty plot - zone color
+    const zoneColor = getZoneColor(x, y);
+    const rgb = zoneColor.match(/\w\w/g)?.map(x => parseInt(x, 16));
+    if (rgb) {
+      return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.3)`;
+    }
+    return 'rgba(112, 0, 255, 0.2)';
   };
 
   const getCellStroke = (x, y) => {
