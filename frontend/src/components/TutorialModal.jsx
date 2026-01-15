@@ -206,7 +206,17 @@ export function TutorialModal({ isOpen, onClose, lang = 'ru' }) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
+              className="space-y-4"
             >
+              {step?.image_url && (
+                <div className="w-full h-48 rounded-lg overflow-hidden bg-grid-border">
+                  <img 
+                    src={step.image_url} 
+                    alt={step.title[lang] || step.title.en}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
               <p className="text-text-muted whitespace-pre-line leading-relaxed text-sm">
                 {step?.description[lang] || step?.description.en}
               </p>
