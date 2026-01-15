@@ -790,6 +790,14 @@ async def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] 
         if wallet_address:
             user_doc = await db.users.find_one({"wallet_address": wallet_address}, {"_id": 0})
             if user_doc:
+                # Normalize is_admin field to boolean
+                if "is_admin" in user_doc:
+                    if isinstance(user_doc["is_admin"], str):
+                        user_doc["is_admin"] = user_doc["is_admin"].lower() in ("true", "1", "yes")
+                    elif not isinstance(user_doc["is_admin"], bool):
+                        user_doc["is_admin"] = False
+                else:
+                    user_doc["is_admin"] = False
                 return User(**user_doc)
     except:
         pass
