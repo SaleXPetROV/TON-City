@@ -495,13 +495,26 @@ export default function GamePage() {
               })()}
               
               {/* Center marker */}
-              <Rect
-                x={50 * CELL_SIZE - 2}
-                y={50 * CELL_SIZE - 2}
-                width={4}
-                height={4}
-                fill="#FF0055"
-              />
+              <Group>
+                <Rect
+                  x={50 * CELL_SIZE - 5}
+                  y={50 * CELL_SIZE - 5}
+                  width={10}
+                  height={10}
+                  fill="#FF0055"
+                  stroke="#FFFFFF"
+                  strokeWidth={2}
+                />
+                <Text
+                  x={50 * CELL_SIZE}
+                  y={50 * CELL_SIZE - 20}
+                  text="CENTER"
+                  fontSize={14}
+                  fill="#FFFFFF"
+                  fontStyle="bold"
+                  offsetX={30}
+                />
+              </Group>
             </Layer>
           </Stage>
 
