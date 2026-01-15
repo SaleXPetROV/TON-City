@@ -561,7 +561,7 @@ export default function GamePage() {
               {['center', 'business', 'residential', 'industrial', 'outskirts'].map(zone => {
                 const zonePlots = plots
                   .filter(p => p.is_available && p.zone === zone)
-                  .slice(0, 10); // Показываем до 10 участков на зону
+                  .slice(0, 5); // Показываем до 5 участков на зону
                 
                 if (zonePlots.length === 0) return null;
                 
