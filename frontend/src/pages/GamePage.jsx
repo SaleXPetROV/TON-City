@@ -648,9 +648,9 @@ export default function GamePage() {
                       {zoneNames[zone].name} — {zoneNames[zone].price} TON
                     </div>
                     <div className="space-y-1">
-                      {zonePlots.map(plot => (
+                      {zonePlots.map((plot, idx) => (
                         <button
-                          key={plot.id}
+                          key={`${plot.x}-${plot.y}`}
                           onClick={() => handleCellClick(plot.x, plot.y)}
                           className={`w-full text-left p-2 rounded-lg transition-colors ${
                             selectedPlot?.x === plot.x && selectedPlot?.y === plot.y
