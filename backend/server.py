@@ -720,8 +720,8 @@ def calculate_business_income(business_type: str, level: int, zone: str, connect
     if "customer_flow" in bt and zone in bt["customer_flow"]:
         zone_mult = bt["customer_flow"][zone] / bt["customer_flow"].get("center", 100)
     
-    # Connection bonus (+20% per connection)
-    connection_mult = 1 + connections * 0.2
+    # Connection bonus (+5% per connection)
+    connection_mult = 1 + connections * 0.05
     
     gross_income = base_income * level_mult * zone_mult * connection_mult
     net_income = (gross_income - operating_cost * level_mult) * (1 - BASE_TAX_RATE)
