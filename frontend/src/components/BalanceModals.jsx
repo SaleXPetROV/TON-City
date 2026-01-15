@@ -93,7 +93,7 @@ export function DepositModal({ isOpen, onClose, onSuccess, receiverAddress }) {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Например: 10"
-              className="mt-2 text-lg"
+              className="mt-2 text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               data-testid="deposit-amount-input"
             />
           </div>
