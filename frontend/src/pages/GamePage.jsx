@@ -457,12 +457,14 @@ export default function GamePage() {
             <Layer>
               {/* Grid cells - only render visible ones */}
               {(() => {
-                const { startX, startY, endX, endY } = getVisibleCells();
+                const { startX, startY, endX, endY } = visibleCells;
                 const cells = [];
                 
                 for (let y = startY; y < endY; y++) {
                   for (let x = startX; x < endX; x++) {
                     const plot = plots.find(p => p.x === x && p.y === y);
+                    const isSelected = selectedPlot?.x === x && selectedPlot?.y === y;
+                    
                     cells.push(
                       <Group key={`${x}-${y}`}>
                         <Rect
@@ -471,10 +473,13 @@ export default function GamePage() {
                           width={CELL_SIZE}
                           height={CELL_SIZE}
                           fill={getCellColor(x, y)}
-                          stroke={getCellStroke(x, y)}
-                          strokeWidth={selectedPlot?.x === x && selectedPlot?.y === y ? 2 : 0.5}
+                          stroke={isSelected ? '#00F0FF' : (plot?.business_id ? '#FFD600' : '#1F1F22')}
+                          strokeWidth={isSelected ? 2 : 0.5}
                           onClick={() => handleCellClick(x, y)}
                           onTap={() => handleCellClick(x, y)}
+                          perfectDrawEnabled={false}
+                          shadowForStrokeEnabled={false}
+                          listening={true}
                         />
                         {plot?.business_icon && scale > 0.8 && (
                           <Text
@@ -484,6 +489,7 @@ export default function GamePage() {
                             fontSize={12}
                             offsetX={6}
                             offsetY={6}
+                            perfectDrawEnabled={false}
                           />
                         )}
                       </Group>
