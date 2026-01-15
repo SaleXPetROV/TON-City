@@ -136,10 +136,12 @@ export default function GamePage() {
         console.log('Could not load wallet settings');
       }
       
-      // Center view
+      // Center view on the center of the map (50, 50)
+      const centerX = 50;
+      const centerY = 50;
       setPosition({
-        x: viewportSize.width / 2 - (GRID_SIZE * CELL_SIZE * scale) / 2,
-        y: viewportSize.height / 2 - (GRID_SIZE * CELL_SIZE * scale) / 2,
+        x: viewportSize.width / 2 - (centerX * CELL_SIZE * scale),
+        y: viewportSize.height / 2 - (centerY * CELL_SIZE * scale),
       });
     } catch (error) {
       console.error('Failed to load data:', error);
