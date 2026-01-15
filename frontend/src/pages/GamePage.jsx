@@ -160,12 +160,19 @@ export default function GamePage() {
       }
       
       // Center view on the center of the map (50, 50)
-      const centerX = 50;
-      const centerY = 50;
-      setPosition({
-        x: viewportSize.width / 2 - (centerX * CELL_SIZE * scale),
-        y: viewportSize.height / 2 - (centerY * CELL_SIZE * scale),
-      });
+      // Use setTimeout to ensure viewport is ready
+      setTimeout(() => {
+        const centerX = 50;
+        const centerY = 50;
+        const currentViewport = {
+          width: document.getElementById('map-container')?.clientWidth || window.innerWidth - 320,
+          height: document.getElementById('map-container')?.clientHeight || window.innerHeight - 64
+        };
+        setPosition({
+          x: currentViewport.width / 2 - (centerX * CELL_SIZE),
+          y: currentViewport.height / 2 - (centerY * CELL_SIZE),
+        });
+      }, 200);
     } catch (error) {
       console.error('Failed to load data:', error);
       toast.error('Ошибка загрузки данных');
