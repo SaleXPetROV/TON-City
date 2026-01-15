@@ -58,11 +58,15 @@ export default function GamePage() {
     const mapWidth = viewportSize.width - 320; // Subtract right panel width
     const cellPixelSize = CELL_SIZE * scale;
     
+    if (cellPixelSize === 0) {
+      return { startX: 0, startY: 0, endX: GRID_SIZE, endY: GRID_SIZE };
+    }
+    
     // Calculate viewport bounds in grid coordinates
     const startX = Math.max(0, Math.floor(-position.x / cellPixelSize));
     const startY = Math.max(0, Math.floor(-position.y / cellPixelSize));
-    const endX = Math.min(GRID_SIZE, Math.ceil((mapWidth - position.x) / cellPixelSize) + 1);
-    const endY = Math.min(GRID_SIZE, Math.ceil((viewportSize.height - position.y) / cellPixelSize) + 1);
+    const endX = Math.min(GRID_SIZE, Math.ceil((-position.x + mapWidth) / cellPixelSize) + 1);
+    const endY = Math.min(GRID_SIZE, Math.ceil((-position.y + viewportSize.height) / cellPixelSize) + 1);
     
     return { startX, startY, endX, endY };
   }, [position.x, position.y, scale, viewportSize.width, viewportSize.height]);
