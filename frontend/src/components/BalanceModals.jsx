@@ -236,7 +236,7 @@ export function WithdrawModal({ isOpen, onClose, onSuccess, currentBalance, user
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Минимум 1 TON"
-              className="mt-2 text-lg"
+              className="mt-2 text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               data-testid="withdraw-amount-input"
             />
           </div>
