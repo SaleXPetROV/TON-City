@@ -27,8 +27,8 @@ export function DepositModal({ isOpen, onClose, onSuccess, receiverAddress }) {
       return;
     }
 
-    if (!receiverAddress) {
-      toast.error('Адрес получателя не настроен. Обратитесь к администратору.');
+    if (!receiverAddress || receiverAddress === '') {
+      toast.error('❌ Адрес получателя не настроен администратором. Обратитесь к администратору для настройки кошелька в админ-панели.');
       return;
     }
 
