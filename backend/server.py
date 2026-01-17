@@ -57,7 +57,7 @@ last_activity = {}
 # Tax rates
 BASE_TAX_RATE = 0.13
 PROGRESSIVE_TAX = {0.15: 0.18, 0.20: 0.25, 0.25: 0.35}
-RESALE_COMMISSION = 0.15
+RESALE_COMMISSION = 0.0  # No commission on resale - admin gets 100% of original price only
 TRADE_COMMISSION = 0.05
 RENTAL_COMMISSION = 0.10
 WITHDRAWAL_COMMISSION = 0.03
