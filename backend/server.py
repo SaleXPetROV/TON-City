@@ -1193,17 +1193,73 @@ async def resale_plot(request: ResalePlotRequest, current_user: User = Depends(g
 
 @api_router.post("/plots/buy-resale/{plot_id}")
 async def buy_resale_plot(plot_id: str, current_user: User = Depends(get_current_user)):
-    """Buy a resale plot"""
+    """Buy a resale plot with 15% tax"""
     plot = await db.plots.find_one({"id": plot_id}, {"_id": 0})
     
     if not plot or not plot.get("is_resale"):
         raise HTTPException(status_code=404, detail="Plot not for sale")
     
+    if plot["owner"] == current_user.wallet_address:
+        raise HTTPException(status_code=400, detail="Cannot buy your own plot")
+    
     seller_address = plot["owner"]
     price = plot["price"]
-    commission = price * RESALE_COMMISSION
+    commission = price * RESALE_COMMISSION  # 15% tax
     seller_amount = price - commission
     
+    # Check buyer balance
+    buyer = await db.users.find_one({"wallet_address": current_user.wallet_address}, {"_id": 0})
+    if buyer["balance_game"] < price:
+        raise HTTPException(status_code=400, detail=f"Insufficient balance. Need {price} TON")
+    
+    # Transfer ownership
+    await db.plots.update_one(
+        {"id": plot_id},
+        {"$set": {
+            "owner": current_user.wallet_address,
+            "is_available": False,
+            "is_resale": False,
+            "price": plot.get("original_price", price)  # Reset to original price
+        }}
+    )
+    
+    # Update buyer balance
+    await db.users.update_one(
+        {"wallet_address": current_user.wallet_address},
+        {"$inc": {"balance_game": -price}, "$push": {"plots_owned": f"{plot['x']},{plot['y']}"}}
+    )
+    
+    # Update seller balance
+    await db.users.update_one(
+        {"wallet_address": seller_address},
+        {"$inc": {"balance_game": seller_amount}, "$pull": {"plots_owned": f"{plot['x']},{plot['y']}"}}
+    )
+    
+    # If plot has business, transfer it too
+    if plot.get("business_id"):
+        await db.businesses.update_one(
+            {"id": plot["business_id"]},
+            {"$set": {"owner": current_user.wallet_address}}
+        )
+        
+        # Update business ownership lists
+        await db.users.update_one(
+            {"wallet_address": seller_address},
+            {"$pull": {"businesses_owned": plot["business_id"]}}
+        )
+        await db.users.update_one(
+            {"wallet_address": current_user.wallet_address},
+            {"$push": {"businesses_owned": plot["business_id"]}}
+        )
+    
+    # Add commission to treasury
+    await db.admin_stats.update_one(
+        {"type": "treasury"},
+        {"$inc": {"resale_tax": commission, "total_income": commission}},
+        upsert=True
+    )
+    
+    # Record transaction
     tx = Transaction(
         tx_type="resale_plot",
         from_address=current_user.wallet_address,
@@ -1216,12 +1272,15 @@ async def buy_resale_plot(plot_id: str, current_user: User = Depends(get_current
     tx_dict['created_at'] = tx_dict['created_at'].isoformat()
     await db.transactions.insert_one(tx_dict.copy())
     
+    logger.info(f"Plot resale: {plot_id} from {seller_address} to {current_user.wallet_address} for {price} TON")
+    
     return {
         "transaction_id": tx.id,
         "plot_id": plot_id,
         "amount_ton": price,
         "commission": commission,
-        "seller_receives": seller_amount
+        "seller_receives": seller_amount,
+        "business_transferred": bool(plot.get("business_id"))
     }
 
 # ==================== BUSINESS ROUTES ====================
