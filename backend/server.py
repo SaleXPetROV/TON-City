@@ -1468,6 +1468,88 @@ async def confirm_business_build(request: ConfirmTransactionRequest, current_use
         "message": t("business_built", current_user.language)
     }
 
+
+@api_router.post("/businesses/demolish/{business_id}")
+async def demolish_business(business_id: str, current_user: User = Depends(get_current_user)):
+    """Demolish business for 5% of its cost"""
+    business = await db.businesses.find_one({"id": business_id}, {"_id": 0})
+    
+    if not business:
+        raise HTTPException(status_code=404, detail="Business not found")
+    
+    if business["owner"] != current_user.wallet_address:
+        raise HTTPException(status_code=403, detail="Not your business")
+    
+    # Calculate demolish cost (5% of total investment)
+    business_config = BUSINESS_TYPES.get(business["business_type"], {})
+    base_cost = business_config.get("cost", 0)
+    level = business.get("level", 1)
+    
+    # Calculate total investment
+    total_investment = base_cost
+    for lvl in range(2, level + 1):
+        upgrade_cost = LEVEL_CONFIG.get(lvl, {}).get("upgrade_cost", 0)
+        total_investment += upgrade_cost
+    
+    demolish_cost = total_investment * DEMOLISH_COST  # 5%
+    
+    # Check balance
+    user = await db.users.find_one({"wallet_address": current_user.wallet_address}, {"_id": 0})
+    if user["balance_game"] < demolish_cost:
+        raise HTTPException(status_code=400, detail=f"Insufficient balance. Need {demolish_cost} TON for demolition")
+    
+    # Deduct demolish cost
+    await db.users.update_one(
+        {"wallet_address": current_user.wallet_address},
+        {"$inc": {"balance_game": -demolish_cost}}
+    )
+    
+    # Remove business from plot
+    plot = await db.plots.find_one({"business_id": business_id}, {"_id": 0})
+    if plot:
+        await db.plots.update_one(
+            {"id": plot["id"]},
+            {"$set": {"business_id": None}}
+        )
+    
+    # Delete business
+    await db.businesses.delete_one({"id": business_id})
+    
+    # Remove from user's businesses list
+    await db.users.update_one(
+        {"wallet_address": current_user.wallet_address},
+        {"$pull": {"businesses_owned": business_id}}
+    )
+    
+    # Add to treasury
+    await db.admin_stats.update_one(
+        {"type": "treasury"},
+        {"$inc": {"demolish_fees": demolish_cost, "total_income": demolish_cost}},
+        upsert=True
+    )
+    
+    # Record transaction
+    tx = Transaction(
+        tx_type="demolish_business",
+        from_address=current_user.wallet_address,
+        to_address="treasury",
+        amount_ton=demolish_cost,
+        commission=0,
+        metadata={"business_id": business_id, "business_type": business["business_type"], "level": level}
+    )
+    tx_dict = tx.model_dump()
+    tx_dict['created_at'] = tx_dict['created_at'].isoformat()
+    await db.transactions.insert_one(tx_dict)
+    
+    logger.info(f"Business demolished: {business_id} by {current_user.wallet_address} for {demolish_cost} TON")
+    
+    return {
+        "status": "demolished",
+        "business_id": business_id,
+        "demolish_cost": demolish_cost,
+        "plot_freed": bool(plot)
+    }
+
 async def connect_businesses(business_id: str, business_type: str, x: int, y: int):
     """Connect business with nearby compatible businesses"""
     bt = BUSINESS_TYPES.get(business_type, {})
