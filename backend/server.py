@@ -1612,14 +1612,37 @@ async def spot_trade(request: TradeResourceRequest, current_user: User = Depends
     # Get current market price
     base_price = RESOURCE_PRICES.get(request.resource_type, 0.001)
     total_value = request.amount * base_price
-    commission = total_value * TRADE_COMMISSION
+    commission = total_value * TRADE_COMMISSION  # Now 0%
+    
+    # Apply income tax to seller's earnings (13% base rate)
+    income_tax = total_value * BASE_TAX_RATE
+    seller_receives = total_value - income_tax
+    
+    # Update seller balance
+    await db.users.update_one(
+        {"wallet_address": seller_biz["owner"]},
+        {"$inc": {"balance_game": seller_receives, "total_income": seller_receives}}
+    )
+    
+    # Update buyer balance (full payment)
+    await db.users.update_one(
+        {"wallet_address": buyer_biz["owner"]},
+        {"$inc": {"balance_game": -total_value}}
+    )
+    
+    # Record tax to treasury
+    await db.admin_stats.update_one(
+        {"type": "treasury"},
+        {"$inc": {"total_tax": income_tax}},
+        upsert=True
+    )
     
     tx = Transaction(
         tx_type="trade_resource",
         from_address=buyer_biz["owner"],
         to_address=seller_biz["owner"],
         amount_ton=total_value,
-        commission=commission,
+        commission=income_tax,  # Now this is income tax, not trade commission
         resource_type=request.resource_type,
         resource_amount=request.amount
     )
@@ -1632,8 +1655,8 @@ async def spot_trade(request: TradeResourceRequest, current_user: User = Depends
         "resource": request.resource_type,
         "amount": request.amount,
         "total_value": total_value,
-        "commission": commission,
-        "seller_receives": total_value - commission
+        "income_tax": income_tax,
+        "seller_receives": seller_receives
     }
 
 @api_router.get("/trade/contracts")
