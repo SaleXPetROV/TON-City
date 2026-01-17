@@ -174,7 +174,7 @@ export function WithdrawModal({ isOpen, onClose, onSuccess, currentBalance, user
     try {
       const token = localStorage.getItem('ton_city_token');
       await axios.post(
-        `${API}/transactions/withdraw`,
+        `${API}/withdraw`,
         {
           amount_ton: parseFloat(amount),
           to_address: userWallet,
