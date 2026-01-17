@@ -1136,21 +1136,60 @@ async def confirm_plot_purchase(request: ConfirmTransactionRequest, current_user
 
 @api_router.post("/plots/resale")
 async def resale_plot(request: ResalePlotRequest, current_user: User = Depends(get_current_user)):
-    """List plot for resale"""
+    """List plot for resale with minimum price rules"""
     plot = await db.plots.find_one({"id": request.plot_id}, {"_id": 0})
     
     if not plot or plot.get("owner") != current_user.wallet_address:
         raise HTTPException(status_code=404, detail="Plot not found or not owned")
     
+    # Calculate original plot price
+    original_price = calculate_plot_price(plot["x"], plot["y"])
+    min_plot_price = original_price * 0.5  # 50% of original
+    
+    # If plot has business, cannot sell (must demolish first or include in price)
+    business = None
     if plot.get("business_id"):
-        raise HTTPException(status_code=400, detail="Cannot sell plot with business")
+        business = await db.businesses.find_one({"id": plot["business_id"]}, {"_id": 0})
+        if business:
+            # Get business cost
+            business_config = BUSINESS_TYPES.get(business["business_type"], {})
+            business_cost = business_config.get("cost", 0)
+            level = business.get("level", 1)
+            
+            # Calculate total business investment
+            total_business_cost = business_cost
+            for lvl in range(2, level + 1):
+                upgrade_cost = LEVEL_CONFIG.get(lvl, {}).get("upgrade_cost", 0)
+                total_business_cost += upgrade_cost
+            
+            # Minimum price = plot price + half of business value
+            min_plot_price = original_price + (total_business_cost * 0.5)
+    
+    # Check minimum price
+    if request.price < min_plot_price:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Price too low. Minimum price: {min_plot_price} TON (50% of original value{' + half of business value' if business else ''})"
+        )
     
     await db.plots.update_one(
         {"id": request.plot_id},
-        {"$set": {"is_available": True, "price": request.price, "is_resale": True}}
+        {"$set": {
+            "is_available": True, 
+            "price": request.price, 
+            "is_resale": True,
+            "original_price": original_price,
+            "has_business": bool(business)
+        }}
     )
     
-    return {"status": "listed", "plot_id": request.plot_id, "price": request.price}
+    return {
+        "status": "listed", 
+        "plot_id": request.plot_id, 
+        "price": request.price,
+        "min_price": min_plot_price,
+        "has_business": bool(business)
+    }
 
 @api_router.post("/plots/buy-resale/{plot_id}")
 async def buy_resale_plot(plot_id: str, current_user: User = Depends(get_current_user)):
