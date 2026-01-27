@@ -139,13 +139,22 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
       const data = await res.json();
       
       if (!res.ok) {
-        throw new Error(data.detail || 'Authentication failed');
+        // Показываем ошибку от сервера
+        const errorMsg = data.detail || data.message || 'Authentication failed';
+        toast.error(errorMsg);
+        setIsVerifying(false);
+        return;
       }
   
-      finishAuth(data);
+      await finishAuth(data);
     } catch (e) {
       console.error("Email auth error:", e);
-      toast.error(e.message || 'Auth failed');
+      // Показываем понятное сообщение об ошибке
+      if (e.message === 'Failed to fetch') {
+        toast.error(lang === 'ru' ? 'Ошибка соединения с сервером' : 'Server connection error');
+      } else {
+        toast.error(e.message || (lang === 'ru' ? 'Ошибка авторизации' : 'Auth failed'));
+      }
     } finally {
       setIsVerifying(false);
     }
