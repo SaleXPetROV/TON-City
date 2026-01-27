@@ -357,3 +357,134 @@ async def set_username(data: UsernameUpdate, token: str):
     )
     
     return {"status": "success"}
+
+
+# 5. Настройки пользователя
+class UpdateUsernameRequest(BaseModel):
+    username: str
+
+class UpdateEmailRequest(BaseModel):
+    email: EmailStr
+    password: str  # Требуется текущий пароль для подтверждения
+
+class UpdatePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+class LinkWalletRequest(BaseModel):
+    wallet_address: str
+
+class UploadAvatarRequest(BaseModel):
+    avatar_data: str  # Base64 encoded image or URL
+
+@auth_router.put("/update-username")
+async def update_username(data: UpdateUsernameRequest, current_user: dict = Depends(get_current_user_local)):
+    """Изменение username"""
+    from server import db
+    
+    if len(data.username) < 3:
+        raise HTTPException(status_code=400, detail="Username слишком короткий (минимум 3 символа)")
+    
+    # Проверяем уникальность
+    existing = await db.users.find_one({"username": data.username})
+    if existing and str(existing.get("_id")) != str(current_user.get("_id")):
+        raise HTTPException(status_code=400, detail="Этот username уже занят")
+    
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {"username": data.username, "display_name": data.username}}
+    )
+    
+    return {"status": "success", "username": data.username}
+
+@auth_router.put("/update-email")
+async def update_email(data: UpdateEmailRequest, current_user: dict = Depends(get_current_user_local)):
+    """Изменение email (требуется пароль)"""
+    from server import db
+    
+    # Проверка: у пользователя должен быть пароль (не Google auth)
+    if not current_user.get("hashed_password"):
+        raise HTTPException(status_code=400, detail="Невозможно изменить email для аккаунта Google")
+    
+    # Проверяем текущий пароль
+    if not pwd_context.verify(data.password, current_user.get("hashed_password", "")):
+        raise HTTPException(status_code=401, detail="Неверный пароль")
+    
+    # Проверяем уникальность email
+    existing = await db.users.find_one({"email": data.email})
+    if existing and str(existing.get("_id")) != str(current_user.get("_id")):
+        raise HTTPException(status_code=400, detail="Этот email уже используется")
+    
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {"email": data.email}}
+    )
+    
+    return {"status": "success", "email": data.email}
+
+@auth_router.put("/update-password")
+async def update_password(data: UpdatePasswordRequest, current_user: dict = Depends(get_current_user_local)):
+    """Изменение пароля"""
+    from server import db
+    
+    # Проверка: у пользователя должен быть пароль (не Google auth)
+    if not current_user.get("hashed_password"):
+        raise HTTPException(status_code=400, detail="Невозможно установить пароль для аккаунта Google")
+    
+    # Проверяем текущий пароль
+    if not pwd_context.verify(data.current_password, current_user.get("hashed_password", "")):
+        raise HTTPException(status_code=401, detail="Неверный текущий пароль")
+    
+    # Хешируем новый пароль
+    new_hashed = pwd_context.hash(data.new_password)
+    
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {"hashed_password": new_hashed}}
+    )
+    
+    return {"status": "success"}
+
+@auth_router.post("/link-wallet")
+async def link_wallet(data: LinkWalletRequest, current_user: dict = Depends(get_current_user_local)):
+    """Привязка кошелька к аккаунту"""
+    from server import db, to_raw
+    
+    # Проверяем, не привязан ли кошелек к другому аккаунту
+    raw_address = to_raw(data.wallet_address)
+    existing = await db.users.find_one({
+        "$or": [
+            {"wallet_address": data.wallet_address},
+            {"raw_address": raw_address}
+        ]
+    })
+    
+    if existing and str(existing.get("_id")) != str(current_user.get("_id")):
+        raise HTTPException(status_code=400, detail="Этот кошелек уже привязан к другому аккаунту")
+    
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {
+            "wallet_address": data.wallet_address,
+            "raw_address": raw_address
+        }}
+    )
+    
+    return {"status": "success", "wallet_address": data.wallet_address}
+
+@auth_router.post("/upload-avatar")
+async def upload_avatar(data: UploadAvatarRequest, current_user: dict = Depends(get_current_user_local)):
+    """Загрузка пользовательского аватара"""
+    from server import db
+    
+    # В реальном приложении здесь была бы загрузка на S3/CDN
+    # Пока просто сохраняем base64/URL
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {
+            "avatar": data.avatar_data,
+            "avatar_uploaded": True
+        }}
+    )
+    
+    return {"status": "success", "avatar": data.avatar_data}
