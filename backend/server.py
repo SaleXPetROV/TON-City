@@ -24,12 +24,38 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# JWT Configuration
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'ton-city-builder-secret-key-2025')
+ADMIN_SECRET = os.environ.get('ADMIN_SECRET', 'admin-secret-key-2025')
+ADMIN_WALLET = os.environ.get('ADMIN_WALLET') or None
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_DAYS = 30
 
+# Create the main app
+app = FastAPI(title="TON City Builder API")
+api_router = APIRouter(prefix="/api")
+admin_router = APIRouter(prefix="/api/admin")
+security = HTTPBearer(auto_error=False)
 oauth2_scheme = HTTPBearer()
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# Online users tracking
+online_users = set()
+last_activity = {}
 
 class WithdrawRequest(BaseModel):
     amount: float
 
+class User(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    username: Optional[str] = None
+    email: Optional[str] = None
+    wallet_address: Optional[str] = None
+    raw_address: Optional[str] = None
     display_name: Optional[str] = None
     language: str = "en"
     level: str = "novice"
