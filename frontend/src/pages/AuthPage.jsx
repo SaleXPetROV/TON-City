@@ -136,11 +136,21 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
         }
       );
   
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        // Ответ не содержит JSON
+        if (!res.ok) {
+          toast.error(lang === 'ru' ? 'Ошибка авторизации' : 'Auth failed');
+          setIsVerifying(false);
+          return;
+        }
+      }
       
       if (!res.ok) {
         // Показываем ошибку от сервера
-        const errorMsg = data.detail || data.message || 'Authentication failed';
+        const errorMsg = data?.detail || data?.message || (lang === 'ru' ? 'Неверные данные для входа' : 'Invalid credentials');
         toast.error(errorMsg);
         setIsVerifying(false);
         return;
