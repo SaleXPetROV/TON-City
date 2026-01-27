@@ -14,25 +14,7 @@ from jose import JWTError, jwt
 import math
 import asyncio
 import json
-<<<<<<< HEAD
 from tonsdk.utils import Address
-=======
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
-
-# Import TON integration and background tasks
-from ton_integration import ton_client, init_ton_client, close_ton_client, validate_ton_address
-from background_tasks import (
-    init_scheduler, start_scheduler, shutdown_scheduler, 
-    trigger_auto_collection_now
-)
-from payment_monitor import init_payment_monitor, stop_payment_monitor
-<<<<<<< HEAD
-from tonsdk.contract.wallet import Wallets, WalletVersionEnum
-from tonsdk.utils import to_nano
-from fastapi.security import HTTPBearer
-
-=======
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -42,500 +24,12 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-<<<<<<< HEAD
 
 oauth2_scheme = HTTPBearer()
 
 class WithdrawRequest(BaseModel):
     amount: float
 
-=======
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
-# JWT Configuration
-SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'ton-city-builder-secret-key-2025')
-ADMIN_SECRET = os.environ.get('ADMIN_SECRET', 'admin-secret-key-2025')
-ADMIN_WALLET = os.environ.get('ADMIN_WALLET') or None  # Admin wallet from .env (None if empty)
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_DAYS = 30
-
-# Create the main app
-app = FastAPI(title="TON City Builder API")
-api_router = APIRouter(prefix="/api")
-admin_router = APIRouter(prefix="/api/admin")
-security = HTTPBearer(auto_error=False)
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-# Online users tracking (in-memory, resets on restart)
-online_users = set()
-last_activity = {}
-
-# ==================== CONSTANTS ====================
-
-# Tax rates
-BASE_TAX_RATE = 0.13
-PROGRESSIVE_TAX = {0.15: 0.18, 0.20: 0.25, 0.25: 0.35}
-RESALE_COMMISSION = 0.15  # 15% tax on resale to prevent speculation
-DEMOLISH_COST = 0.05  # 5% of business cost to demolish
-TRADE_COMMISSION = 0.0  # No trade commission - income tax applies when user receives money
-RENTAL_COMMISSION = 0.10
-WITHDRAWAL_COMMISSION = 0.03
-MIN_WITHDRAWAL = 1.0
-
-# Level system multipliers
-LEVEL_CONFIG = {
-    1: {"xp_required": 0, "income_mult": 1.0, "speed_mult": 1.0, "bonus": None},
-    2: {"xp_required": 100, "income_mult": 1.2, "speed_mult": 1.1, "bonus": "upgrades"},
-    3: {"xp_required": 300, "income_mult": 1.5, "speed_mult": 1.2, "bonus": "discount_5"},
-    4: {"xp_required": 600, "income_mult": 1.8, "speed_mult": 1.3, "bonus": "storage"},
-    5: {"xp_required": 1000, "income_mult": 2.2, "speed_mult": 1.5, "bonus": "automation_1"},
-    6: {"xp_required": 1500, "income_mult": 2.7, "speed_mult": 1.7, "bonus": "discount_10"},
-    7: {"xp_required": 2200, "income_mult": 3.3, "speed_mult": 2.0, "bonus": "automation_2"},
-    8: {"xp_required": 3000, "income_mult": 4.0, "speed_mult": 2.3, "bonus": "vip"},
-    9: {"xp_required": 4000, "income_mult": 5.0, "speed_mult": 2.7, "bonus": "franchise"},
-    10: {"xp_required": 5500, "income_mult": 6.5, "speed_mult": 3.0, "bonus": "corporation"},
-}
-
-# Player levels
-PLAYER_LEVELS = {
-    "novice": {"min_turnover": 0, "max_plots": 3, "max_market_share": 0.05},
-    "entrepreneur": {"min_turnover": 100, "max_plots": 7, "max_market_share": 0.10},
-    "businessman": {"min_turnover": 500, "max_plots": 15, "max_market_share": 0.15},
-    "magnate": {"min_turnover": 2000, "max_plots": 30, "max_market_share": 0.20},
-    "oligarch": {"min_turnover": 10000, "max_plots": 50, "max_market_share": 0.25},
-}
-
-# Zone configuration
-ZONES = {
-    "center": {"radius_max": 10, "plot_limit": 3, "price_mult": 1.0},
-    "business": {"radius_max": 25, "plot_limit": 10, "price_mult": 0.7},
-    "residential": {"radius_max": 40, "plot_limit": 15, "price_mult": 0.45},
-    "industrial": {"radius_max": 50, "plot_limit": 20, "price_mult": 0.25},
-    "outskirts": {"radius_max": 100, "plot_limit": 30, "price_mult": 0.12},
-}
-
-# Business types with full configuration
-BUSINESS_TYPES = {
-    # Primary sector - Resource production
-    "farm": {
-        "name": {"en": "Farm", "ru": "Ферма", "zh": "农场"},
-        "icon": "🌾",
-        "sector": "primary",
-        "cost": 5,
-        "build_time_hours": 2,
-        "materials_required": 50,
-        "energy_consumption": 10,
-        "produces": "crops",
-        "production_rate": 100,  # per hour
-        "requires": None,
-        "base_income": 2.4,  # TON/day at level 1
-        "operating_cost": 0.3,
-        "allowed_zones": ["residential", "industrial", "outskirts"],
-        "max_per_player": 10,
-        "min_builders": 1,
-    },
-    "power_plant": {
-        "name": {"en": "Power Plant", "ru": "Электростанция", "zh": "发电厂"},
-        "icon": "⚡",
-        "sector": "primary",
-        "cost": 20,
-        "build_time_hours": 8,
-        "materials_required": 300,
-        "energy_consumption": 0,
-        "produces": "energy",
-        "production_rate": 500,  # kWh per hour
-        "requires": None,
-        "base_income": 2.4,
-        "operating_cost": 0.8,
-        "allowed_zones": ["industrial", "outskirts"],
-        "max_per_player": 3,
-        "min_builders": 2,
-    },
-    "quarry": {
-        "name": {"en": "Quarry", "ru": "Карьер", "zh": "采石场"},
-        "icon": "⛏️",
-        "sector": "primary",
-        "cost": 25,
-        "build_time_hours": 10,
-        "materials_required": 200,
-        "energy_consumption": 80,
-        "produces": "materials",
-        "production_rate": 50,
-        "requires": None,
-        "base_income": 6.0,
-        "operating_cost": 1.5,
-        "allowed_zones": ["industrial", "outskirts"],
-        "max_per_player": 5,
-        "min_builders": 2,
-    },
-    "oil_rig": {
-        "name": {"en": "Oil Rig", "ru": "Нефтевышка", "zh": "石油钻井"},
-        "icon": "🛢️",
-        "sector": "primary",
-        "cost": 40,
-        "build_time_hours": 16,
-        "materials_required": 400,
-        "energy_consumption": 100,
-        "produces": "fuel",
-        "production_rate": 30,
-        "requires": None,
-        "base_income": 8.0,
-        "operating_cost": 2.0,
-        "allowed_zones": ["industrial", "outskirts"],
-        "max_per_player": 3,
-        "min_builders": 3,
-    },
-    "mine": {
-        "name": {"en": "Mine", "ru": "Шахта", "zh": "矿山"},
-        "icon": "🪨",
-        "sector": "primary",
-        "cost": 35,
-        "build_time_hours": 14,
-        "materials_required": 350,
-        "energy_consumption": 120,
-        "produces": "ore",
-        "production_rate": 40,
-        "requires": None,
-        "base_income": 7.0,
-        "operating_cost": 1.8,
-        "allowed_zones": ["industrial", "outskirts"],
-        "max_per_player": 4,
-        "min_builders": 2,
-    },
-    
-    # Secondary sector - Manufacturing
-    "factory": {
-        "name": {"en": "Factory", "ru": "Завод", "zh": "工厂"},
-        "icon": "🏭",
-        "sector": "secondary",
-        "cost": 15,
-        "build_time_hours": 6,
-        "materials_required": 150,
-        "energy_consumption": 50,
-        "produces": "goods",
-        "production_rate": 30,
-        "requires": "crops",
-        "consumption_rate": 50,
-        "base_income": 2.88,
-        "operating_cost": 1.44,
-        "allowed_zones": ["business", "industrial"],
-        "max_per_player": 8,
-        "min_builders": 2,
-    },
-    "construction_company": {
-        "name": {"en": "Construction Co.", "ru": "Стройкомпания", "zh": "建筑公司"},
-        "icon": "🏗️",
-        "sector": "secondary",
-        "cost": 30,
-        "build_time_hours": 12,
-        "materials_required": 250,
-        "energy_consumption": 100,
-        "produces": "construction_service",
-        "production_rate": 1,
-        "requires": "materials",
-        "consumption_rate": 0,  # depends on orders
-        "base_income": 5.0,  # varies with orders
-        "operating_cost": 1.0,
-        "allowed_zones": ["business", "industrial"],
-        "max_per_player": 5,
-        "min_builders": 2,
-    },
-    "refinery": {
-        "name": {"en": "Refinery", "ru": "НПЗ", "zh": "炼油厂"},
-        "icon": "🏭",
-        "sector": "secondary",
-        "cost": 50,
-        "build_time_hours": 20,
-        "materials_required": 500,
-        "energy_consumption": 150,
-        "produces": "refined_fuel",
-        "production_rate": 20,
-        "requires": "fuel",
-        "consumption_rate": 30,
-        "base_income": 10.0,
-        "operating_cost": 3.0,
-        "allowed_zones": ["industrial"],
-        "max_per_player": 2,
-        "min_builders": 3,
-    },
-    "steel_mill": {
-        "name": {"en": "Steel Mill", "ru": "Сталелитейный", "zh": "钢铁厂"},
-        "icon": "🔩",
-        "sector": "secondary",
-        "cost": 45,
-        "build_time_hours": 18,
-        "materials_required": 450,
-        "energy_consumption": 200,
-        "produces": "steel",
-        "production_rate": 25,
-        "requires": "ore",
-        "consumption_rate": 40,
-        "base_income": 9.0,
-        "operating_cost": 2.5,
-        "allowed_zones": ["industrial"],
-        "max_per_player": 3,
-        "min_builders": 3,
-    },
-    "textile_factory": {
-        "name": {"en": "Textile Factory", "ru": "Текстильная ф-ка", "zh": "纺织厂"},
-        "icon": "🧵",
-        "sector": "secondary",
-        "cost": 20,
-        "build_time_hours": 8,
-        "materials_required": 180,
-        "energy_consumption": 40,
-        "produces": "textiles",
-        "production_rate": 40,
-        "requires": "crops",
-        "consumption_rate": 60,
-        "base_income": 4.0,
-        "operating_cost": 1.2,
-        "allowed_zones": ["business", "industrial"],
-        "max_per_player": 6,
-        "min_builders": 1,
-    },
-    
-    # Tertiary sector - Services
-    "shop": {
-        "name": {"en": "Shop", "ru": "Магазин", "zh": "商店"},
-        "icon": "🏪",
-        "sector": "tertiary",
-        "cost": 10,
-        "build_time_hours": 4,
-        "materials_required": 100,
-        "energy_consumption": 20,
-        "produces": "retail",
-        "production_rate": 0,
-        "requires": "goods",
-        "consumption_rate": 30,
-        "base_income": 4.8,  # varies by zone
-        "operating_cost": 0.5,
-        "allowed_zones": ["center", "business", "residential"],
-        "max_per_player": 15,
-        "min_builders": 1,
-        "customer_flow": {"center": 100, "business": 60, "residential": 40},
-    },
-    "restaurant": {
-        "name": {"en": "Restaurant", "ru": "Ресторан", "zh": "餐厅"},
-        "icon": "🍽️",
-        "sector": "tertiary",
-        "cost": 12,
-        "build_time_hours": 5,
-        "materials_required": 120,
-        "energy_consumption": 30,
-        "produces": "food_service",
-        "production_rate": 30,
-        "requires": "crops",
-        "consumption_rate": 30,
-        "base_income": 5.4,
-        "operating_cost": 0.86,
-        "allowed_zones": ["center", "business", "residential"],
-        "max_per_player": 10,
-        "min_builders": 1,
-        "customer_flow": {"center": 80, "business": 50, "residential": 30},
-    },
-    "hotel": {
-        "name": {"en": "Hotel", "ru": "Отель", "zh": "酒店"},
-        "icon": "🏨",
-        "sector": "tertiary",
-        "cost": 35,
-        "build_time_hours": 16,
-        "materials_required": 350,
-        "energy_consumption": 80,
-        "produces": "accommodation",
-        "production_rate": 50,  # rooms
-        "requires": None,
-        "base_income": 8.0,
-        "operating_cost": 2.0,
-        "allowed_zones": ["center", "business"],
-        "max_per_player": 5,
-        "min_builders": 2,
-        "customer_flow": {"center": 90, "business": 60},
-    },
-    "hospital": {
-        "name": {"en": "Hospital", "ru": "Больница", "zh": "医院"},
-        "icon": "🏥",
-        "sector": "tertiary",
-        "cost": 60,
-        "build_time_hours": 24,
-        "materials_required": 600,
-        "energy_consumption": 150,
-        "produces": "healthcare",
-        "production_rate": 100,
-        "requires": None,
-        "base_income": 12.0,
-        "operating_cost": 4.0,
-        "allowed_zones": ["center", "business", "residential"],
-        "max_per_player": 2,
-        "min_builders": 3,
-    },
-    "university": {
-        "name": {"en": "University", "ru": "Университет", "zh": "大学"},
-        "icon": "🎓",
-        "sector": "tertiary",
-        "cost": 70,
-        "build_time_hours": 30,
-        "materials_required": 700,
-        "energy_consumption": 100,
-        "produces": "education",
-        "production_rate": 200,
-        "requires": None,
-        "base_income": 10.0,
-        "operating_cost": 3.0,
-        "allowed_zones": ["center", "business"],
-        "max_per_player": 1,
-        "min_builders": 4,
-    },
-    "logistics_center": {
-        "name": {"en": "Logistics Center", "ru": "Логистический центр", "zh": "物流中心"},
-        "icon": "📦",
-        "sector": "tertiary",
-        "cost": 25,
-        "build_time_hours": 10,
-        "materials_required": 250,
-        "energy_consumption": 60,
-        "produces": "logistics",
-        "production_rate": 100,
-        "requires": None,
-        "base_income": 6.0,
-        "operating_cost": 1.5,
-        "allowed_zones": ["business", "industrial"],
-        "max_per_player": 5,
-        "min_builders": 2,
-    },
-    "gas_station": {
-        "name": {"en": "Gas Station", "ru": "АЗС", "zh": "加油站"},
-        "icon": "⛽",
-        "sector": "tertiary",
-        "cost": 15,
-        "build_time_hours": 6,
-        "materials_required": 150,
-        "energy_consumption": 20,
-        "produces": "fuel_retail",
-        "production_rate": 0,
-        "requires": "refined_fuel",
-        "consumption_rate": 20,
-        "base_income": 4.0,
-        "operating_cost": 1.0,
-        "allowed_zones": ["business", "residential", "industrial", "outskirts"],
-        "max_per_player": 8,
-        "min_builders": 1,
-    },
-    
-    # Quaternary sector - Finance & Tech
-    "bank": {
-        "name": {"en": "Bank", "ru": "Банк", "zh": "银行"},
-        "icon": "🏦",
-        "sector": "quaternary",
-        "cost": 50,
-        "build_time_hours": 24,
-        "materials_required": 500,
-        "energy_consumption": 40,
-        "produces": "finance",
-        "production_rate": 0,
-        "requires": None,
-        "base_income": 4.5,
-        "operating_cost": 0.6,
-        "allowed_zones": ["center", "business"],
-        "max_per_player": 1,
-        "min_builders": 3,
-    },
-    "exchange": {
-        "name": {"en": "Exchange", "ru": "Биржа", "zh": "交易所"},
-        "icon": "📊",
-        "sector": "quaternary",
-        "cost": 100,
-        "build_time_hours": 48,
-        "materials_required": 1000,
-        "energy_consumption": 80,
-        "produces": "trading",
-        "production_rate": 0,
-        "requires": None,
-        "base_income": 20.0,  # from commissions
-        "operating_cost": 3.0,
-        "allowed_zones": ["center"],
-        "max_per_player": 1,
-        "min_builders": 4,
-        "max_total": 5,  # max 5 on entire map
-    },
-    "tech_hub": {
-        "name": {"en": "Tech Hub", "ru": "Технопарк", "zh": "科技园"},
-        "icon": "💻",
-        "sector": "quaternary",
-        "cost": 80,
-        "build_time_hours": 36,
-        "materials_required": 800,
-        "energy_consumption": 200,
-        "produces": "tech_service",
-        "production_rate": 50,
-        "requires": None,
-        "base_income": 15.0,
-        "operating_cost": 4.0,
-        "allowed_zones": ["center", "business"],
-        "max_per_player": 2,
-        "min_builders": 3,
-    },
-    "data_center": {
-        "name": {"en": "Data Center", "ru": "Дата-центр", "zh": "数据中心"},
-        "icon": "🖥️",
-        "sector": "quaternary",
-        "cost": 90,
-        "build_time_hours": 40,
-        "materials_required": 900,
-        "energy_consumption": 500,
-        "produces": "data_service",
-        "production_rate": 1000,
-        "requires": None,
-        "base_income": 18.0,
-        "operating_cost": 6.0,
-        "allowed_zones": ["business", "industrial"],
-        "max_per_player": 2,
-        "min_builders": 3,
-    },
-    "insurance": {
-        "name": {"en": "Insurance Co.", "ru": "Страховая", "zh": "保险公司"},
-        "icon": "🛡️",
-        "sector": "quaternary",
-        "cost": 40,
-        "build_time_hours": 16,
-        "materials_required": 400,
-        "energy_consumption": 30,
-        "produces": "insurance",
-        "production_rate": 0,
-        "requires": None,
-        "base_income": 6.0,
-        "operating_cost": 1.0,
-        "allowed_zones": ["center", "business"],
-        "max_per_player": 2,
-        "min_builders": 2,
-    },
-}
-
-# Resource prices (base)
-RESOURCE_PRICES = {
-    "crops": 0.001,
-    "energy": 0.0002,
-    "materials": 0.005,
-    "fuel": 0.008,
-    "ore": 0.006,
-    "goods": 0.004,
-    "refined_fuel": 0.015,
-    "steel": 0.012,
-    "textiles": 0.003,
-}
-
-# ==================== MODELS ====================
-
-class User(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    wallet_address: str
-<<<<<<< HEAD
-    raw_address: Optional[str] = None
-=======
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
     display_name: Optional[str] = None
     language: str = "en"
     level: str = "novice"
@@ -636,58 +130,9 @@ class WalletVerifyRequest(BaseModel):
     address: str
     proof: Optional[Dict[str, Any]] = None
     language: str = "en"
-<<<<<<< HEAD
     username: Optional[str] = None
     email: Optional[str] = None     
     password: Optional[str] = None 
-=======
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
-
-class PurchasePlotRequest(BaseModel):
-    plot_x: int
-    plot_y: int
-
-class ResalePlotRequest(BaseModel):
-    plot_id: str
-    price: float
-
-class BuildBusinessRequest(BaseModel):
-    plot_id: str
-    business_type: str
-
-class CreateContractRequest(BaseModel):
-    seller_business_id: str
-    buyer_business_id: str
-    resource_type: str
-    amount_per_hour: float
-    price_per_unit: float
-    duration_days: int = 7
-
-class TradeResourceRequest(BaseModel):
-    seller_business_id: str
-    buyer_business_id: str
-    resource_type: str
-    amount: float
-
-<<<<<<< HEAD
-class Withdrawal(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    user_wallet: str
-    user_raw_address: str
-    to_address: str
-    amount: float
-    commission: float
-    net_amount: float
-    status: str = "pending"  # pending / approved / rejected / failed
-    tx_hash: Optional[str] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    approved_at: Optional[datetime] = None
-
-=======
-class WithdrawRequest(BaseModel):
-    amount: float
-    to_address: str
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 
 class ConfirmTransactionRequest(BaseModel):
     transaction_id: str
@@ -700,7 +145,6 @@ class RentPlotRequest(BaseModel):
 class AcceptRentRequest(BaseModel):
     plot_id: str
 
-<<<<<<< HEAD
 # ========================== AUTH ===========================
 
 class EmailRegister(BaseModel):
@@ -713,139 +157,6 @@ class WalletAuth(BaseModel):
     public_key: Optional[str] = None
     username: Optional[str] = None
 
-=======
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
-# ==================== WEBSOCKET MANAGER ====================
-
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: Dict[str, WebSocket] = {}
-    
-    async def connect(self, websocket: WebSocket, user_id: str):
-        await websocket.accept()
-        self.active_connections[user_id] = websocket
-    
-    def disconnect(self, user_id: str):
-        if user_id in self.active_connections:
-            del self.active_connections[user_id]
-    
-    async def send_personal(self, message: dict, user_id: str):
-        if user_id in self.active_connections:
-            await self.active_connections[user_id].send_json(message)
-    
-    async def broadcast(self, message: dict):
-        for connection in self.active_connections.values():
-            await connection.send_json(message)
-
-manager = ConnectionManager()
-
-# ==================== HELPERS ====================
-
-def calculate_plot_price(x: int, y: int) -> tuple:
-    """Calculate plot price and zone based on distance from center"""
-    center_x, center_y = 50, 50
-    distance = math.sqrt((x - center_x)**2 + (y - center_y)**2)
-    
-    # Determine zone
-    zone = "outskirts"
-    for zone_name, config in ZONES.items():
-        if distance <= config["radius_max"]:
-            zone = zone_name
-            break
-    
-    # Calculate price
-    max_distance = math.sqrt(50**2 + 50**2)
-    price = 10 + 90 * (1 - distance / max_distance)
-    return round(price, 2), zone
-
-def get_tax_rate(market_share: float) -> float:
-    """Get progressive tax rate based on market share"""
-    for threshold, rate in sorted(PROGRESSIVE_TAX.items(), reverse=True):
-        if market_share >= threshold:
-            return rate
-    return BASE_TAX_RATE
-
-def calculate_business_income(business_type: str, level: int, zone: str, connections: int) -> dict:
-    """Calculate business income with all factors"""
-    bt = BUSINESS_TYPES.get(business_type)
-    if not bt:
-        return {"gross": 0, "net": 0}
-    
-    base_income = bt["base_income"]
-    operating_cost = bt["operating_cost"]
-    
-    # Level multiplier
-    level_mult = LEVEL_CONFIG.get(level, LEVEL_CONFIG[1])["income_mult"]
-    
-    # Zone multiplier for customer-based businesses
-    zone_mult = 1.0
-    if "customer_flow" in bt and zone in bt["customer_flow"]:
-        zone_mult = bt["customer_flow"][zone] / bt["customer_flow"].get("center", 100)
-    
-    # Connection bonus (+5% per connection)
-    connection_mult = 1 + connections * 0.05
-    
-    gross_income = base_income * level_mult * zone_mult * connection_mult
-    net_income = (gross_income - operating_cost * level_mult) * (1 - BASE_TAX_RATE)
-    
-    return {
-        "gross": round(gross_income, 2),
-        "operating_cost": round(operating_cost * level_mult, 2),
-        "tax": round((gross_income - operating_cost * level_mult) * BASE_TAX_RATE, 2),
-        "net": round(net_income, 2),
-        "level_mult": level_mult,
-        "zone_mult": zone_mult,
-        "connection_mult": connection_mult
-    }
-
-def get_player_level(turnover: float) -> str:
-    """Determine player level based on turnover"""
-    for level_name in ["oligarch", "magnate", "businessman", "entrepreneur", "novice"]:
-        if turnover >= PLAYER_LEVELS[level_name]["min_turnover"]:
-            return level_name
-    return "novice"
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS))
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-<<<<<<< HEAD
-async def send_ton_payout(dest_address: str, amount_ton: float, mnemonics: str):
-    try:
-        # Разделяем сид-фразу на слова
-        words = mnemonics.strip().split(" ")
-        
-        # Инициализируем кошелек администратора (v4R2)
-        _m, _pub, _priv, wallet = Wallets.from_mnemonics(
-            words, WalletVersionEnum.v4r2, workchain=0
-        )
-        
-        # Получаем seqno через глобальный ton_client
-        # Если ton_client из pytonlib, используем его метод
-        seqno = await ton_client.get_wallet_seqno(wallet.address.to_string())
-        
-        # Создаем сообщение о переводе
-        query = wallet.create_transfer_message(
-            to_addr=dest_address,
-            amount=to_nano(amount_ton, 'ton'),
-            seqno=seqno if seqno else 0,
-            payload="Withdrawal from TON City"
-        )
-        
-        # Отправляем BOC в сеть
-        boc = query['message'].to_boc(False)
-        result = await ton_client.send_boc(boc)
-        
-        # Возвращаем хеш транзакции (в разных библиотеках ключ может называться 'hash' или '@type')
-        return result.get('hash') if isinstance(result, dict) else result
-    except Exception as e:
-        logging.error(f"Ошибка блокчейна: {e}")
-        return None
-
-=======
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
     if not credentials:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -871,114 +182,16 @@ async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] =
         return User(**user_doc)
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
-<<<<<<< HEAD
     
 async def get_current_admin(current_user: User = Depends(get_current_user)):
     # Проверка: либо флаг в БД, либо сверка с кошельком админа из .env
     if not current_user.is_admin and current_user.wallet_address != ADMIN_WALLET:
         raise HTTPException(status_code=403, detail="Доступ запрещен: вы не администратор")
     return current_user
-=======
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
-
-async def get_admin_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
-    user = await get_current_user(credentials)
-    if not user.is_admin:
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return user
-
-async def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
-    if not credentials:
-        return None
-    try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        wallet_address: str = payload.get("sub")
-        if wallet_address:
-            user_doc = await db.users.find_one({"wallet_address": wallet_address}, {"_id": 0})
-            if user_doc:
-                # Normalize is_admin field to boolean
-                if "is_admin" in user_doc:
-                    if isinstance(user_doc["is_admin"], str):
-                        user_doc["is_admin"] = user_doc["is_admin"].lower() in ("true", "1", "yes")
-                    elif not isinstance(user_doc["is_admin"], bool):
-                        user_doc["is_admin"] = False
-                else:
-                    user_doc["is_admin"] = False
-                return User(**user_doc)
-    except:
-        pass
-    return None
-
-# ==================== TRANSLATIONS ====================
-
-TRANSLATIONS = {
-    "en": {
-        "welcome": "Welcome to TON City Builder!",
-        "plot_purchased": "Plot purchased successfully",
-        "business_built": "Business built successfully",
-        "insufficient_funds": "Insufficient funds",
-        "plot_not_available": "Plot not available",
-        "max_plots_reached": "Maximum plots limit reached",
-        "invalid_zone": "Business not allowed in this zone",
-    },
-    "ru": {
-        "welcome": "Добро пожаловать в TON City Builder!",
-        "plot_purchased": "Участок успешно куплен",
-        "business_built": "Бизнес успешно построен",
-        "insufficient_funds": "Недостаточно средств",
-        "plot_not_available": "Участок недоступен",
-        "max_plots_reached": "Достигнут лимит участков",
-        "invalid_zone": "Бизнес нельзя построить в этой зоне",
-    },
-    "zh": {
-        "welcome": "欢迎来到TON城市建设者!",
-        "plot_purchased": "地块购买成功",
-        "business_built": "企业建设成功",
-        "insufficient_funds": "资金不足",
-        "plot_not_available": "地块不可用",
-        "max_plots_reached": "已达到地块上限",
-        "invalid_zone": "该区域不允许建设此类企业",
-    },
-}
-
-def t(key: str, lang: str = "en") -> str:
-    """Get translation"""
-    return TRANSLATIONS.get(lang, TRANSLATIONS["en"]).get(key, key)
-
-<<<<<<< HEAD
-def to_raw(address_str):
-    try:
-        return Address(address_str).to_string(is_user_friendly=False)
-    except Exception as e:
-        logging.debug(f"to_raw failed for '{address_str}': {e}")
-        return None
-
-def to_user_friendly(address_str):
-    try:
-        return Address(address_str).to_string(is_user_friendly=True)
-    except Exception as e:
-        logger.debug(f"to_user_friendly failed for '{address_str}': {e}")
-        return None
-
-async def resolve_display_from_raw(raw_addr: Optional[str]) -> str:
-    """Вернёт display-адрес строго из БД, если пользователь найден по raw_address;
-    иначе вернёт to_user_friendly(raw_addr) или сам raw_addr."""
-    if not raw_addr:
-        return ""
-    # ищем пользователя, у которого raw_address == raw_addr или wallet_address == raw_addr
-    user = await db.users.find_one({"$or": [{"raw_address": raw_addr}, {"wallet_address": raw_addr}]}, {"wallet_address": 1})
-    if user and user.get("wallet_address"):
-        return user["wallet_address"]
-    # fallback — преобразовать raw в user-friendly (может дать отличную variant, но только если пользователь не найден)
-    return to_user_friendly(raw_addr) or raw_addr
-
-=======
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 # ==================== AUTH ROUTES ====================
 
 @api_router.post("/auth/verify-wallet")
 async def verify_wallet(request: WalletVerifyRequest):
-<<<<<<< HEAD
     """Verify wallet connection with DEBUG logging"""
     try:
         # --- ЛОГИРОВАНИЕ ВХОДЯЩИХ ДАННЫХ ---
@@ -1120,101 +333,6 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         "max_plots": PLAYER_LEVELS.get(user_doc.get("level", "novice"), {}).get("max_plots", 3)
     }
 
-=======
-    """Verify wallet connection and create/update user"""
-    try:
-        wallet_address = request.address
-        if not wallet_address:
-            raise HTTPException(status_code=400, detail="Wallet address required")
-        
-        # Check if this is the admin wallet from .env
-        is_admin_wallet = bool(ADMIN_WALLET and wallet_address == ADMIN_WALLET)
-        
-        user_doc = await db.users.find_one({"wallet_address": wallet_address}, {"_id": 0})
-        
-        if not user_doc:
-            new_user = User(wallet_address=wallet_address, language=request.language, is_admin=is_admin_wallet)
-            user_dict = new_user.model_dump()
-            user_dict['created_at'] = user_dict['created_at'].isoformat()
-            user_dict['last_login'] = user_dict['last_login'].isoformat()
-            await db.users.insert_one(user_dict.copy())
-            user_doc = await db.users.find_one({"wallet_address": wallet_address}, {"_id": 0})
-        else:
-            update_data = {"last_login": datetime.now(timezone.utc).isoformat(), "language": request.language}
-            # Auto-grant admin if this is the admin wallet from .env
-            if is_admin_wallet and not user_doc.get("is_admin"):
-                update_data["is_admin"] = True
-            await db.users.update_one(
-                {"wallet_address": wallet_address},
-                {"$set": update_data}
-            )
-            # Refresh user_doc after update
-            if is_admin_wallet:
-                user_doc = await db.users.find_one({"wallet_address": wallet_address}, {"_id": 0})
-        
-        # Track online user
-        online_users.add(wallet_address)
-        last_activity[wallet_address] = datetime.now(timezone.utc)
-        
-        token = create_access_token(data={"sub": wallet_address})
-        
-        # Determine if should redirect to admin
-        final_is_admin = user_doc.get("is_admin", False) or is_admin_wallet
-        
-        return {
-            "token": token,
-            "user": {
-                "wallet_address": wallet_address,
-                "language": user_doc.get("language", "en"),
-                "level": user_doc.get("level", "novice"),
-                "balance_ton": user_doc.get("balance_ton", 0),
-                "balance_game": user_doc.get("balance_game", 0),
-                "plots_owned": user_doc.get("plots_owned", []),
-                "businesses_owned": user_doc.get("businesses_owned", []),
-                "total_income": user_doc.get("total_income", 0),
-                "is_admin": final_is_admin
-            },
-            "redirect_to_admin": final_is_admin,  # Frontend will use this to redirect
-            "message": t("welcome", request.language)
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Wallet verification error: {e}")
-        raise HTTPException(status_code=500, detail="Verification failed")
-
-@api_router.get("/auth/me")
-async def get_current_user_info(current_user: User = Depends(get_current_user)):
-    """Get current user info"""
-    return {
-        "wallet_address": current_user.wallet_address,
-        "display_name": current_user.display_name,
-        "language": current_user.language,
-        "level": current_user.level,
-        "xp": current_user.xp,
-        "balance_ton": current_user.balance_ton,
-        "balance_game": current_user.balance_game,
-        "total_turnover": current_user.total_turnover,
-        "total_income": current_user.total_income,
-        "plots_owned": current_user.plots_owned,
-        "businesses_owned": current_user.businesses_owned,
-        "is_admin": current_user.is_admin,
-        "max_plots": PLAYER_LEVELS.get(current_user.level, {}).get("max_plots", 3)
-    }
-
-@api_router.put("/auth/language")
-async def update_language(lang: str, current_user: User = Depends(get_current_user)):
-    """Update user language"""
-    if lang not in ["en", "ru", "zh"]:
-        raise HTTPException(status_code=400, detail="Unsupported language")
-    
-    await db.users.update_one(
-        {"wallet_address": current_user.wallet_address},
-        {"$set": {"language": lang}}
-    )
-    return {"language": lang}
-
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 # ==================== PLOTS ROUTES ====================
 
 @api_router.get("/plots")
@@ -2133,7 +1251,6 @@ async def get_user_contracts(current_user: User = Depends(get_current_user)):
 # ==================== WITHDRAWAL ROUTES ====================
 
 @api_router.post("/withdraw")
-<<<<<<< HEAD
 async def create_withdraw(
     data: WithdrawRequest,
     current_user: User = Depends(get_current_user)
@@ -2230,44 +1347,6 @@ async def reject_withdrawal(
 
     return {"status": "success", "msg": "Заявка отклонена, средства возвращены пользователю"}
 
-=======
-async def request_withdrawal(request: WithdrawRequest, current_user: User = Depends(get_current_user)):
-    """Request TON withdrawal"""
-    if request.amount < MIN_WITHDRAWAL:
-        raise HTTPException(status_code=400, detail=f"Minimum withdrawal is {MIN_WITHDRAWAL} TON")
-    
-    if current_user.balance_game < request.amount:
-        raise HTTPException(status_code=400, detail=t("insufficient_funds", current_user.language))
-    
-    commission = request.amount * WITHDRAWAL_COMMISSION
-    net_amount = request.amount - commission
-    
-    tx = Transaction(
-        tx_type="withdrawal",
-        from_address=current_user.wallet_address,
-        to_address=request.to_address,
-        amount_ton=request.amount,
-        commission=commission
-    )
-    tx_dict = tx.model_dump()
-    tx_dict['created_at'] = tx_dict['created_at'].isoformat()
-    await db.transactions.insert_one(tx_dict.copy())
-    
-    # Deduct from balance
-    await db.users.update_one(
-        {"wallet_address": current_user.wallet_address},
-        {"$inc": {"balance_game": -request.amount}}
-    )
-    
-    return {
-        "transaction_id": tx.id,
-        "amount": request.amount,
-        "commission": commission,
-        "net_amount": net_amount,
-        "status": "pending"
-    }
-
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 # ==================== STATS ROUTES ====================
 
 @api_router.get("/stats")
@@ -2363,7 +1442,6 @@ async def get_public_wallet_settings():
             "receiver_address": "",
             "configured": False
         }
-<<<<<<< HEAD
     stored_raw = settings.get("receiver_address", "") or ""
     display = to_user_friendly(stored_raw) or stored_raw
     return {
@@ -2371,12 +1449,6 @@ async def get_public_wallet_settings():
         "receiver_address": display,
         "receiver_address_raw": stored_raw,
         "configured": bool(stored_raw)
-=======
-    return {
-        "network": settings.get("network", "testnet"),
-        "receiver_address": settings.get("receiver_address", ""),
-        "configured": bool(settings.get("receiver_address"))
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
     }
 
 # ==================== TON BLOCKCHAIN ROUTES ====================
@@ -2391,11 +1463,7 @@ async def get_ton_balance(address: str):
         balance = await ton_client.get_balance(address)
         return {
             "address": address,
-<<<<<<< HEAD
             "balance_game": balance,
-=======
-            "balance_ton": balance,
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
             "balance_nano": int(balance * 1e9)
         }
     except Exception as e:
@@ -2631,7 +1699,6 @@ async def admin_get_transactions(skip: int = 0, limit: int = 100, tx_type: str =
     return {"transactions": transactions, "total": total}
 
 @admin_router.post("/withdrawal/approve/{tx_id}")
-<<<<<<< HEAD
 async def admin_approve_withdrawal(tx_id: str, admin: User = Depends(get_current_admin)):
     # 1. Поиск транзакции
     tx = await db.transactions.find_one({"id": tx_id})
@@ -2751,54 +1818,6 @@ async def admin_reject_withdrawal(tx_id: str, admin: User = Depends(get_current_
         return {"status": "success", "message": f"Возвращено {amount_to_return} TON"}
     else:
         raise HTTPException(status_code=404, detail="Пользователь не найден в базе для возврата")
-=======
-async def admin_approve_withdrawal(tx_id: str, admin: User = Depends(get_admin_user)):
-    """Approve withdrawal request"""
-    tx = await db.transactions.find_one({"id": tx_id, "tx_type": "withdrawal"}, {"_id": 0})
-    
-    if not tx:
-        raise HTTPException(status_code=404, detail="Withdrawal not found")
-    
-    if tx["status"] != "pending":
-        raise HTTPException(status_code=400, detail="Not pending")
-    
-    await db.transactions.update_one(
-        {"id": tx_id},
-        {"$set": {"status": "approved", "completed_at": datetime.now(timezone.utc).isoformat()}}
-    )
-    
-    return {"status": "approved", "tx_id": tx_id}
-
-@admin_router.post("/withdrawal/reject/{tx_id}")
-async def admin_reject_withdrawal(tx_id: str, admin: User = Depends(get_admin_user)):
-    """Reject withdrawal request"""
-    tx = await db.transactions.find_one({"id": tx_id, "tx_type": "withdrawal"}, {"_id": 0})
-    
-    if not tx:
-        raise HTTPException(status_code=404, detail="Withdrawal not found")
-    
-    # Refund to user
-    await db.users.update_one(
-        {"wallet_address": tx["from_address"]},
-        {"$inc": {"balance_game": tx["amount_ton"]}}
-    )
-    
-    await db.transactions.update_one(
-        {"id": tx_id},
-        {"$set": {"status": "rejected", "completed_at": datetime.now(timezone.utc).isoformat()}}
-    )
-    
-    return {"status": "rejected", "tx_id": tx_id, "refunded": tx["amount_ton"]}
-
-@admin_router.post("/user/set-admin/{wallet_address}")
-async def admin_set_admin(wallet_address: str, is_admin: bool = True, admin: User = Depends(get_admin_user)):
-    """Set user as admin"""
-    await db.users.update_one(
-        {"wallet_address": wallet_address},
-        {"$set": {"is_admin": is_admin}}
-    )
-    return {"wallet_address": wallet_address, "is_admin": is_admin}
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 
 @admin_router.post("/promo/create")
 async def admin_create_promo(name: str, amount: float, max_uses: int, admin: User = Depends(get_admin_user)):
@@ -2866,7 +1885,6 @@ async def admin_get_system_events(limit: int = 50, admin: User = Depends(get_adm
     events = await db.system_events.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
     return {"events": events, "total": len(events)}
 
-<<<<<<< HEAD
 @admin_router.get("/withdrawals")
 async def admin_get_withdrawals(skip: int = 0, limit: int = 100, status: str = None, admin: User = Depends(get_admin_user)):
     """Get withdrawal requests for admin"""
@@ -2897,48 +1915,6 @@ async def admin_get_withdrawals(skip: int = 0, limit: int = 100, status: str = N
         "limit": limit, 
         "treasury_wallet": treasury_wallet
     }
-=======
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
-
-
-# ==================== ADMIN: TON WALLET SETTINGS ====================
-
-@admin_router.get("/wallet-settings")
-async def admin_get_wallet_settings(admin: User = Depends(get_admin_user)):
-<<<<<<< HEAD
-    """Get current TON wallet settings (admin view)"""
-    settings = await db.game_settings.find_one({"type": "ton_wallet"}, {"_id": 0})
-    if not settings:
-        return {
-            "network": "testnet",
-            "receiver_address": "",
-            "receiver_address_raw": "",
-            "configured": False
-        }
-    stored_raw = settings.get("receiver_address", "") or ""
-    display = to_user_friendly(stored_raw) or stored_raw
-    return {
-        "network": settings.get("network", "testnet"),
-        "receiver_address": display,
-        "receiver_address_raw": stored_raw,
-        "configured": bool(stored_raw),
-        "updated_at": settings.get("updated_at")
-    }
-=======
-    """Get TON wallet settings"""
-    settings = await db.game_settings.find_one({"type": "ton_wallet"}, {"_id": 0})
-    if not settings:
-        # Create default
-        settings = {
-            "type": "ton_wallet",
-            "network": "testnet",
-            "receiver_address": "",
-            "last_checked_lt": 0,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }
-        await db.game_settings.insert_one(settings)
-    return settings
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 
 @admin_router.post("/wallet-settings")
 async def admin_update_wallet_settings(
@@ -2953,7 +1929,6 @@ async def admin_update_wallet_settings(
     if receiver_address and not validate_ton_address(receiver_address):
         raise HTTPException(status_code=400, detail="Invalid TON address")
     
-<<<<<<< HEAD
     # Normalize: store canonical raw, compute display
     raw_addr = to_raw(receiver_address) if receiver_address else ""
     display_addr = to_user_friendly(raw_addr) or receiver_address if raw_addr else ""
@@ -2961,40 +1936,19 @@ async def admin_update_wallet_settings(
     if receiver_address and not raw_addr:
         raise HTTPException(status_code=400, detail="Failed to parse wallet address")
     
-=======
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
-    await db.game_settings.update_one(
-        {"type": "ton_wallet"},
-        {
-            "$set": {
-                "network": network,
-<<<<<<< HEAD
-                "receiver_address": raw_addr,
-                "receiver_address_display": display_addr,
-=======
-                "receiver_address": receiver_address,
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
                 "updated_at": datetime.now(timezone.utc).isoformat()
             }
         },
         upsert=True
     )
     
-<<<<<<< HEAD
     logger.info(f"✅ Wallet settings updated: {network}, {display_addr[:16]}...")
-=======
-    logger.info(f"✅ Wallet settings updated: {network}, {receiver_address[:8]}...")
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
     
     return {
         "status": "success",
         "network": network,
-<<<<<<< HEAD
         "receiver_address": display_addr,
         "receiver_address_raw": raw_addr
-=======
-        "receiver_address": receiver_address
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
     }
 
 @admin_router.get("/deposits")
