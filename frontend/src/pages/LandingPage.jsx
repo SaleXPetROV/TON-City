@@ -17,10 +17,6 @@ import { useLocation } from 'react-router-dom';
 
 export default function LandingPage({ user, setUser }) {
   const navigate = useNavigate();
-  const location = useLocation();
-  const isHome = location.pathname === '/';
-  const [isNavHovered, setIsNavHovered] = useState(false);
-  const isNavExpanded = isHome || isNavHovered;
   const wallet = useTonWallet();
   const [stats, setStats] = useState(null);
   const [showTutorial, setShowTutorial] = useState(false);
