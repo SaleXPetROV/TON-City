@@ -42,6 +42,19 @@ function App() {
 
   useEffect(() => {
     checkAuth();
+    
+    // Добавим слушатель на изменение localStorage (для случая когда token обновляется в другой вкладке)
+    const handleStorageChange = (e) => {
+      if (e.key === 'token') {
+        checkAuth();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   return (
