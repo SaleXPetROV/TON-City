@@ -198,7 +198,7 @@ export default function AuthPage({ setUser }) {
 
     setIsVerifying(true);
     try {
-      const response = await fetch('/api/api/auth/verify-wallet', {
+      const response = await fetch('/api/auth/verify-wallet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
