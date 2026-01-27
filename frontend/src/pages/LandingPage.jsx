@@ -56,26 +56,6 @@ export default function LandingPage({ user, setUser }) {
     localStorage.setItem('ton_city_lang', newLang);
   };
 
-  const checkAuth = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const response = await fetch('/api/auth/me', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
-        } else {
-          localStorage.removeItem('token');
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Auth check failed", error);
-      }
-    }
-  }, []);
-
   const loadStats = async () => {
     try {
       const data = await getGameStats();
@@ -87,8 +67,7 @@ export default function LandingPage({ user, setUser }) {
 
   useEffect(() => {
     loadStats();
-    checkAuth();
-  }, [checkAuth]);
+  }, []);
 
   // Вспомогательный компонент для боковых иконок
   const NavIcon = ({ icon, label, onClick, isVisible = true }) => {
