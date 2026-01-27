@@ -107,8 +107,21 @@ class TONPaymentMonitor:
             transaction: Transaction data from blockchain
         """
         try:
+            tx_hash = transaction.get("hash")
             sender = transaction.get("sender")
             sender_raw = transaction.get("sender_raw") or to_raw(sender)
+            amount = transaction.get("amount", 0)
+            amount_ton = amount / 1_000_000_000  # Convert from nanotons
+            
+            # Find user by wallet address
+            user = await self.db.users.find_one({
+                "$or": [
+                    {"wallet_address": sender},
+                    {"raw_address": sender},
+                    {"wallet_address": sender_raw},
+                    {"raw_address": sender_raw},
+                ]
+            })
             
             if not user:
                 logger.warning(f"⚠️  Payment from unknown user: {sender}")
@@ -117,6 +130,21 @@ class TONPaymentMonitor:
                     "tx_hash": tx_hash,
                     "sender": sender,
                     "sender_raw": sender_raw,
+                    "amount_ton": amount_ton,
+                    "status": "pending",
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                })
+                return
+            
+            # Check if already processed
+            existing = await self.db.deposits.find_one({"tx_hash": tx_hash})
+            if existing:
+                logger.debug(f"Transaction {tx_hash} already processed")
+                return
+            
+            # Credit user balance
+            await self.db.users.update_one(
+                {"_id": user["_id"]},
                 {
                     "$inc": {
                         "balance_game": amount_ton,
@@ -128,14 +156,13 @@ class TONPaymentMonitor:
             # Record deposit
             await self.db.deposits.insert_one({
                 "tx_hash": tx_hash,
-                "user_id": user["id"],
-                "wallet_address": user_wallet_address,
-                "raw_address": user_raw_address,
+                "user_id": user.get("id", str(user["_id"])),
+                "wallet_address": user.get("wallet_address"),
+                "raw_address": user.get("raw_address"),
                 "amount_ton": amount_ton,
                 "status": "completed",
                 "credited_at": datetime.now(timezone.utc).isoformat(),
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "memo": memo
+                "created_at": datetime.now(timezone.utc).isoformat()
             })
             
             # Update stats
@@ -150,7 +177,7 @@ class TONPaymentMonitor:
                 upsert=True
             )
             
-            logger.info(f"✅ Credited {amount_ton} TON to {user_wallet_address[:8]}...")
+            logger.info(f"✅ Credited {amount_ton} TON to {user.get('username', 'User')}")
             logger.info(f"   TX: {tx_hash}")
             
         except Exception as e:
