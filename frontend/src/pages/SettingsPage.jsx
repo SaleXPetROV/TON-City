@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { languages } from '@/lib/translations';
 import { toast } from 'sonner';
 
 export default function SettingsPage() {
