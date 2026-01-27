@@ -187,6 +187,128 @@ async def login(data: EmailLogin):
         }
     }
 
+
+# 2.5. Вход/Регистрация через Google OAuth
+@auth_router.post("/google")
+async def google_auth(data: GoogleAuth):
+    """
+    Аутентификация через Google OAuth
+    Принимает Google ID token от фронтенда
+    """
+    from server import db
+    import uuid
+    
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=500,
+            detail="Google OAuth not configured. Please add GOOGLE_CLIENT_ID to .env"
+        )
+    
+    try:
+        # Верифицируем Google ID token
+        idinfo = id_token.verify_oauth2_token(
+            data.credential,
+            google_requests.Request(),
+            GOOGLE_CLIENT_ID
+        )
+        
+        # Получаем данные пользователя из Google
+        email = idinfo.get('email')
+        name = idinfo.get('name', '')
+        picture = idinfo.get('picture', '')
+        google_id = idinfo.get('sub')
+        
+        if not email:
+            raise HTTPException(status_code=400, detail="Email not provided by Google")
+        
+        # Ищем пользователя по email или google_id
+        user = await db.users.find_one({
+            "$or": [
+                {"email": email},
+                {"google_id": google_id}
+            ]
+        })
+        
+        if user:
+            # Пользователь существует - обновляем данные при необходимости
+            updates = {}
+            if not user.get("google_id"):
+                updates["google_id"] = google_id
+            if picture and not user.get("avatar_uploaded"):
+                updates["avatar"] = picture
+            if not user.get("display_name"):
+                updates["display_name"] = name
+            
+            if updates:
+                updates["last_login"] = datetime.now(timezone.utc)
+                await db.users.update_one(
+                    {"_id": user["_id"]},
+                    {"$set": updates}
+                )
+                user.update(updates)
+            
+        else:
+            # Новый пользователь - создаем аккаунт
+            # Генерируем уникальный username из email
+            base_username = email.split('@')[0]
+            username = base_username
+            counter = 1
+            while await db.users.find_one({"username": username}):
+                username = f"{base_username}{counter}"
+                counter += 1
+            
+            # Используем Google avatar или генерируем из инициалов
+            avatar = picture if picture else generate_avatar_from_initials(name or username)
+            
+            user = {
+                "id": str(uuid.uuid4()),
+                "username": username,
+                "display_name": name or username,
+                "email": email,
+                "google_id": google_id,
+                "hashed_password": None,  # Google users don't have password
+                "wallet_address": None,
+                "raw_address": None,
+                "avatar": avatar,
+                "avatar_uploaded": bool(picture),  # Track if using Google avatar
+                "balance_game": 0,
+                "balance_ton": 0,
+                "language": "ru",
+                "level": "novice",
+                "xp": 0,
+                "total_turnover": 0,
+                "total_income": 0,
+                "plots_owned": [],
+                "businesses_owned": [],
+                "is_admin": False,
+                "created_at": datetime.now(timezone.utc),
+                "last_login": datetime.now(timezone.utc)
+            }
+            
+            await db.users.insert_one(user)
+        
+        # Создаем токен
+        token = create_token({"sub": email})
+        
+        return {
+            "token": token,
+            "type": "bearer",
+            "user": {
+                "id": user.get("id", str(user.get("_id"))),
+                "username": user.get("username"),
+                "email": user.get("email"),
+                "wallet_address": user.get("wallet_address"),
+                "avatar": user.get("avatar"),
+                "display_name": user.get("display_name")
+            }
+        }
+        
+    except ValueError as e:
+        # Invalid token
+        raise HTTPException(status_code=401, detail=f"Invalid Google token: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Google auth error: {str(e)}")
+
 # 3. Проверка/Вход через Кошелек (Wallet Check)
 @auth_router.post("/wallet-check")
 async def wallet_check(data: WalletAuth):
