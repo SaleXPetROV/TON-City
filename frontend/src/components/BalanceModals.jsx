@@ -173,6 +173,8 @@ export function WithdrawModal({ isOpen, onClose, onSuccess, currentBalance, user
       loadUserAddress();
     }
   }, [isOpen, userWallet]);
+
+  const handleWithdraw = async () => {
     if (parseFloat(amount) < 1) {
       toast.error('Минимальная сумма вывода: 1 TON');
       return;
