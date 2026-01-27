@@ -67,7 +67,7 @@ function App() {
           
           <Routes>
             <Route path="/" element={<LandingPage user={user} setUser={setUser} />} />
-            <Route path="/auth" element={<AuthPage setUser={setUser} />} />
+            <Route path="/auth" element={<AuthPage setUser={setUser} onAuthSuccess={checkAuth} />} />
             <Route path="/game" element={<GamePage user={user} />} />
             <Route path="/dashboard" element={<DashboardPage user={user} />} />
             <Route path="/admin" element={<AdminPage user={user} />} />
