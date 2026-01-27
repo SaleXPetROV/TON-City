@@ -162,8 +162,10 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
       // Показываем понятное сообщение об ошибке
       if (e.message === 'Failed to fetch') {
         toast.error(lang === 'ru' ? 'Ошибка соединения с сервером' : 'Server connection error');
+      } else if (e.message?.includes('body stream')) {
+        // Техническая ошибка парсинга ответа - уже обработана выше
       } else {
-        toast.error(e.message || (lang === 'ru' ? 'Ошибка авторизации' : 'Auth failed'));
+        toast.error(lang === 'ru' ? 'Ошибка авторизации' : 'Auth failed');
       }
     } finally {
       setIsVerifying(false);
