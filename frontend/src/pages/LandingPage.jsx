@@ -100,43 +100,7 @@ export default function LandingPage({ user, setUser }) {
         />
       </div>
 
-      {/* ЛЕВАЯ НАВИГАЦИЯ (Картинка 2) */}
-      <AnimatePresence>
-        {user && (
-          <motion.div 
-            initial={{ x: -100, opacity: 0 }} 
-            animate={{ x: 0, opacity: 1 }}
-            onMouseEnter={() => setIsNavHovered(true)}
-            onMouseLeave={() => setIsNavHovered(false)}
-            className={`fixed left-6 top-0 bottom-0 z-40 hidden lg:flex flex-col justify-center gap-8
-              transition-all duration-300
-              ${isNavExpanded ? 'w-56' : 'w-16'}
-            `}
-          >
-        
-            <div className="flex flex-col items-center gap-6">
-              {/* Вертикальный заголовок */}
-              <div 
-                className="text-[10px] text-cyber-cyan/30 font-unbounded tracking-[0.8em] uppercase select-none mb-4"
-                style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
-              >
-                Navigation
-              </div>
-
-              {/* Панель иконок */}
-              <div className="flex flex-col gap-3 p-2 bg-black/40 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl shadow-black/50">
-                <NavIcon icon={<LayoutDashboard className="w-5 h-5" />} label="Dashboard" onClick={() => navigate('/game')} />
-                <NavIcon icon={<Globe className="w-5 h-5" />} label="World Map" onClick={() => navigate('/map')} />
-                <NavIcon icon={<ShoppingBag className="w-5 h-5" />} label="Market" onClick={() => navigate('/market')} />
-                <NavIcon icon={<Users className="w-5 h-5" />} label="Citizens" onClick={() => navigate('/social')} />
-                <NavIcon icon={<Lock className="w-5 h-5" />} label="Admin" onClick={() => navigate('/admin')} isVisible={user.is_admin} />
-                <div className="h-px bg-white/5 mx-2 my-1" />
-                <NavIcon icon={<Settings className="w-5 h-5" />} label="Settings" onClick={() => navigate('/settings')} />
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Sidebar теперь в App.js, не дублируем здесь */}
 
       <div className="relative z-10">
         {/* HEADER */}
