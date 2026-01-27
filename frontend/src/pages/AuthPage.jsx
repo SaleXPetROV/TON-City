@@ -4,7 +4,7 @@ import { TonConnectButton, useTonWallet } from '@tonconnect/ui-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, ArrowLeft, Globe, UserCircle, Mail, Lock, Chrome, CheckCircle2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useTranslation } from '@/lib/translations';
+import { useTranslation, languages } from '@/lib/translations';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
