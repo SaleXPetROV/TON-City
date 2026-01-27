@@ -255,7 +255,7 @@ def test_4_update_email():
         log_test("Смена email", "FAIL", "Нет токена авторизации")
         return False
     
-    new_email = "newemail@example.com"
+    new_email = f"newemail{test_id}@example.com"
     update_data = {
         "email": new_email,
         "password": TEST_USER["password"]  # Требуется текущий пароль
