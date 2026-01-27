@@ -21,7 +21,15 @@ export function DepositModal({ isOpen, onClose, onSuccess, receiverAddress }) {
   const [amount, setAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const handleDeposit = async () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      toast.error('Введите корректную сумму');
+      return;
+    }
 
+    const targetAddress = receiverAddress || 'EQDefault...'; // Адрес получателя
+    if (!targetAddress || targetAddress === 'EQDefault...') {
+      toast.error('Адрес получателя не настроен. Обратитесь к администратору.');
       return;
     }
 
