@@ -24,7 +24,7 @@ const loadGoogleScript = () => {
   });
 };
 
-export default function AuthPage({ setUser }) {
+export default function AuthPage({ setUser, onAuthSuccess }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const wallet = useTonWallet();
@@ -45,6 +45,10 @@ export default function AuthPage({ setUser }) {
     localStorage.setItem('token', data.token);
     if (data.user) {
       setUser(data.user);
+    }
+    // Вызываем checkAuth из App.js для обновления глобального состояния
+    if (onAuthSuccess) {
+      setTimeout(() => onAuthSuccess(), 100);
     }
     toast.success(lang === 'ru' ? 'Вход выполнен!' : 'Logged in!');
     navigate('/');
