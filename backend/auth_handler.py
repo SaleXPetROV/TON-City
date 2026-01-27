@@ -96,6 +96,7 @@ async def get_current_user_local(token: str):
 @auth_router.post("/register")
 async def register(data: EmailRegister):
     from server import db
+    import uuid
     
     # Проверка уникальности
     if await db.users.find_one({"email": data.email}):
@@ -103,18 +104,46 @@ async def register(data: EmailRegister):
     if await db.users.find_one({"username": data.username}):
         raise HTTPException(status_code=400, detail="Этот Username уже занят")
     
+    # Генерируем аватар из инициалов
+    avatar = generate_avatar_from_initials(data.username)
+    
     user = {
+        "id": str(uuid.uuid4()),
         "username": data.username,
+        "display_name": data.username,
         "email": data.email,
         "hashed_password": pwd_context.hash(data.password),
         "wallet_address": None,
+        "raw_address": None,
+        "avatar": avatar,
         "balance_game": 0,
-        "created_at": datetime.now(timezone.utc)
+        "balance_ton": 0,
+        "language": "ru",
+        "level": "novice",
+        "xp": 0,
+        "total_turnover": 0,
+        "total_income": 0,
+        "plots_owned": [],
+        "businesses_owned": [],
+        "is_admin": False,
+        "created_at": datetime.now(timezone.utc),
+        "last_login": datetime.now(timezone.utc)
     }
     
     await db.users.insert_one(user)
     token = create_token({"sub": data.email})
-    return {"token": token, "type": "bearer"}
+    
+    return {
+        "token": token,
+        "type": "bearer",
+        "user": {
+            "id": user["id"],
+            "username": user["username"],
+            "email": user["email"],
+            "avatar": user["avatar"],
+            "display_name": user["display_name"]
+        }
+    }
 
 # 2. Вход через Email или Username
 @auth_router.post("/login")
