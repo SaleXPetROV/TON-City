@@ -110,8 +110,12 @@ export default function AdminPage() {
       toast.success('Withdrawal approved');
       loadData();
     } catch (error) {
+<<<<<<< HEAD
       const msg = error.response?.data?.detail || 'Failed to approve';
       toast.error(msg);
+=======
+      toast.error('Failed to approve');
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
     }
   };
 
@@ -171,6 +175,7 @@ export default function AdminPage() {
     }
   };
 
+<<<<<<< HEAD
   const AddressDisplay = ({ address, short = false }) => {
     if (!address) return <span className="text-text-muted">-</span>;
   
@@ -198,6 +203,28 @@ export default function AdminPage() {
       <div className="flex items-center gap-2 group">
         <span className="font-mono text-sm break-all" title={displayAddress}>
           {shortAddress}
+=======
+  // Show full address with copy button - in user-friendly format
+  const AddressDisplay = ({ address, short = false }) => {
+    if (!address) return <span className="text-text-muted">-</span>;
+    
+    // Convert raw address (0:...) to user-friendly format (UQ.../EQ...)
+    const friendlyAddress = toUserFriendlyAddress(address);
+    
+    const copyToClipboard = () => {
+      navigator.clipboard.writeText(friendlyAddress);
+      toast.success('Адрес скопирован');
+    };
+    
+    const displayAddress = short 
+      ? `${friendlyAddress.slice(0, 8)}...${friendlyAddress.slice(-6)}` 
+      : friendlyAddress;
+    
+    return (
+      <div className="flex items-center gap-2 group">
+        <span className="font-mono text-sm break-all" title={friendlyAddress}>
+          {displayAddress}
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
         </span>
         <Button
           variant="ghost"
@@ -402,8 +429,17 @@ export default function AdminPage() {
                         <div className="flex items-start gap-4">
                           <div className="flex-1 space-y-2">
                             <div>
+<<<<<<< HEAD
                               <div className="text-xs text-text-muted mb-1">Куда (To):</div>
                               <AddressDisplay address={tx.to_address_display || tx.to_address} />
+=======
+                              <div className="text-xs text-text-muted mb-1">От кого (From):</div>
+                              <AddressDisplay address={tx.from_address} />
+                            </div>
+                            <div>
+                              <div className="text-xs text-text-muted mb-1">Куда (To):</div>
+                              <AddressDisplay address={tx.to_address} />
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
                             </div>
                             <div className="text-xs text-text-muted">
                               {formatDate(tx.created_at)}

@@ -14,7 +14,10 @@ from jose import JWTError, jwt
 import math
 import asyncio
 import json
+<<<<<<< HEAD
 from tonsdk.utils import Address
+=======
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 
 # Import TON integration and background tasks
 from ton_integration import ton_client, init_ton_client, close_ton_client, validate_ton_address
@@ -23,10 +26,13 @@ from background_tasks import (
     trigger_auto_collection_now
 )
 from payment_monitor import init_payment_monitor, stop_payment_monitor
+<<<<<<< HEAD
 from tonsdk.contract.wallet import Wallets, WalletVersionEnum
 from tonsdk.utils import to_nano
 from fastapi.security import HTTPBearer
 
+=======
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -36,12 +42,15 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+<<<<<<< HEAD
 
 oauth2_scheme = HTTPBearer()
 
 class WithdrawRequest(BaseModel):
     amount: float
 
+=======
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 # JWT Configuration
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'ton-city-builder-secret-key-2025')
 ADMIN_SECRET = os.environ.get('ADMIN_SECRET', 'admin-secret-key-2025')
@@ -523,7 +532,10 @@ class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     wallet_address: str
+<<<<<<< HEAD
     raw_address: Optional[str] = None
+=======
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
     display_name: Optional[str] = None
     language: str = "en"
     level: str = "novice"
@@ -624,9 +636,12 @@ class WalletVerifyRequest(BaseModel):
     address: str
     proof: Optional[Dict[str, Any]] = None
     language: str = "en"
+<<<<<<< HEAD
     username: Optional[str] = None
     email: Optional[str] = None     
     password: Optional[str] = None 
+=======
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 
 class PurchasePlotRequest(BaseModel):
     plot_x: int
@@ -654,6 +669,7 @@ class TradeResourceRequest(BaseModel):
     resource_type: str
     amount: float
 
+<<<<<<< HEAD
 class Withdrawal(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_wallet: str
@@ -667,6 +683,11 @@ class Withdrawal(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     approved_at: Optional[datetime] = None
 
+=======
+class WithdrawRequest(BaseModel):
+    amount: float
+    to_address: str
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 
 class ConfirmTransactionRequest(BaseModel):
     transaction_id: str
@@ -679,6 +700,7 @@ class RentPlotRequest(BaseModel):
 class AcceptRentRequest(BaseModel):
     plot_id: str
 
+<<<<<<< HEAD
 # ========================== AUTH ===========================
 
 class EmailRegister(BaseModel):
@@ -691,6 +713,8 @@ class WalletAuth(BaseModel):
     public_key: Optional[str] = None
     username: Optional[str] = None
 
+=======
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 # ==================== WEBSOCKET MANAGER ====================
 
 class ConnectionManager:
@@ -787,6 +811,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+<<<<<<< HEAD
 async def send_ton_payout(dest_address: str, amount_ton: float, mnemonics: str):
     try:
         # Разделяем сид-фразу на слова
@@ -819,6 +844,8 @@ async def send_ton_payout(dest_address: str, amount_ton: float, mnemonics: str):
         logging.error(f"Ошибка блокчейна: {e}")
         return None
 
+=======
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
     if not credentials:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -844,12 +871,15 @@ async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] =
         return User(**user_doc)
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
+<<<<<<< HEAD
     
 async def get_current_admin(current_user: User = Depends(get_current_user)):
     # Проверка: либо флаг в БД, либо сверка с кошельком админа из .env
     if not current_user.is_admin and current_user.wallet_address != ADMIN_WALLET:
         raise HTTPException(status_code=403, detail="Доступ запрещен: вы не администратор")
     return current_user
+=======
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 
 async def get_admin_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
     user = await get_current_user(credentials)
@@ -915,6 +945,7 @@ def t(key: str, lang: str = "en") -> str:
     """Get translation"""
     return TRANSLATIONS.get(lang, TRANSLATIONS["en"]).get(key, key)
 
+<<<<<<< HEAD
 def to_raw(address_str):
     try:
         return Address(address_str).to_string(is_user_friendly=False)
@@ -941,10 +972,13 @@ async def resolve_display_from_raw(raw_addr: Optional[str]) -> str:
     # fallback — преобразовать raw в user-friendly (может дать отличную variant, но только если пользователь не найден)
     return to_user_friendly(raw_addr) or raw_addr
 
+=======
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 # ==================== AUTH ROUTES ====================
 
 @api_router.post("/auth/verify-wallet")
 async def verify_wallet(request: WalletVerifyRequest):
+<<<<<<< HEAD
     """Verify wallet connection with DEBUG logging"""
     try:
         # --- ЛОГИРОВАНИЕ ВХОДЯЩИХ ДАННЫХ ---
@@ -1086,6 +1120,101 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         "max_plots": PLAYER_LEVELS.get(user_doc.get("level", "novice"), {}).get("max_plots", 3)
     }
 
+=======
+    """Verify wallet connection and create/update user"""
+    try:
+        wallet_address = request.address
+        if not wallet_address:
+            raise HTTPException(status_code=400, detail="Wallet address required")
+        
+        # Check if this is the admin wallet from .env
+        is_admin_wallet = bool(ADMIN_WALLET and wallet_address == ADMIN_WALLET)
+        
+        user_doc = await db.users.find_one({"wallet_address": wallet_address}, {"_id": 0})
+        
+        if not user_doc:
+            new_user = User(wallet_address=wallet_address, language=request.language, is_admin=is_admin_wallet)
+            user_dict = new_user.model_dump()
+            user_dict['created_at'] = user_dict['created_at'].isoformat()
+            user_dict['last_login'] = user_dict['last_login'].isoformat()
+            await db.users.insert_one(user_dict.copy())
+            user_doc = await db.users.find_one({"wallet_address": wallet_address}, {"_id": 0})
+        else:
+            update_data = {"last_login": datetime.now(timezone.utc).isoformat(), "language": request.language}
+            # Auto-grant admin if this is the admin wallet from .env
+            if is_admin_wallet and not user_doc.get("is_admin"):
+                update_data["is_admin"] = True
+            await db.users.update_one(
+                {"wallet_address": wallet_address},
+                {"$set": update_data}
+            )
+            # Refresh user_doc after update
+            if is_admin_wallet:
+                user_doc = await db.users.find_one({"wallet_address": wallet_address}, {"_id": 0})
+        
+        # Track online user
+        online_users.add(wallet_address)
+        last_activity[wallet_address] = datetime.now(timezone.utc)
+        
+        token = create_access_token(data={"sub": wallet_address})
+        
+        # Determine if should redirect to admin
+        final_is_admin = user_doc.get("is_admin", False) or is_admin_wallet
+        
+        return {
+            "token": token,
+            "user": {
+                "wallet_address": wallet_address,
+                "language": user_doc.get("language", "en"),
+                "level": user_doc.get("level", "novice"),
+                "balance_ton": user_doc.get("balance_ton", 0),
+                "balance_game": user_doc.get("balance_game", 0),
+                "plots_owned": user_doc.get("plots_owned", []),
+                "businesses_owned": user_doc.get("businesses_owned", []),
+                "total_income": user_doc.get("total_income", 0),
+                "is_admin": final_is_admin
+            },
+            "redirect_to_admin": final_is_admin,  # Frontend will use this to redirect
+            "message": t("welcome", request.language)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Wallet verification error: {e}")
+        raise HTTPException(status_code=500, detail="Verification failed")
+
+@api_router.get("/auth/me")
+async def get_current_user_info(current_user: User = Depends(get_current_user)):
+    """Get current user info"""
+    return {
+        "wallet_address": current_user.wallet_address,
+        "display_name": current_user.display_name,
+        "language": current_user.language,
+        "level": current_user.level,
+        "xp": current_user.xp,
+        "balance_ton": current_user.balance_ton,
+        "balance_game": current_user.balance_game,
+        "total_turnover": current_user.total_turnover,
+        "total_income": current_user.total_income,
+        "plots_owned": current_user.plots_owned,
+        "businesses_owned": current_user.businesses_owned,
+        "is_admin": current_user.is_admin,
+        "max_plots": PLAYER_LEVELS.get(current_user.level, {}).get("max_plots", 3)
+    }
+
+@api_router.put("/auth/language")
+async def update_language(lang: str, current_user: User = Depends(get_current_user)):
+    """Update user language"""
+    if lang not in ["en", "ru", "zh"]:
+        raise HTTPException(status_code=400, detail="Unsupported language")
+    
+    await db.users.update_one(
+        {"wallet_address": current_user.wallet_address},
+        {"$set": {"language": lang}}
+    )
+    return {"language": lang}
+
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 # ==================== PLOTS ROUTES ====================
 
 @api_router.get("/plots")
@@ -2004,6 +2133,7 @@ async def get_user_contracts(current_user: User = Depends(get_current_user)):
 # ==================== WITHDRAWAL ROUTES ====================
 
 @api_router.post("/withdraw")
+<<<<<<< HEAD
 async def create_withdraw(
     data: WithdrawRequest,
     current_user: User = Depends(get_current_user)
@@ -2100,6 +2230,44 @@ async def reject_withdrawal(
 
     return {"status": "success", "msg": "Заявка отклонена, средства возвращены пользователю"}
 
+=======
+async def request_withdrawal(request: WithdrawRequest, current_user: User = Depends(get_current_user)):
+    """Request TON withdrawal"""
+    if request.amount < MIN_WITHDRAWAL:
+        raise HTTPException(status_code=400, detail=f"Minimum withdrawal is {MIN_WITHDRAWAL} TON")
+    
+    if current_user.balance_game < request.amount:
+        raise HTTPException(status_code=400, detail=t("insufficient_funds", current_user.language))
+    
+    commission = request.amount * WITHDRAWAL_COMMISSION
+    net_amount = request.amount - commission
+    
+    tx = Transaction(
+        tx_type="withdrawal",
+        from_address=current_user.wallet_address,
+        to_address=request.to_address,
+        amount_ton=request.amount,
+        commission=commission
+    )
+    tx_dict = tx.model_dump()
+    tx_dict['created_at'] = tx_dict['created_at'].isoformat()
+    await db.transactions.insert_one(tx_dict.copy())
+    
+    # Deduct from balance
+    await db.users.update_one(
+        {"wallet_address": current_user.wallet_address},
+        {"$inc": {"balance_game": -request.amount}}
+    )
+    
+    return {
+        "transaction_id": tx.id,
+        "amount": request.amount,
+        "commission": commission,
+        "net_amount": net_amount,
+        "status": "pending"
+    }
+
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 # ==================== STATS ROUTES ====================
 
 @api_router.get("/stats")
@@ -2195,6 +2363,7 @@ async def get_public_wallet_settings():
             "receiver_address": "",
             "configured": False
         }
+<<<<<<< HEAD
     stored_raw = settings.get("receiver_address", "") or ""
     display = to_user_friendly(stored_raw) or stored_raw
     return {
@@ -2202,6 +2371,12 @@ async def get_public_wallet_settings():
         "receiver_address": display,
         "receiver_address_raw": stored_raw,
         "configured": bool(stored_raw)
+=======
+    return {
+        "network": settings.get("network", "testnet"),
+        "receiver_address": settings.get("receiver_address", ""),
+        "configured": bool(settings.get("receiver_address"))
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
     }
 
 # ==================== TON BLOCKCHAIN ROUTES ====================
@@ -2216,7 +2391,11 @@ async def get_ton_balance(address: str):
         balance = await ton_client.get_balance(address)
         return {
             "address": address,
+<<<<<<< HEAD
             "balance_game": balance,
+=======
+            "balance_ton": balance,
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
             "balance_nano": int(balance * 1e9)
         }
     except Exception as e:
@@ -2452,6 +2631,7 @@ async def admin_get_transactions(skip: int = 0, limit: int = 100, tx_type: str =
     return {"transactions": transactions, "total": total}
 
 @admin_router.post("/withdrawal/approve/{tx_id}")
+<<<<<<< HEAD
 async def admin_approve_withdrawal(tx_id: str, admin: User = Depends(get_current_admin)):
     # 1. Поиск транзакции
     tx = await db.transactions.find_one({"id": tx_id})
@@ -2571,6 +2751,54 @@ async def admin_reject_withdrawal(tx_id: str, admin: User = Depends(get_current_
         return {"status": "success", "message": f"Возвращено {amount_to_return} TON"}
     else:
         raise HTTPException(status_code=404, detail="Пользователь не найден в базе для возврата")
+=======
+async def admin_approve_withdrawal(tx_id: str, admin: User = Depends(get_admin_user)):
+    """Approve withdrawal request"""
+    tx = await db.transactions.find_one({"id": tx_id, "tx_type": "withdrawal"}, {"_id": 0})
+    
+    if not tx:
+        raise HTTPException(status_code=404, detail="Withdrawal not found")
+    
+    if tx["status"] != "pending":
+        raise HTTPException(status_code=400, detail="Not pending")
+    
+    await db.transactions.update_one(
+        {"id": tx_id},
+        {"$set": {"status": "approved", "completed_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"status": "approved", "tx_id": tx_id}
+
+@admin_router.post("/withdrawal/reject/{tx_id}")
+async def admin_reject_withdrawal(tx_id: str, admin: User = Depends(get_admin_user)):
+    """Reject withdrawal request"""
+    tx = await db.transactions.find_one({"id": tx_id, "tx_type": "withdrawal"}, {"_id": 0})
+    
+    if not tx:
+        raise HTTPException(status_code=404, detail="Withdrawal not found")
+    
+    # Refund to user
+    await db.users.update_one(
+        {"wallet_address": tx["from_address"]},
+        {"$inc": {"balance_game": tx["amount_ton"]}}
+    )
+    
+    await db.transactions.update_one(
+        {"id": tx_id},
+        {"$set": {"status": "rejected", "completed_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"status": "rejected", "tx_id": tx_id, "refunded": tx["amount_ton"]}
+
+@admin_router.post("/user/set-admin/{wallet_address}")
+async def admin_set_admin(wallet_address: str, is_admin: bool = True, admin: User = Depends(get_admin_user)):
+    """Set user as admin"""
+    await db.users.update_one(
+        {"wallet_address": wallet_address},
+        {"$set": {"is_admin": is_admin}}
+    )
+    return {"wallet_address": wallet_address, "is_admin": is_admin}
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 
 @admin_router.post("/promo/create")
 async def admin_create_promo(name: str, amount: float, max_uses: int, admin: User = Depends(get_admin_user)):
@@ -2638,6 +2866,7 @@ async def admin_get_system_events(limit: int = 50, admin: User = Depends(get_adm
     events = await db.system_events.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
     return {"events": events, "total": len(events)}
 
+<<<<<<< HEAD
 @admin_router.get("/withdrawals")
 async def admin_get_withdrawals(skip: int = 0, limit: int = 100, status: str = None, admin: User = Depends(get_admin_user)):
     """Get withdrawal requests for admin"""
@@ -2668,12 +2897,15 @@ async def admin_get_withdrawals(skip: int = 0, limit: int = 100, status: str = N
         "limit": limit, 
         "treasury_wallet": treasury_wallet
     }
+=======
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 
 
 # ==================== ADMIN: TON WALLET SETTINGS ====================
 
 @admin_router.get("/wallet-settings")
 async def admin_get_wallet_settings(admin: User = Depends(get_admin_user)):
+<<<<<<< HEAD
     """Get current TON wallet settings (admin view)"""
     settings = await db.game_settings.find_one({"type": "ton_wallet"}, {"_id": 0})
     if not settings:
@@ -2692,6 +2924,21 @@ async def admin_get_wallet_settings(admin: User = Depends(get_admin_user)):
         "configured": bool(stored_raw),
         "updated_at": settings.get("updated_at")
     }
+=======
+    """Get TON wallet settings"""
+    settings = await db.game_settings.find_one({"type": "ton_wallet"}, {"_id": 0})
+    if not settings:
+        # Create default
+        settings = {
+            "type": "ton_wallet",
+            "network": "testnet",
+            "receiver_address": "",
+            "last_checked_lt": 0,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.game_settings.insert_one(settings)
+    return settings
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 
 @admin_router.post("/wallet-settings")
 async def admin_update_wallet_settings(
@@ -2706,6 +2953,7 @@ async def admin_update_wallet_settings(
     if receiver_address and not validate_ton_address(receiver_address):
         raise HTTPException(status_code=400, detail="Invalid TON address")
     
+<<<<<<< HEAD
     # Normalize: store canonical raw, compute display
     raw_addr = to_raw(receiver_address) if receiver_address else ""
     display_addr = to_user_friendly(raw_addr) or receiver_address if raw_addr else ""
@@ -2713,26 +2961,40 @@ async def admin_update_wallet_settings(
     if receiver_address and not raw_addr:
         raise HTTPException(status_code=400, detail="Failed to parse wallet address")
     
+=======
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
     await db.game_settings.update_one(
         {"type": "ton_wallet"},
         {
             "$set": {
                 "network": network,
+<<<<<<< HEAD
                 "receiver_address": raw_addr,
                 "receiver_address_display": display_addr,
+=======
+                "receiver_address": receiver_address,
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
                 "updated_at": datetime.now(timezone.utc).isoformat()
             }
         },
         upsert=True
     )
     
+<<<<<<< HEAD
     logger.info(f"✅ Wallet settings updated: {network}, {display_addr[:16]}...")
+=======
+    logger.info(f"✅ Wallet settings updated: {network}, {receiver_address[:8]}...")
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
     
     return {
         "status": "success",
         "network": network,
+<<<<<<< HEAD
         "receiver_address": display_addr,
         "receiver_address_raw": raw_addr
+=======
+        "receiver_address": receiver_address
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
     }
 
 @admin_router.get("/deposits")

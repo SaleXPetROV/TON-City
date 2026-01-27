@@ -112,6 +112,7 @@ export const translations = {
     monthly: "Monthly",
     roiDays: "ROI (days)",
     zone: "Zone",
+<<<<<<< HEAD
 
     // AuthPage
     loginTitle: "LOG IN TO TON CITY",
@@ -119,6 +120,8 @@ export const translations = {
     waitWallet: "Waiting for wallet connection...",
     verifying: "Verifying data...",
     authError: "Auth error. Check if server is running."
+=======
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
   },
   
   ru: {
@@ -233,6 +236,7 @@ export const translations = {
     monthly: "В месяц",
     roiDays: "Окупаемость (дни)",
     zone: "Зона",
+<<<<<<< HEAD
 
     // AuthPage
     loginTitle: "ВХОД В TON CITY",
@@ -250,6 +254,11 @@ export const translations = {
     verifying: "Проверка данных...",
     authError: "Ошибка авторизации. Проверьте сервер.",
 
+=======
+  },
+  
+  zh: {
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
     // Navigation
     home: "首页",
     game: "游戏",

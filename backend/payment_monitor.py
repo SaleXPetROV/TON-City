@@ -5,6 +5,7 @@ Monitors incoming TON transactions and credits internal balance
 import logging
 import asyncio
 from datetime import datetime, timezone
+<<<<<<< HEAD
 import os   
 from tonsdk.utils import Address
 
@@ -14,6 +15,10 @@ def to_raw(address_str):
     except Exception:
         return address_str
 
+=======
+from motor.motor_asyncio import AsyncIOMotorClient
+import os
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +48,16 @@ class TONPaymentMonitor:
         return settings
     
     async def check_incoming_transactions(self):
+<<<<<<< HEAD
+=======
+        """Check for new incoming TON transactions"""
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
         try:
             settings = await self.get_game_settings()
             receiver_address = settings.get("receiver_address")
             
             if not receiver_address:
+<<<<<<< HEAD
                 logger.warning("⚠️ Адрес получателя не настроен.")
                 return
             
@@ -97,6 +107,26 @@ class TONPaymentMonitor:
 
         except Exception as e:
             logger.error(f"❌ Error in monitor: {e}")
+=======
+                logger.warning("⚠️  No receiver address configured. Set in admin panel.")
+                return
+            
+            network = settings.get("network", "testnet")
+            logger.info(f"🔍 Checking {network} transactions for {receiver_address[:8]}...")
+            
+            # In production, here we would:
+            # 1. Query TON blockchain API for transactions
+            # 2. Filter transactions since last_checked_lt
+            # 3. Process each incoming transaction
+            
+            # For now, simulate checking
+            # In production, use TonCenter API or TON SDK
+            
+            logger.info(f"✅ Transaction check complete ({network})")
+            
+        except Exception as e:
+            logger.error(f"❌ Error checking transactions: {e}")
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
     
     async def process_incoming_payment(self, transaction):
         """
@@ -107,7 +137,10 @@ class TONPaymentMonitor:
         """
         try:
             sender = transaction.get("sender")
+<<<<<<< HEAD
             sender_raw = transaction.get("sender_raw") or to_raw(sender)
+=======
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
             amount = transaction.get("amount")  # in nanoTON
             amount_ton = amount / 1e9
             tx_hash = transaction.get("hash")
@@ -119,6 +152,7 @@ class TONPaymentMonitor:
                 logger.info(f"⏭️  Transaction already processed: {tx_hash}")
                 return
             
+<<<<<<< HEAD
             # Try to find user by wallet address (support both user-friendly and raw formats)
             user = await self.db.users.find_one({
                 "$or": [
@@ -128,6 +162,10 @@ class TONPaymentMonitor:
                     {"raw_address": sender_raw},
                 ]
             }, {"_id": 0})
+=======
+            # Try to find user by wallet address
+            user = await self.db.users.find_one({"wallet_address": sender})
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
             
             if not user:
                 logger.warning(f"⚠️  Payment from unknown user: {sender}")
@@ -135,13 +173,17 @@ class TONPaymentMonitor:
                 await self.db.deposits.insert_one({
                     "tx_hash": tx_hash,
                     "sender": sender,
+<<<<<<< HEAD
                     "sender_raw": sender_raw,
+=======
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
                     "amount_ton": amount_ton,
                     "status": "pending_user",
                     "created_at": datetime.now(timezone.utc).isoformat(),
                     "memo": memo
                 })
                 return
+<<<<<<< HEAD
 
             # Use canonical addresses from DB for balance updates / logs
             user_wallet_address = user.get("wallet_address") or sender
@@ -150,6 +192,12 @@ class TONPaymentMonitor:
             # Credit internal balance
             await self.db.users.update_one(
                 {"$or": [{"wallet_address": user_wallet_address}, {"raw_address": user_raw_address}]},
+=======
+            
+            # Credit internal balance
+            await self.db.users.update_one(
+                {"wallet_address": sender},
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
                 {
                     "$inc": {
                         "balance_game": amount_ton,
@@ -162,8 +210,12 @@ class TONPaymentMonitor:
             await self.db.deposits.insert_one({
                 "tx_hash": tx_hash,
                 "user_id": user["id"],
+<<<<<<< HEAD
                 "wallet_address": user_wallet_address,
                 "raw_address": user_raw_address,
+=======
+                "wallet_address": sender,
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
                 "amount_ton": amount_ton,
                 "status": "completed",
                 "credited_at": datetime.now(timezone.utc).isoformat(),
@@ -183,7 +235,11 @@ class TONPaymentMonitor:
                 upsert=True
             )
             
+<<<<<<< HEAD
             logger.info(f"✅ Credited {amount_ton} TON to {user_wallet_address[:8]}...")
+=======
+            logger.info(f"✅ Credited {amount_ton} TON to {sender[:8]}...")
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
             logger.info(f"   TX: {tx_hash}")
             
         except Exception as e:

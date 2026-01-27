@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TonConnectButton, useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
+<<<<<<< HEAD
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Building2, Coins, Users, TrendingUp, Zap, MapPin, 
@@ -24,6 +25,24 @@ export default function LandingPage() {
   const wallet = useTonWallet();
   const [stats, setStats] = useState(null);
   const [user, setUser] = useState(null);
+=======
+import { motion } from 'framer-motion';
+import { Building2, Coins, Users, TrendingUp, Zap, MapPin, Calculator, Globe, GraduationCap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { verifyWallet, getGameStats } from '@/lib/api';
+import { useTranslation } from '@/lib/translations';
+import { toast } from 'sonner';
+import TutorialModal from '@/components/TutorialModal';
+
+export default function LandingPage() {
+  const navigate = useNavigate();
+  const [tonConnectUI] = useTonConnectUI();
+  const wallet = useTonWallet();
+  const [stats, setStats] = useState(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [hasVerified, setHasVerified] = useState(false);
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
   const [showTutorial, setShowTutorial] = useState(false);
   const [lang, setLang] = useState(localStorage.getItem('ton_city_lang') || 'en');
   const { t } = useTranslation(lang);
@@ -33,6 +52,7 @@ export default function LandingPage() {
     localStorage.setItem('ton_city_lang', newLang);
   };
 
+<<<<<<< HEAD
   const checkAuth = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -53,6 +73,8 @@ export default function LandingPage() {
     }
   }, []);
 
+=======
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
   const loadStats = async () => {
     try {
       const data = await getGameStats();
@@ -62,6 +84,7 @@ export default function LandingPage() {
     }
   };
 
+<<<<<<< HEAD
   useEffect(() => {
     loadStats();
     checkAuth();
@@ -101,11 +124,84 @@ export default function LandingPage() {
           className="absolute inset-0"
           style={{
             backgroundImage: `linear-gradient(rgba(0, 240, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 240, 255, 0.1) 1px, transparent 1px)`,
+=======
+  const handleWalletConnect = useCallback(async () => {
+    if (!wallet?.account?.address || isVerifying || hasVerified) return;
+    
+    setIsVerifying(true);
+    try {
+      const result = await verifyWallet(wallet.account.address, null, lang);
+      setHasVerified(true);
+      toast.success(lang === 'ru' ? 'Кошелёк подключен!' : lang === 'zh' ? '钱包已连接!' : 'Wallet connected!');
+      
+      // Auto-redirect admin to admin panel
+      if (result.redirect_to_admin) {
+        toast.info(lang === 'ru' ? 'Вход в админ-панель...' : 'Entering admin panel...');
+        setTimeout(() => navigate('/admin'), 500);
+      }
+    } catch (error) {
+      console.error('Verification failed:', error);
+      toast.error(lang === 'ru' ? 'Ошибка подключения' : 'Connection error');
+    } finally {
+      setIsVerifying(false);
+    }
+  }, [wallet?.account?.address, isVerifying, hasVerified, lang, navigate]);
+  
+  const handleStartGame = () => {
+    navigate('/game');
+  };
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  useEffect(() => {
+    if (wallet?.account && !hasVerified && !isVerifying) {
+      handleWalletConnect();
+    }
+  }, [wallet?.account, hasVerified, isVerifying, handleWalletConnect]);
+
+  const features = [
+    {
+      icon: MapPin,
+      title: t('buyLand'),
+      description: t('buyLandDesc'),
+    },
+    {
+      icon: Building2,
+      title: t('buildBusiness'),
+      description: t('buildBusinessDesc'),
+    },
+    {
+      icon: Zap,
+      title: t('createConnections'),
+      description: t('createConnectionsDesc'),
+    },
+    {
+      icon: Coins,
+      title: t('earnTon'),
+      description: t('earnTonDesc'),
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-void relative overflow-hidden">
+      {/* Background grid effect */}
+      <div className="absolute inset-0 opacity-10">
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(0, 240, 255, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(0, 240, 255, 0.1) 1px, transparent 1px)
+            `,
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
             backgroundSize: '50px 50px',
           }}
         />
       </div>
 
+<<<<<<< HEAD
       {/* ЛЕВАЯ НАВИГАЦИЯ (Картинка 2) */}
       <AnimatePresence>
         {user && (
@@ -146,11 +242,17 @@ export default function LandingPage() {
 
       <div className="relative z-10">
         {/* HEADER */}
+=======
+      {/* Hero Section */}
+      <div className="relative z-10">
+        {/* Header */}
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
         <header className="container mx-auto px-6 py-6">
           <nav className="flex items-center justify-between">
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
+<<<<<<< HEAD
               className="flex items-center gap-3 cursor-pointer"
               onClick={() => navigate('/')}
             >
@@ -159,12 +261,22 @@ export default function LandingPage() {
               </div>
               <span className="font-unbounded text-xl font-bold text-text-main tracking-tighter">
                 TON <span className="text-cyber-cyan">CITY</span>
+=======
+              className="flex items-center gap-3"
+            >
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyber-cyan to-neon-purple flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-black" />
+              </div>
+              <span className="font-unbounded text-xl font-bold text-text-main">
+                TON City
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
               </span>
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
+<<<<<<< HEAD
               className="flex items-center gap-4"
             >
               <Select value={lang} onValueChange={changeLang}>
@@ -217,33 +329,66 @@ export default function LandingPage() {
                   </div>
                 )}
               </div>
+=======
+              className="flex items-center gap-3"
+            >
+              <Select value={lang} onValueChange={changeLang}>
+                <SelectTrigger className="w-28 bg-panel border-grid-border text-text-main">
+                  <Globe className="w-4 h-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="ru">Русский</SelectItem>
+                  <SelectItem value="zh">中文</SelectItem>
+                </SelectContent>
+              </Select>
+              <TonConnectButton />
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
             </motion.div>
           </nav>
         </header>
 
+<<<<<<< HEAD
         {/* HERO CONTENT */}
+=======
+        {/* Hero Content */}
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
         <main className="container mx-auto px-6 pt-12 pb-24">
           <div className="max-w-4xl mx-auto text-center">
             <motion.h1 
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
+<<<<<<< HEAD
               className="font-unbounded text-4xl sm:text-5xl lg:text-7xl font-black text-text-main mb-6 leading-tight uppercase"
             >
               {t('title')}{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyber-cyan to-neon-purple animate-pulse">
                 {t('subtitle')}
               </span>
+=======
+              transition={{ delay: 0.1 }}
+              className="font-unbounded text-4xl sm:text-5xl lg:text-6xl font-black text-text-main mb-6 leading-tight"
+            >
+              {t('title')}{' '}
+              <span className="gradient-text">{t('subtitle')}</span>
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
             </motion.h1>
 
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
+<<<<<<< HEAD
               className="text-lg text-text-muted mb-10 max-w-2xl mx-auto"
+=======
+              className="text-lg text-text-muted mb-10 max-w-2xl mx-auto font-rajdhani"
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
             >
               {t('description')}
             </motion.p>
 
+<<<<<<< HEAD
             <div className="flex flex-wrap items-center justify-center gap-4 mb-16">
               <Button 
                 onClick={() => user ? navigate('/game') : navigate('/auth?mode=register')}
@@ -263,6 +408,60 @@ export default function LandingPage() {
             </div>
 
             {/* СТАТИСТИКА */}
+=======
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8"
+            >
+              {wallet?.account ? (
+                <>
+                  <Button 
+                    onClick={handleStartGame}
+                    className="btn-cyber px-8 py-6 text-lg rounded-xl"
+                    data-testid="start-game-btn"
+                  >
+                    <Zap className="w-5 h-5 mr-2" />
+                    {lang === 'ru' ? 'Начать игру' : lang === 'zh' ? '开始游戏' : 'Start Game'}
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => setShowTutorial(true)}
+                    className="border-neon-purple/30 text-neon-purple hover:bg-neon-purple/10 px-6 py-5"
+                    data-testid="tutorial-btn"
+                  >
+                    <GraduationCap className="w-5 h-5 mr-2" />
+                    {lang === 'ru' ? 'Обучение' : lang === 'zh' ? '教程' : 'Tutorial'}
+                  </Button>
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <TonConnectButton />
+                  <p className="text-text-muted text-sm">{lang === 'ru' ? 'Подключите кошелёк чтобы начать' : lang === 'zh' ? '连接钱包以开始' : 'Connect wallet to start playing'}</p>
+                </div>
+              )}
+            </motion.div>
+            
+            {/* Secondary buttons - только калькулятор */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+            >
+              <Button 
+                variant="outline"
+                onClick={() => navigate('/income-table')}
+                className="border-cyber-cyan/30 text-cyber-cyan hover:bg-cyber-cyan/10 px-6 py-5"
+              >
+                <Calculator className="w-4 h-4 mr-2" />
+                {t('incomeTable')}
+              </Button>
+            </motion.div>
+
+            {/* Stats */}
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
             {stats && (
               <motion.div 
                 initial={{ opacity: 0, y: 30 }}
@@ -270,6 +469,7 @@ export default function LandingPage() {
                 transition={{ delay: 0.4 }}
                 className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-20"
               >
+<<<<<<< HEAD
                 {[
                   { label: t('players'), value: stats.total_players, color: 'text-cyber-cyan' },
                   { label: t('plotsBought'), value: stats.owned_plots, color: 'text-cyber-cyan' },
@@ -281,10 +481,37 @@ export default function LandingPage() {
                     <div className="text-[10px] text-text-muted uppercase tracking-[0.2em]">{s.label}</div>
                   </div>
                 ))}
+=======
+                <div className="glass-panel rounded-xl p-6 text-center">
+                  <div className="text-3xl font-mono text-cyber-cyan font-bold mb-1">
+                    {stats.total_players || 0}
+                  </div>
+                  <div className="text-sm text-text-muted uppercase tracking-wider">{t('players')}</div>
+                </div>
+                <div className="glass-panel rounded-xl p-6 text-center">
+                  <div className="text-3xl font-mono text-cyber-cyan font-bold mb-1">
+                    {stats.owned_plots || 0}
+                  </div>
+                  <div className="text-sm text-text-muted uppercase tracking-wider">{t('plotsBought')}</div>
+                </div>
+                <div className="glass-panel rounded-xl p-6 text-center">
+                  <div className="text-3xl font-mono text-cyber-cyan font-bold mb-1">
+                    {stats.total_businesses || 0}
+                  </div>
+                  <div className="text-sm text-text-muted uppercase tracking-wider">{t('businesses')}</div>
+                </div>
+                <div className="glass-panel rounded-xl p-6 text-center">
+                  <div className="text-3xl font-mono text-signal-amber font-bold mb-1">
+                    {(stats.total_volume_ton || 0).toFixed(1)}
+                  </div>
+                  <div className="text-sm text-text-muted uppercase tracking-wider">{t('tonInCirculation')}</div>
+                </div>
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
               </motion.div>
             )}
           </div>
 
+<<<<<<< HEAD
           {/* КАРТОЧКИ ФУНКЦИЙ */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {features.map((feature, index) => (
@@ -305,10 +532,35 @@ export default function LandingPage() {
                   {feature.title}
                 </h3>
                 <p className="text-text-muted text-sm leading-relaxed">
+=======
+          {/* Features */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto"
+          >
+            {features.map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 + index * 0.1 }}
+                className="glass-panel glass-panel-hover rounded-2xl p-6 relative corner-brackets"
+              >
+                <div className="w-12 h-12 rounded-lg bg-cyber-cyan-dim flex items-center justify-center mb-4">
+                  <feature.icon className="w-6 h-6 text-cyber-cyan" />
+                </div>
+                <h3 className="font-unbounded text-lg font-bold text-text-main mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-text-muted text-sm font-rajdhani">
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
                   {feature.description}
                 </p>
               </motion.div>
             ))}
+<<<<<<< HEAD
           </div>
         </main>
 
@@ -325,6 +577,89 @@ export default function LandingPage() {
         </footer>
       </div>
 
+=======
+          </motion.div>
+
+          {/* Business Types Preview */}
+          <motion.div 
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="mt-24 max-w-4xl mx-auto"
+          >
+            <h2 className="font-unbounded text-2xl font-bold text-center text-text-main mb-8">
+              {t('businessTypes')}
+            </h2>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+              {[
+                { icon: '🌾', name: lang === 'ru' ? 'Ферма' : lang === 'zh' ? '农场' : 'Farm', cost: 5 },
+                { icon: '🏭', name: lang === 'ru' ? 'Завод' : lang === 'zh' ? '工厂' : 'Factory', cost: 15 },
+                { icon: '🏪', name: lang === 'ru' ? 'Магазин' : lang === 'zh' ? '商店' : 'Shop', cost: 10 },
+                { icon: '⚡', name: lang === 'ru' ? 'Энергия' : lang === 'zh' ? '发电厂' : 'Power', cost: 20 },
+                { icon: '🏦', name: lang === 'ru' ? 'Банк' : lang === 'zh' ? '银行' : 'Bank', cost: 50 },
+                { icon: '📊', name: lang === 'ru' ? 'Биржа' : lang === 'zh' ? '交易所' : 'Exchange', cost: 100 },
+              ].map((biz) => (
+                <div 
+                  key={biz.name}
+                  className="glass-panel rounded-xl p-4 text-center card-hover"
+                >
+                  <div className="text-4xl mb-2">{biz.icon}</div>
+                  <div className="text-sm text-text-main font-rajdhani font-semibold">{biz.name}</div>
+                  <div className="text-xs text-cyber-cyan font-mono">{biz.cost} TON</div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* How it works */}
+          <motion.div 
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1 }}
+            className="mt-24 max-w-3xl mx-auto text-center"
+          >
+            <h2 className="font-unbounded text-2xl font-bold text-text-main mb-6">
+              {t('howEconomyWorks')}
+            </h2>
+            <div className="glass-panel rounded-2xl p-8">
+              <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-lg">
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl">🌾</span>
+                  <span className="text-text-muted">{lang === 'ru' ? 'Ферма' : 'Farm'}</span>
+                </div>
+                <span className="text-cyber-cyan text-2xl">→</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl">🏭</span>
+                  <span className="text-text-muted">{lang === 'ru' ? 'Завод' : 'Factory'}</span>
+                </div>
+                <span className="text-cyber-cyan text-2xl">→</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl">🏪</span>
+                  <span className="text-text-muted">{lang === 'ru' ? 'Магазин' : 'Shop'}</span>
+                </div>
+                <span className="text-signal-amber text-2xl">→</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl">💰</span>
+                  <span className="text-signal-amber font-bold">TON</span>
+                </div>
+              </div>
+              <p className="text-text-muted mt-6 font-rajdhani">
+                {t('economyDesc')}
+              </p>
+            </div>
+          </motion.div>
+        </main>
+
+        {/* Footer */}
+        <footer className="border-t border-grid-border py-8">
+          <div className="container mx-auto px-6 text-center text-text-muted text-sm">
+            <p>TON City Builder © 2025. Построено на блокчейне TON.</p>
+          </div>
+        </footer>
+      </div>
+      
+      {/* Tutorial Modal */}
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
       <TutorialModal 
         isOpen={showTutorial} 
         onClose={() => setShowTutorial(false)} 
@@ -332,4 +667,8 @@ export default function LandingPage() {
       />
     </div>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
