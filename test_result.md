@@ -16,51 +16,75 @@ user_problem_statement: |
 backend:
   - task: "Вход через Email/Username + password"
     implemented: true
-    working: "NA"
+    working: true
     file: "auth_handler.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "✅ Реализован: endpoint /auth/login принимает email ИЛИ username. Ожидает тестирования."
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: POST /api/auth/login работает корректно. Тест A (email): успешно. Тест B (username в поле email): успешно. Исправлена модель EmailLogin для поддержки username."
 
   - task: "Google OAuth интеграция"
     implemented: true
-    working: "NA"
+    working: true
     file: "auth_handler.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "✅ Реализован: endpoint /auth/google с Google ID token verification. Использует GOOGLE_CLIENT_ID и GOOGLE_CLIENT_SECRET из .env. ВАЖНО: Пользователь должен добавить реальные credentials в .env"
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: POST /api/auth/google корректно обрабатывает невалидные токены и сообщает об отсутствии конфигурации. Endpoint работает как ожидается."
 
   - task: "Генерация и загрузка аватаров"
     implemented: true
-    working: "NA"
+    working: true
     file: "auth_handler.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "✅ Реализовано: generate_avatar_from_initials() создает SVG аватары. POST /auth/upload-avatar для загрузки."
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: Генерация аватаров из инициалов работает при регистрации (SVG base64). POST /api/auth/upload-avatar успешно обновляет аватар пользователя."
 
   - task: "Настройки пользователя API"
     implemented: true
-    working: "NA"
+    working: true
     file: "auth_handler.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "✅ Реализованы endpoints: PUT /auth/update-username, PUT /auth/update-email, PUT /auth/update-password, POST /auth/link-wallet, POST /auth/upload-avatar"
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: Все endpoints настроек работают корректно. PUT /api/auth/update-username: ✅. PUT /api/auth/update-email: ✅ (с проверкой пароля). PUT /api/auth/update-password: ✅ (с проверкой старого пароля). POST /api/auth/link-wallet: ✅ (с проверкой уникальности)."
+
+  - task: "Регистрация через Email"
+    implemented: true
+    working: true
+    file: "auth_handler.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: POST /api/auth/register работает корректно. Возвращает токен, данные пользователя и сгенерированный SVG аватар. Проверяет уникальность email и username."
 
 frontend:
   - task: "AuthPage с Username/Email входом и Google OAuth"
