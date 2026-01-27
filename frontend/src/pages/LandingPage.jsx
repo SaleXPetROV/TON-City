@@ -65,24 +65,6 @@ export default function LandingPage({ user, setUser }) {
     loadStats();
   }, []);
 
-  // Вспомогательный компонент для боковых иконок
-  const NavIcon = ({ icon, label, onClick, isVisible = true }) => {
-    if (!isVisible) return null;
-    return (
-      <div 
-        onClick={onClick}
-        className="group relative p-3 text-white/40 hover:text-cyber-cyan hover:bg-cyber-cyan/10 rounded-xl transition-all cursor-pointer border border-transparent hover:border-cyber-cyan/20"
-      >
-        {icon}
-        {isNavExpanded && (
-          <span className="absolute left-16 bg-cyber-cyan text-black text-[10px] font-bold px-2 py-1 rounded uppercase tracking-widest whitespace-nowrap z-50">
-            {label}
-          </span>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-void relative overflow-hidden font-rajdhani">
       {/* Сетка на фоне */}
