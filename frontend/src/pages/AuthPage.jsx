@@ -223,13 +223,13 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
       const data = await response.json();
 
       if (response.ok && data.token) {
-        localStorage.setItem('token', data.token);
-        toast.success(lang === 'ru' ? "Город основан!" : "City founded!");
-        navigate('/game');
+        // Используем finishAuth для корректной обработки
+        finishAuth(data);
       } else {
         toast.error(data.detail || "Error");
       }
     } catch (e) {
+      console.error("Registration error:", e);
       toast.error("Registration failed");
     } finally {
       setIsVerifying(false);
