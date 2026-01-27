@@ -27,11 +27,15 @@ class EmailLogin(BaseModel):
     email: EmailStr
     password: str
 
+class GoogleAuth(BaseModel):
+    credential: str  # Google ID token
+
 class WalletAuth(BaseModel):
     address: str
 
 class UsernameUpdate(BaseModel):
     username: str
+
 
 # --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
 def generate_avatar_from_initials(name: str) -> str:
