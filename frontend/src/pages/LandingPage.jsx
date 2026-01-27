@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import TutorialModal from '@/components/TutorialModal';
 import { useLocation } from 'react-router-dom';
 
-export default function LandingPage() {
+export default function LandingPage({ user, setUser }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isHome = location.pathname === '/';
@@ -23,7 +23,6 @@ export default function LandingPage() {
   const isNavExpanded = isHome || isNavHovered;
   const wallet = useTonWallet();
   const [stats, setStats] = useState(null);
-  const [user, setUser] = useState(null);
   const [showTutorial, setShowTutorial] = useState(false);
   const [lang, setLang] = useState(localStorage.getItem('ton_city_lang') || 'en');
   const { t } = useTranslation(lang);
