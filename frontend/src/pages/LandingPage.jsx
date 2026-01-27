@@ -127,12 +127,20 @@ export default function LandingPage({ user, setUser }) {
                   <motion.div 
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    onClick={() => navigate('/game')}
+                    onClick={() => navigate('/settings')}
                     className="flex items-center gap-3 bg-white/5 p-1.5 pr-4 rounded-full border border-white/10 cursor-pointer hover:bg-white/10 transition-all group"
                   >
-                    <div className="w-9 h-9 bg-gradient-to-br from-cyber-cyan to-neon-purple rounded-full flex items-center justify-center font-bold text-black border-2 border-cyber-cyan shadow-[0_0_15px_rgba(0,255,243,0.3)] group-hover:shadow-cyber-cyan/50 transition-all">
-                      {(user.display_name || user.username || 'U')[0].toUpperCase()}
-                    </div>
+                    {user.avatar ? (
+                      <img 
+                        src={user.avatar} 
+                        alt={user.username}
+                        className="w-9 h-9 rounded-full border-2 border-cyber-cyan shadow-[0_0_15px_rgba(0,255,243,0.3)] group-hover:shadow-cyber-cyan/50 transition-all"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 bg-gradient-to-br from-cyber-cyan to-neon-purple rounded-full flex items-center justify-center font-bold text-black border-2 border-cyber-cyan shadow-[0_0_15px_rgba(0,255,243,0.3)] group-hover:shadow-cyber-cyan/50 transition-all">
+                        {(user.display_name || user.username || 'U')[0].toUpperCase()}
+                      </div>
+                    )}
                     <div className="text-left hidden sm:block">
                       <p className="text-[9px] text-cyber-cyan font-mono uppercase leading-none tracking-widest opacity-70">
                         {user.level || 'CITIZEN'}
