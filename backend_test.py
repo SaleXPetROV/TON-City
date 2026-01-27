@@ -217,7 +217,7 @@ def test_3_update_username():
         log_test("Смена username", "FAIL", "Нет токена авторизации")
         return False
     
-    new_username = "newusername123"
+    new_username = f"newusername{test_id}"
     update_data = {"username": new_username}
     headers = {"Authorization": f"Bearer {auth_token}"}
     
