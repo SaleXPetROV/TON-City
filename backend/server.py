@@ -82,7 +82,7 @@ class User(BaseModel):
     raw_address: Optional[str] = None
     display_name: Optional[str] = None
     language: str = "en"
-    level: str = "novice"
+    level: Union[str, int] = "novice"  # Поддержка и str и int
     xp: int = 0
     balance_ton: float = 0.0
     balance_game: float = 0.0
