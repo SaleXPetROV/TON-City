@@ -303,28 +303,31 @@ export default function LandingPage() {
 
           {/* КАРТОЧКИ ФУНКЦИЙ */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
-                className="glass-panel group hover:border-cyber-cyan/30 rounded-3xl p-8 transition-all relative overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                   <feature.icon className="w-20 h-20 text-white" />
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-cyber-cyan/10 flex items-center justify-center mb-6 border border-cyber-cyan/20">
-                  <feature.icon className="w-6 h-6 text-cyber-cyan" />
-                </div>
-                <h3 className="font-unbounded text-lg font-bold text-white mb-3 uppercase tracking-tight">
-                  {feature.title}
-                </h3>
-                <p className="text-text-muted text-sm leading-relaxed">
-                  {feature.description}
-                </p>
-              </motion.div>
-            ))}
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 + index * 0.1 }}
+                  className="glass-panel group hover:border-cyber-cyan/30 rounded-3xl p-8 transition-all relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Icon className="w-20 h-20 text-white" />
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-cyber-cyan/10 flex items-center justify-center mb-6 border border-cyber-cyan/20">
+                    <Icon className="w-6 h-6 text-cyber-cyan" />
+                  </div>
+                  <h3 className="font-unbounded text-lg font-bold text-white mb-3 uppercase tracking-tight">
+                    {feature.title}
+                  </h3>
+                  <p className="text-text-muted text-sm leading-relaxed">
+                    {feature.description}
+                  </p>
+                </motion.div>
+              );
+            })}
           </div>
         </main>
 
