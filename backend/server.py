@@ -391,7 +391,8 @@ async def verify_wallet(request: WalletVerifyRequest):
             user_doc.update(update_data)
         
         # Создаем токен
-        token = create_access_token(data={"sub": wallet_address})
+        from auth_handler import create_token
+        token = create_token(data={"sub": wallet_address})
         print(f"🎫 JWT токен сгенерирован для: {wallet_address}")
         
         return {
