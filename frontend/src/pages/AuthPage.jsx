@@ -165,8 +165,9 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
       // Показываем понятное сообщение об ошибке
       if (e.message === 'Failed to fetch') {
         toast.error(lang === 'ru' ? 'Ошибка соединения с сервером' : 'Server connection error');
-      } else if (e.message?.includes('body stream')) {
-        // Техническая ошибка парсинга ответа - уже обработана выше
+      } else if (e.message?.includes('body stream') || e.message?.includes('already read')) {
+        // Техническая ошибка - показываем общее сообщение
+        toast.error(lang === 'ru' ? 'Неверные данные для входа' : 'Invalid credentials');
       } else {
         toast.error(lang === 'ru' ? 'Ошибка авторизации' : 'Auth failed');
       }
