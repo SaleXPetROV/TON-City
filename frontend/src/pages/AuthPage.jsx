@@ -230,13 +230,21 @@ export default function AuthPage({ setUser }) {
     <div className="min-h-screen bg-void flex items-center justify-center p-4 relative font-rajdhani">
       <div className="absolute top-6 right-6 z-20">
         <Select value={lang} onValueChange={changeLang}>
-          <SelectTrigger className="w-32 bg-panel/50 border-grid-border text-white border-white/10">
+          <SelectTrigger className="w-36 bg-panel/50 border-grid-border text-white border-white/10">
             <Globe className="w-4 h-4 mr-2 text-cyber-cyan" />
-            <SelectValue />
+            <SelectValue>
+              {languages.find(l => l.code === lang)?.flag} {languages.find(l => l.code === lang)?.name}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent className="bg-panel border-white/10 text-white">
-            <SelectItem value="en">English</SelectItem>
-            <SelectItem value="ru">Русский</SelectItem>
+            {languages.map(language => (
+              <SelectItem key={language.code} value={language.code}>
+                <span className="flex items-center gap-2">
+                  <span>{language.flag}</span>
+                  <span>{language.name}</span>
+                </span>
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
