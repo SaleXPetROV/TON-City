@@ -76,19 +76,24 @@ def create_token(data: dict):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-# Зависимость для получения текущего пользователя (аналог из server.py)
-async def get_current_user_local(token: str):
+# Зависимость для получения текущего пользователя через Bearer token
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+security = HTTPBearer()
+
+async def get_current_user_local(credentials: HTTPAuthorizationCredentials = Depends(security)):
     from server import db
     try:
+        token = credentials.credentials
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        # Ищем либо по почте, либо по адресу кошелька
+        # Ищем по email, username или wallet_address
         user = await db.users.find_one({
             "$or": [
                 {"email": user_id},
+                {"username": user_id},
                 {"wallet_address": user_id}
             ]
         })
