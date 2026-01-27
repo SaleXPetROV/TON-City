@@ -37,7 +37,7 @@ export default function LandingPage() {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const response = await fetch('/api/api/auth/me', {
+        const response = await fetch('/api/auth/me', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -52,6 +52,20 @@ export default function LandingPage() {
       }
     }
   }, []);
+
+  const loadStats = async () => {
+    try {
+      const data = await getGameStats();
+      setStats(data);
+    } catch (error) {
+      console.error('Failed to load stats:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadStats();
+    checkAuth();
+  }, [checkAuth]);
 
             backgroundSize: '50px 50px',
           }}
