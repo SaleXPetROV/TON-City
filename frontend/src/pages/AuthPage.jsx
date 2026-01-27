@@ -41,16 +41,19 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
   const [showUsernameStep, setShowUsernameStep] = useState(false);
   const [googleLoaded, setGoogleLoaded] = useState(false);
 
-  const finishAuth = (data) => {
+  const finishAuth = async (data) => {
     localStorage.setItem('token', data.token);
     if (data.user) {
       setUser(data.user);
     }
+    toast.success(lang === 'ru' ? 'Вход выполнен!' : 'Logged in!');
+    
     // Вызываем checkAuth из App.js для обновления глобального состояния
     if (onAuthSuccess) {
-      setTimeout(() => onAuthSuccess(), 100);
+      await onAuthSuccess();
     }
-    toast.success(lang === 'ru' ? 'Вход выполнен!' : 'Logged in!');
+    
+    // Переходим на главную после обновления состояния
     navigate('/');
   };
 
