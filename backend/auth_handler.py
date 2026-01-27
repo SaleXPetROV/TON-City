@@ -30,6 +30,38 @@ class UsernameUpdate(BaseModel):
     username: str
 
 # --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+def generate_avatar_from_initials(name: str) -> str:
+    """Генерирует SVG аватар из первых букв имени"""
+    if not name:
+        name = "U"
+    
+    # Берем первую букву (или две, если есть пробел)
+    parts = name.strip().split()
+    if len(parts) >= 2:
+        initials = (parts[0][0] + parts[1][0]).upper()
+    else:
+        initials = name[0].upper()
+    
+    # Генерируем цвет на основе имени
+    hash_val = sum(ord(c) for c in name)
+    colors = [
+        "#00F0FF",  # cyber-cyan
+        "#B026FF",  # neon-purple  
+        "#FF6B9D",  # pink
+        "#FFB800",  # amber
+        "#00FF88",  # green
+    ]
+    color = colors[hash_val % len(colors)]
+    
+    # SVG аватар
+    svg = f'''<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="100" fill="{color}"/>
+        <text x="50" y="50" font-family="Arial" font-size="40" font-weight="bold" 
+              fill="#000" text-anchor="middle" dominant-baseline="central">{initials}</text>
+    </svg>'''
+    
+    return f"data:image/svg+xml;base64,{__import__('base64').b64encode(svg.encode()).decode()}"
+
 def create_token(data: dict):
     expire = datetime.now(timezone.utc) + timedelta(days=7)
     to_encode = data.copy()
