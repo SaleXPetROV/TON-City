@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getGameStats } from '@/lib/api';
-import { useTranslation } from '@/lib/translations';
+import { useTranslation, languages } from '@/lib/translations';
 import { toast } from 'sonner';
 import TutorialModal from '@/components/TutorialModal';
 import { useLocation } from 'react-router-dom';
