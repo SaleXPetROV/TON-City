@@ -1,11 +1,13 @@
-// Translations for the app
+// Translations for TON City Builder - 8 languages
 export const translations = {
+  // English
   en: {
     // Navigation
     home: "Home",
     game: "Game",
     dashboard: "Dashboard",
     admin: "Admin",
+    settings: "Settings",
     
     // Landing
     title: "Build your digital city",
@@ -13,30 +15,40 @@ export const translations = {
     description: "Economic strategy with real cryptocurrency. Buy land, build businesses, create connections with other players and earn TON.",
     connectWallet: "Connect Wallet",
     playNow: "Play Now",
+    login: "Login",
+    register: "Register",
     connectToPlay: "Connect wallet to start playing",
+    
+    // Auth
+    loginTitle: "LOG IN TO TON CITY",
+    registerTitle: "SIGN UP TO TON CITY",
+    email: "Email",
+    emailOrUsername: "Email or Username",
+    username: "Username",
+    password: "Password",
+    createAccount: "Create Account",
+    signIn: "Sign In",
+    orVia: "Or via",
+    google: "Google",
+    waitWallet: "Waiting for wallet connection...",
+    verifying: "Verifying data...",
+    authError: "Auth error. Check if server is running.",
+    
+    // Features
+    buildCity: "Build City",
+    buildCityDesc: "Create businesses and grow your empire",
+    earnMoney: "Earn Money",
+    earnMoneyDesc: "Get income from your businesses",
+    trade: "Trade",
+    tradeDesc: "Make deals with other players",
+    grow: "Grow",
+    growDesc: "Scale business on TON blockchain",
     
     // Stats
     players: "Players",
     plotsBought: "Plots Bought",
     businesses: "Businesses",
     tonInCirculation: "TON in Circulation",
-    
-    // Features
-    buyLand: "Buy Land",
-    buyLandDesc: "100×100 grid. Price from 10 to 100 TON depending on location.",
-    buildBusiness: "Build Business",
-    buildBusinessDesc: "Farms, factories, shops, banks. Each business produces resources.",
-    createConnections: "Create Connections",
-    createConnectionsDesc: "Businesses are interconnected. Farm supplies factory, factory supplies shop.",
-    earnTon: "Earn TON",
-    earnTonDesc: "Income from interaction with other players. Real cryptocurrency.",
-    
-    // Business types
-    businessTypes: "Business Types",
-    
-    // Economy
-    howEconomyWorks: "How does the economy work?",
-    economyDesc: "Nearby businesses create connections and increase income by 20% per connection. All transactions happen in real TON between players.",
     
     // Game page
     coordinates: "Coordinates",
@@ -48,90 +60,220 @@ export const translations = {
     level: "Level",
     income: "Income",
     connections: "Connections",
-    plots: "Plots",
     
-    // Dashboard
-    myBusinesses: "My Businesses",
-    noBusinesses: "You don't have any businesses yet",
-    buildFirst: "Build your first business",
-    transactions: "Transactions",
-    noTransactions: "No transactions yet",
-    leaderboard: "Leaderboard",
-    earned: "TON earned",
-    
-    // Transaction types
-    purchasePlot: "Plot Purchase",
-    buildBusinessTx: "Construction",
-    incomeTx: "Income",
-    transfer: "Transfer",
-    withdrawal: "Withdrawal",
-    
-    // Status
-    completed: "Completed",
-    pending: "Pending",
-    failed: "Failed",
-    
-    // Actions
-    refresh: "Refresh",
-    back: "Back",
-    confirm: "Confirm",
-    cancel: "Cancel",
-    collect: "Collect Income",
-    
-    // Admin
-    adminPanel: "Admin Panel",
-    treasury: "Treasury",
-    totalPlotSales: "Total Plot Sales",
-    totalTax: "Total Tax Collected",
-    pendingWithdrawals: "Pending Withdrawals",
-    activeUsers: "Active Users (7d)",
-    users: "Users",
-    approveWithdrawal: "Approve",
-    rejectWithdrawal: "Reject",
-    createPromo: "Create Promo",
-    announcements: "Announcements",
-    createAnnouncement: "Create Announcement",
-    
-    // Zones
-    center: "Center (VIP)",
-    business: "Business District",
-    residential: "Residential",
-    industrial: "Industrial",
-    outskirts: "Outskirts",
-    
-    // Sectors
-    primary: "Primary Sector",
-    secondary: "Secondary Sector",
-    tertiary: "Tertiary Sector",
-    quaternary: "Finance & Tech",
-    
-    // Income table
-    incomeTable: "Income Calculator",
-    grossDaily: "Gross/Day",
-    netDaily: "Net/Day",
-    monthly: "Monthly",
-    roiDays: "ROI (days)",
-    zone: "Zone",
+    // Settings
+    settingsTitle: "Settings",
+    accountManagement: "Manage your account",
+    changeUsername: "Change Username",
+    changeEmail: "Change Email",
+    changePassword: "Change Password",
+    linkWallet: "Link Wallet",
+    uploadAvatar: "Upload Avatar",
+    currentPassword: "Current Password",
+    newPassword: "New Password",
+    confirmPassword: "Confirm Password",
+    save: "Save",
+    googleAccount: "Google Account",
+    googleAccountDesc: "You signed in with Google. Email and password are managed through your Google account.",
+  },
 
-    // AuthPage
-    loginTitle: "LOG IN TO TON CITY",
-    registerTitle: "SIGN UP TO TON CITY",
-    waitWallet: "Waiting for wallet connection...",
-    verifying: "Verifying data...",
-    authError: "Auth error. Check if server is running.",
+  // Russian (Русский)
+  ru: {
+    // Navigation
+    home: "Главная",
+    game: "Игра",
+    dashboard: "Панель",
+    admin: "Админ",
+    settings: "Настройки",
+    
+    // Landing
+    title: "Построй свой цифровой город",
+    subtitle: "на блокчейне TON",
+    description: "Экономическая стратегия с настоящей криптовалютой. Покупай землю, строй бизнесы, создавай связи с другими игроками и зарабатывай TON.",
+    connectWallet: "Подключить кошелёк",
+    playNow: "Играть",
+    login: "Вход",
+    register: "Регистрация",
+    connectToPlay: "Подключите кошелёк для начала игры",
+    
+    // Auth
+    loginTitle: "ВХОД В TON CITY",
+    registerTitle: "РЕГИСТРАЦИЯ В TON CITY",
+    email: "Email",
+    emailOrUsername: "Email или Никнейм",
+    username: "Никнейм",
+    password: "Пароль",
+    createAccount: "Создать аккаунт",
+    signIn: "Войти",
+    orVia: "Или через",
+    google: "Google",
+    waitWallet: "Ожидание подключения кошелька...",
+    verifying: "Проверка данных...",
+    authError: "Ошибка авторизации. Проверьте работу сервера.",
+    
+    // Features
+    buildCity: "Строй город",
+    buildCityDesc: "Создавай бизнесы и развивай свою империю",
+    earnMoney: "Зарабатывай",
+    earnMoneyDesc: "Получай доход от своих предприятий",
+    trade: "Торгуй",
+    tradeDesc: "Заключай контракты с другими игроками",
+    grow: "Расти",
+    growDesc: "Масштабируй бизнес на блокчейне TON",
+    
+    // Stats
+    players: "Игроков",
+    plotsBought: "Участков куплено",
+    businesses: "Бизнесов",
+    tonInCirculation: "TON в обороте",
+    
+    // Game page
+    coordinates: "Координаты",
+    price: "Цена",
+    owner: "Владелец",
+    you: "Вы",
+    buyPlot: "Купить участок",
+    buildBusinessBtn: "Построить бизнес",
+    level: "Уровень",
+    income: "Доход",
+    connections: "Связи",
+    
+    // Settings
+    settingsTitle: "Настройки",
+    accountManagement: "Управление аккаунтом",
+    changeUsername: "Сменить никнейм",
+    changeEmail: "Сменить Email",
+    changePassword: "Сменить пароль",
+    linkWallet: "Привязать кошелёк",
+    uploadAvatar: "Загрузить аватар",
+    currentPassword: "Текущий пароль",
+    newPassword: "Новый пароль",
+    confirmPassword: "Подтвердите пароль",
+    save: "Сохранить",
+    googleAccount: "Google Аккаунт",
+    googleAccountDesc: "Вы вошли через Google. Email и пароль управляются через ваш Google аккаунт.",
+  },
+
+  // Spanish (Español)
+  es: {
+    // Navigation
+    home: "Inicio",
+    game: "Juego",
+    dashboard: "Panel",
+    admin: "Admin",
+    settings: "Ajustes",
+    
+    // Landing
+    title: "Construye tu ciudad digital",
+    subtitle: "en blockchain TON",
+    description: "Estrategia económica con criptomonedas reales. Compra terrenos, construye negocios, crea conexiones con otros jugadores y gana TON.",
+    connectWallet: "Conectar Cartera",
+    playNow: "Jugar Ahora",
+    login: "Iniciar Sesión",
+    register: "Registrarse",
+    connectToPlay: "Conecta tu cartera para empezar a jugar",
+    
+    // Auth
+    loginTitle: "INICIAR SESIÓN EN TON CITY",
+    registerTitle: "REGISTRARSE EN TON CITY",
+    email: "Email",
+    emailOrUsername: "Email o Usuario",
+    username: "Usuario",
+    password: "Contraseña",
+    createAccount: "Crear Cuenta",
+    signIn: "Entrar",
+    orVia: "O vía",
+    google: "Google",
+    waitWallet: "Esperando conexión de cartera...",
+    verifying: "Verificando datos...",
+    authError: "Error de autenticación. Verifica el servidor.",
+    
+    // Features
+    buildCity: "Construir Ciudad",
+    buildCityDesc: "Crea negocios y expande tu imperio",
+    earnMoney: "Ganar Dinero",
+    earnMoneyDesc: "Obtén ingresos de tus negocios",
+    trade: "Comerciar",
+    tradeDesc: "Haz tratos con otros jugadores",
+    grow: "Crecer",
+    growDesc: "Escala tu negocio en blockchain TON",
+    
+    // Stats
+    players: "Jugadores",
+    plotsBought: "Terrenos Comprados",
+    businesses: "Negocios",
+    tonInCirculation: "TON en Circulación",
+    
+    // Game page
+    coordinates: "Coordenadas",
+    price: "Precio",
+    owner: "Propietario",
+    you: "Tú",
+    buyPlot: "Comprar Terreno",
+    buildBusinessBtn: "Construir Negocio",
+    level: "Nivel",
+    income: "Ingresos",
+    connections: "Conexiones",
+    
+    // Settings
+    settingsTitle: "Ajustes",
+    accountManagement: "Gestionar tu cuenta",
+    changeUsername: "Cambiar Usuario",
+    changeEmail: "Cambiar Email",
+    changePassword: "Cambiar Contraseña",
+    linkWallet: "Vincular Cartera",
+    uploadAvatar: "Subir Avatar",
+    currentPassword: "Contraseña Actual",
+    newPassword: "Nueva Contraseña",
+    confirmPassword: "Confirmar Contraseña",
+    save: "Guardar",
+    googleAccount: "Cuenta Google",
+    googleAccountDesc: "Iniciaste sesión con Google. El email y contraseña se gestionan a través de tu cuenta Google.",
+  },
+
+  // Chinese Simplified (简体中文)
+  zh: {
     // Navigation
     home: "首页",
     game: "游戏",
     dashboard: "仪表板",
     admin: "管理",
+    settings: "设置",
     
     // Landing
     title: "建设你的数字城市",
     subtitle: "在TON区块链上",
-    description: "使用真实加密货币的经济策略游戏。购买土地，建设企业，与其他玩家建立联系并赚取TON。",
+    description: "真实加密货币的经济策略游戏。购买土地、建设企业、与其他玩家建立联系并赚取TON。",
     connectWallet: "连接钱包",
-    playNow: "开始游戏",
+    playNow: "立即游戏",
+    login: "登录",
+    register: "注册",
     connectToPlay: "连接钱包开始游戏",
+    
+    // Auth
+    loginTitle: "登录 TON CITY",
+    registerTitle: "注册 TON CITY",
+    email: "邮箱",
+    emailOrUsername: "邮箱或用户名",
+    username: "用户名",
+    password: "密码",
+    createAccount: "创建账户",
+    signIn: "登录",
+    orVia: "或通过",
+    google: "谷歌",
+    waitWallet: "等待钱包连接...",
+    verifying: "验证数据中...",
+    authError: "认证错误。请检查服务器。",
+    
+    // Features
+    buildCity: "建设城市",
+    buildCityDesc: "创建企业并发展你的帝国",
+    earnMoney: "赚取收益",
+    earnMoneyDesc: "从你的企业获得收入",
+    trade: "交易",
+    tradeDesc: "与其他玩家进行交易",
+    grow: "成长",
+    growDesc: "在TON区块链上扩展业务",
     
     // Stats
     players: "玩家",
@@ -139,105 +281,359 @@ export const translations = {
     businesses: "企业",
     tonInCirculation: "流通中的TON",
     
-    // Features
-    buyLand: "购买土地",
-    buyLandDesc: "100×100网格。价格根据位置从10到100 TON不等。",
-    buildBusiness: "建设企业",
-    buildBusinessDesc: "农场、工厂、商店、银行。每个企业生产资源。",
-    createConnections: "建立联系",
-    createConnectionsDesc: "企业相互关联。农场供应工厂，工厂供应商店。",
-    earnTon: "赚取TON",
-    earnTonDesc: "通过与其他玩家互动获得收入。真实的加密货币。",
-    
-    // Business types
-    businessTypes: "企业类型",
-    
-    // Economy
-    howEconomyWorks: "经济如何运作？",
-    economyDesc: "相邻的企业建立联系，每个联系增加20%的收入。所有交易都以真实TON在玩家之间进行。",
-    
     // Game page
     coordinates: "坐标",
     price: "价格",
-    owner: "所有者",
-    you: "您",
+    owner: "拥有者",
+    you: "你",
     buyPlot: "购买地块",
     buildBusinessBtn: "建设企业",
     level: "等级",
     income: "收入",
-    connections: "联系",
-    plots: "地块",
+    connections: "连接",
     
-    // Dashboard
-    myBusinesses: "我的企业",
-    noBusinesses: "您还没有企业",
-    buildFirst: "建设第一个企业",
-    transactions: "交易",
-    noTransactions: "暂无交易",
-    leaderboard: "排行榜",
-    earned: "TON收入",
+    // Settings
+    settingsTitle: "设置",
+    accountManagement: "管理你的账户",
+    changeUsername: "更改用户名",
+    changeEmail: "更改邮箱",
+    changePassword: "更改密码",
+    linkWallet: "绑定钱包",
+    uploadAvatar: "上传头像",
+    currentPassword: "当前密码",
+    newPassword: "新密码",
+    confirmPassword: "确认密码",
+    save: "保存",
+    googleAccount: "谷歌账户",
+    googleAccountDesc: "你通过谷歌登录。邮箱和密码通过你的谷歌账户管理。",
+  },
+
+  // French (Français)
+  fr: {
+    // Navigation
+    home: "Accueil",
+    game: "Jeu",
+    dashboard: "Tableau de bord",
+    admin: "Admin",
+    settings: "Paramètres",
     
-    // Transaction types
-    purchasePlot: "购买地块",
-    buildBusinessTx: "建设",
-    incomeTx: "收入",
-    transfer: "转账",
-    withdrawal: "提款",
+    // Landing
+    title: "Construisez votre ville numérique",
+    subtitle: "sur la blockchain TON",
+    description: "Stratégie économique avec de vraies cryptomonnaies. Achetez des terrains, construisez des entreprises, créez des connexions avec d'autres joueurs et gagnez des TON.",
+    connectWallet: "Connecter le Portefeuille",
+    playNow: "Jouer Maintenant",
+    login: "Connexion",
+    register: "S'inscrire",
+    connectToPlay: "Connectez votre portefeuille pour commencer",
     
-    // Status
-    completed: "已完成",
-    pending: "待处理",
-    failed: "失败",
+    // Auth
+    loginTitle: "CONNEXION À TON CITY",
+    registerTitle: "INSCRIPTION À TON CITY",
+    email: "Email",
+    emailOrUsername: "Email ou Nom d'utilisateur",
+    username: "Nom d'utilisateur",
+    password: "Mot de passe",
+    createAccount: "Créer un Compte",
+    signIn: "Se Connecter",
+    orVia: "Ou via",
+    google: "Google",
+    waitWallet: "En attente de connexion du portefeuille...",
+    verifying: "Vérification des données...",
+    authError: "Erreur d'authentification. Vérifiez le serveur.",
     
-    // Actions
-    refresh: "刷新",
-    back: "返回",
-    confirm: "确认",
-    cancel: "取消",
-    collect: "收取收入",
+    // Features
+    buildCity: "Construire la Ville",
+    buildCityDesc: "Créez des entreprises et développez votre empire",
+    earnMoney: "Gagner de l'Argent",
+    earnMoneyDesc: "Obtenez des revenus de vos entreprises",
+    trade: "Échanger",
+    tradeDesc: "Faites des affaires avec d'autres joueurs",
+    grow: "Croître",
+    growDesc: "Développez votre entreprise sur la blockchain TON",
     
-    // Admin
-    adminPanel: "管理面板",
-    treasury: "金库",
-    totalPlotSales: "地块销售总额",
-    totalTax: "税收总额",
-    pendingWithdrawals: "待处理提款",
-    activeUsers: "活跃用户(7天)",
-    users: "用户",
-    approveWithdrawal: "批准",
-    rejectWithdrawal: "拒绝",
-    createPromo: "创建促销码",
-    announcements: "公告",
-    createAnnouncement: "创建公告",
+    // Stats
+    players: "Joueurs",
+    plotsBought: "Terrains Achetés",
+    businesses: "Entreprises",
+    tonInCirculation: "TON en Circulation",
     
-    // Zones
-    center: "中心(VIP)",
-    business: "商业区",
-    residential: "住宅区",
-    industrial: "工业区",
-    outskirts: "郊区",
+    // Game page
+    coordinates: "Coordonnées",
+    price: "Prix",
+    owner: "Propriétaire",
+    you: "Vous",
+    buyPlot: "Acheter un Terrain",
+    buildBusinessBtn: "Construire une Entreprise",
+    level: "Niveau",
+    income: "Revenu",
+    connections: "Connexions",
     
-    // Sectors
-    primary: "资源开采",
-    secondary: "制造业",
-    tertiary: "服务业",
-    quaternary: "金融科技",
+    // Settings
+    settingsTitle: "Paramètres",
+    accountManagement: "Gérer votre compte",
+    changeUsername: "Changer le Nom d'utilisateur",
+    changeEmail: "Changer l'Email",
+    changePassword: "Changer le Mot de passe",
+    linkWallet: "Lier le Portefeuille",
+    uploadAvatar: "Télécharger l'Avatar",
+    currentPassword: "Mot de passe Actuel",
+    newPassword: "Nouveau Mot de passe",
+    confirmPassword: "Confirmer le Mot de passe",
+    save: "Enregistrer",
+    googleAccount: "Compte Google",
+    googleAccountDesc: "Vous vous êtes connecté avec Google. L'email et le mot de passe sont gérés via votre compte Google.",
+  },
+
+  // German (Deutsch)
+  de: {
+    // Navigation
+    home: "Startseite",
+    game: "Spiel",
+    dashboard: "Dashboard",
+    admin: "Admin",
+    settings: "Einstellungen",
     
-    // Income table
-    incomeTable: "收入计算器",
-    grossDaily: "日毛收入",
-    netDaily: "日净收入",
-    monthly: "月收入",
-    roiDays: "投资回收(天)",
-    zone: "区域",
-  }
+    // Landing
+    title: "Baue deine digitale Stadt",
+    subtitle: "auf der TON Blockchain",
+    description: "Wirtschaftsstrategie mit echter Kryptowährung. Kaufe Land, baue Unternehmen, schaffe Verbindungen mit anderen Spielern und verdiene TON.",
+    connectWallet: "Wallet Verbinden",
+    playNow: "Jetzt Spielen",
+    login: "Anmelden",
+    register: "Registrieren",
+    connectToPlay: "Verbinde dein Wallet um zu spielen",
+    
+    // Auth
+    loginTitle: "ANMELDEN BEI TON CITY",
+    registerTitle: "REGISTRIEREN BEI TON CITY",
+    email: "E-Mail",
+    emailOrUsername: "E-Mail oder Benutzername",
+    username: "Benutzername",
+    password: "Passwort",
+    createAccount: "Konto Erstellen",
+    signIn: "Anmelden",
+    orVia: "Oder via",
+    google: "Google",
+    waitWallet: "Warten auf Wallet-Verbindung...",
+    verifying: "Daten werden überprüft...",
+    authError: "Authentifizierungsfehler. Überprüfen Sie den Server.",
+    
+    // Features
+    buildCity: "Stadt Bauen",
+    buildCityDesc: "Erstelle Unternehmen und erweitere dein Imperium",
+    earnMoney: "Geld Verdienen",
+    earnMoneyDesc: "Erhalte Einkommen von deinen Unternehmen",
+    trade: "Handeln",
+    tradeDesc: "Schließe Geschäfte mit anderen Spielern",
+    grow: "Wachsen",
+    growDesc: "Skaliere dein Geschäft auf der TON Blockchain",
+    
+    // Stats
+    players: "Spieler",
+    plotsBought: "Gekaufte Grundstücke",
+    businesses: "Unternehmen",
+    tonInCirculation: "TON im Umlauf",
+    
+    // Game page
+    coordinates: "Koordinaten",
+    price: "Preis",
+    owner: "Besitzer",
+    you: "Du",
+    buyPlot: "Grundstück Kaufen",
+    buildBusinessBtn: "Unternehmen Bauen",
+    level: "Level",
+    income: "Einkommen",
+    connections: "Verbindungen",
+    
+    // Settings
+    settingsTitle: "Einstellungen",
+    accountManagement: "Konto verwalten",
+    changeUsername: "Benutzername Ändern",
+    changeEmail: "E-Mail Ändern",
+    changePassword: "Passwort Ändern",
+    linkWallet: "Wallet Verknüpfen",
+    uploadAvatar: "Avatar Hochladen",
+    currentPassword: "Aktuelles Passwort",
+    newPassword: "Neues Passwort",
+    confirmPassword: "Passwort Bestätigen",
+    save: "Speichern",
+    googleAccount: "Google-Konto",
+    googleAccountDesc: "Sie haben sich mit Google angemeldet. E-Mail und Passwort werden über Ihr Google-Konto verwaltet.",
+  },
+
+  // Japanese (日本語)
+  ja: {
+    // Navigation
+    home: "ホーム",
+    game: "ゲーム",
+    dashboard: "ダッシュボード",
+    admin: "管理者",
+    settings: "設定",
+    
+    // Landing
+    title: "デジタル都市を建設",
+    subtitle: "TONブロックチェーン上で",
+    description: "本物の暗号通貨を使った経済戦略ゲーム。土地を購入し、ビジネスを構築し、他のプレイヤーとつながり、TONを稼ぎましょう。",
+    connectWallet: "ウォレット接続",
+    playNow: "今すぐプレイ",
+    login: "ログイン",
+    register: "登録",
+    connectToPlay: "プレイを始めるにはウォレットを接続してください",
+    
+    // Auth
+    loginTitle: "TON CITYにログイン",
+    registerTitle: "TON CITYに登録",
+    email: "メールアドレス",
+    emailOrUsername: "メールまたはユーザー名",
+    username: "ユーザー名",
+    password: "パスワード",
+    createAccount: "アカウント作成",
+    signIn: "サインイン",
+    orVia: "または",
+    google: "Google",
+    waitWallet: "ウォレット接続を待っています...",
+    verifying: "データを検証中...",
+    authError: "認証エラー。サーバーを確認してください。",
+    
+    // Features
+    buildCity: "都市を建設",
+    buildCityDesc: "ビジネスを作成し、帝国を拡大",
+    earnMoney: "お金を稼ぐ",
+    earnMoneyDesc: "ビジネスから収入を得る",
+    trade: "取引",
+    tradeDesc: "他のプレイヤーと取引する",
+    grow: "成長",
+    growDesc: "TONブロックチェーンでビジネスを拡大",
+    
+    // Stats
+    players: "プレイヤー",
+    plotsBought: "購入した土地",
+    businesses: "ビジネス",
+    tonInCirculation: "流通中のTON",
+    
+    // Game page
+    coordinates: "座標",
+    price: "価格",
+    owner: "所有者",
+    you: "あなた",
+    buyPlot: "土地を購入",
+    buildBusinessBtn: "ビジネスを構築",
+    level: "レベル",
+    income: "収入",
+    connections: "接続",
+    
+    // Settings
+    settingsTitle: "設定",
+    accountManagement: "アカウント管理",
+    changeUsername: "ユーザー名変更",
+    changeEmail: "メール変更",
+    changePassword: "パスワード変更",
+    linkWallet: "ウォレット連携",
+    uploadAvatar: "アバターアップロード",
+    currentPassword: "現在のパスワード",
+    newPassword: "新しいパスワード",
+    confirmPassword: "パスワード確認",
+    save: "保存",
+    googleAccount: "Googleアカウント",
+    googleAccountDesc: "Googleでサインインしました。メールとパスワードはGoogleアカウントで管理されます。",
+  },
+
+  // Korean (한국어)
+  ko: {
+    // Navigation
+    home: "홈",
+    game: "게임",
+    dashboard: "대시보드",
+    admin: "관리자",
+    settings: "설정",
+    
+    // Landing
+    title: "디지털 도시 건설",
+    subtitle: "TON 블록체인에서",
+    description: "실제 암호화폐로 하는 경제 전략 게임. 땅을 사고, 비즈니스를 짓고, 다른 플레이어들과 연결을 만들어 TON을 벌어보세요.",
+    connectWallet: "지갑 연결",
+    playNow: "지금 플레이",
+    login: "로그인",
+    register: "회원가입",
+    connectToPlay: "게임을 시작하려면 지갑을 연결하세요",
+    
+    // Auth
+    loginTitle: "TON CITY 로그인",
+    registerTitle: "TON CITY 회원가입",
+    email: "이메일",
+    emailOrUsername: "이메일 또는 사용자명",
+    username: "사용자명",
+    password: "비밀번호",
+    createAccount: "계정 만들기",
+    signIn: "로그인",
+    orVia: "또는",
+    google: "구글",
+    waitWallet: "지갑 연결 대기 중...",
+    verifying: "데이터 확인 중...",
+    authError: "인증 오류. 서버를 확인하세요.",
+    
+    // Features
+    buildCity: "도시 건설",
+    buildCityDesc: "비즈니스를 만들고 제국을 확장하세요",
+    earnMoney: "돈 벌기",
+    earnMoneyDesc: "비즈니스에서 수입을 얻으세요",
+    trade: "거래",
+    tradeDesc: "다른 플레이어들과 거래하세요",
+    grow: "성장",
+    growDesc: "TON 블록체인에서 비즈니스 확장",
+    
+    // Stats
+    players: "플레이어",
+    plotsBought: "구매한 땅",
+    businesses: "비즈니스",
+    tonInCirculation: "유통 중인 TON",
+    
+    // Game page
+    coordinates: "좌표",
+    price: "가격",
+    owner: "소유자",
+    you: "당신",
+    buyPlot: "땅 구매",
+    buildBusinessBtn: "비즈니스 건설",
+    level: "레벨",
+    income: "수입",
+    connections: "연결",
+    
+    // Settings
+    settingsTitle: "설정",
+    accountManagement: "계정 관리",
+    changeUsername: "사용자명 변경",
+    changeEmail: "이메일 변경",
+    changePassword: "비밀번호 변경",
+    linkWallet: "지갑 연결",
+    uploadAvatar: "아바타 업로드",
+    currentPassword: "현재 비밀번호",
+    newPassword: "새 비밀번호",
+    confirmPassword: "비밀번호 확인",
+    save: "저장",
+    googleAccount: "구글 계정",
+    googleAccountDesc: "구글로 로그인했습니다. 이메일과 비밀번호는 구글 계정에서 관리됩니다.",
+  },
 };
 
+// Hook to use translations
 export const useTranslation = (lang = 'en') => {
   const t = (key) => {
     return translations[lang]?.[key] || translations['en']?.[key] || key;
   };
+  
   return { t };
 };
 
-export default translations;
+// Available languages
+export const languages = [
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
+  { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'zh', name: '中文', flag: '🇨🇳' },
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+  { code: 'ja', name: '日本語', flag: '🇯🇵' },
+  { code: 'ko', name: '한국어', flag: '🇰🇷' },
+];
