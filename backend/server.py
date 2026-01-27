@@ -242,6 +242,10 @@ async def get_current_admin(current_user: User = Depends(get_current_user)):
     if not current_user.is_admin and current_user.wallet_address != ADMIN_WALLET:
         raise HTTPException(status_code=403, detail="Доступ запрещен: вы не администратор")
     return current_user
+
+# Alias for compatibility
+get_admin_user = get_current_admin
+
 # ==================== AUTH ROUTES ====================
 
 @api_router.post("/auth/verify-wallet")
