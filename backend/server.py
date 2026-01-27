@@ -148,6 +148,23 @@ class BuildOrder(BaseModel):
     progress: float = 0.0
     estimated_completion: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Request models
+class PurchasePlotRequest(BaseModel):
+    plot_x: int
+    plot_y: int
+
+class BuildBusinessRequest(BaseModel):
+    plot_id: str
+    business_type: str
+
+class CreateContractRequest(BaseModel):
+    seller_business_id: str
+    buyer_business_id: str
+    resource_type: str
+    amount_per_hour: float
+    price_per_unit: float
+
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
 
