@@ -9,6 +9,7 @@ import AdminPage from "@/pages/AdminPage";
 import IncomeTablePage from "@/pages/IncomeTablePage";
 import TradingPage from "@/pages/TradingPage";
 import AuthPage from '@/pages/AuthPage';
+import SettingsPage from '@/pages/SettingsPage';
 import Sidebar from '@/components/Sidebar';
 import "@/App.css";
 
