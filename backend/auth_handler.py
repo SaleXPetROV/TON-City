@@ -24,7 +24,7 @@ class EmailRegister(BaseModel):
     username: str
 
 class EmailLogin(BaseModel):
-    email: EmailStr
+    email: str  # Changed from EmailStr to str to allow username
     password: str
 
 class GoogleAuth(BaseModel):
