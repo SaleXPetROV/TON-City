@@ -118,7 +118,7 @@ export const translations = {
     registerTitle: "SIGN UP TO TON CITY",
     waitWallet: "Waiting for wallet connection...",
     verifying: "Verifying data...",
-    authError: "Auth error. Check if server is running."
+    authError: "Auth error. Check if server is running.",
     // Navigation
     home: "首页",
     game: "游戏",
