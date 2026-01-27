@@ -322,10 +322,11 @@ export default function AuthPage({ setUser }) {
                 <div className="relative text-left">
                   <Mail className="absolute left-3 top-3.5 w-5 h-5 text-text-muted" />
                   <input 
-                    type="email"
-                    placeholder="Email"
+                    type="text"
+                    placeholder={mode === 'register' ? 'Email' : (lang === 'ru' ? 'Email или Username' : 'Email or Username')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleEmailAuth()}
                     className="w-full bg-white/5 border border-white/10 p-3 pl-10 rounded-xl text-white outline-none focus:border-cyber-cyan transition-all placeholder:text-white/20"
                   />
                 </div>
@@ -337,14 +338,16 @@ export default function AuthPage({ setUser }) {
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleEmailAuth()}
                     className="w-full bg-white/5 border border-white/10 p-3 pl-10 rounded-xl text-white outline-none focus:border-cyber-cyan transition-all placeholder:text-white/20"
                   />
                 </div>
 
                 <Button 
                   onClick={handleEmailAuth}
+                  disabled={isVerifying}
                   className="w-full bg-cyber-cyan text-black font-bold py-6 hover:brightness-110 transition-all uppercase tracking-widest shadow-lg shadow-cyber-cyan/20">
-                  {mode === 'register' ? (lang === 'ru' ? 'Создать аккаунт' : 'Create Account') : (lang === 'ru' ? 'Войти' : 'Sign In')}
+                  {isVerifying ? '...' : (mode === 'register' ? (lang === 'ru' ? 'Создать аккаунт' : 'Create Account') : (lang === 'ru' ? 'Войти' : 'Sign In'))}
                 </Button>
 
                 <div className="relative flex py-2 items-center">
@@ -355,8 +358,10 @@ export default function AuthPage({ setUser }) {
 
                 <div className="grid grid-cols-2 gap-3">
                   <Button 
-                    onClick={() => toast.info('Google OAuth coming next')}
-                    variant="outline" className="border-white/10 hover:bg-white/5 py-6 text-xs uppercase tracking-widest">
+                    onClick={handleGoogleSignIn}
+                    disabled={!googleLoaded || isVerifying}
+                    variant="outline" 
+                    className="border-white/10 hover:bg-white/5 py-6 text-xs uppercase tracking-widest disabled:opacity-50">
                     <Chrome className="w-4 h-4 mr-2" /> Google
                   </Button>
                   <div className="relative bg-white/5 flex items-center justify-center rounded-xl border border-white/10 hover:border-cyber-cyan/50 transition-all overflow-hidden group">
