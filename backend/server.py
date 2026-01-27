@@ -16,6 +16,14 @@ import asyncio
 import json
 from tonsdk.utils import Address
 
+# Import TON integration and background tasks
+from ton_integration import ton_client, init_ton_client, close_ton_client, validate_ton_address
+from background_tasks import (
+    init_scheduler, start_scheduler, shutdown_scheduler, 
+    trigger_auto_collection_now
+)
+from payment_monitor import init_payment_monitor, stop_payment_monitor
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
