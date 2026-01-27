@@ -32,23 +32,23 @@ export default function LandingPage() {
   const features = [
     {
       icon: Building2,
-      title: lang === 'ru' ? 'Строй город' : 'Build City',
-      description: lang === 'ru' ? 'Создавай бизнесы и развивай свою империю' : 'Create businesses and grow your empire'
+      title: t('buildCity'),
+      description: t('buildCityDesc')
     },
     {
       icon: Coins,
-      title: lang === 'ru' ? 'Зарабатывай' : 'Earn Money',
-      description: lang === 'ru' ? 'Получай доход от своих предприятий' : 'Get income from your businesses'
+      title: t('earnMoney'),
+      description: t('earnMoneyDesc')
     },
     {
       icon: Users,
-      title: lang === 'ru' ? 'Торгуй' : 'Trade',
-      description: lang === 'ru' ? 'Заключай контракты с другими игроками' : 'Make deals with other players'
+      title: t('trade'),
+      description: t('tradeDesc')
     },
     {
       icon: TrendingUp,
-      title: lang === 'ru' ? 'Расти' : 'Grow',
-      description: lang === 'ru' ? 'Масштабируй бизнес на блокчейне TON' : 'Scale business on TON blockchain'
+      title: t('grow'),
+      description: t('growDesc')
     }
   ];
 
