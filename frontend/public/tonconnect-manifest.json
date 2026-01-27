@@ -1,8 +1,8 @@
 {
-  "url": "https://profile-settings-14.preview.emergentagent.com",
+  "url": "https://authflow-ton.preview.emergentagent.com",
   "name": "TON City Builder",
   "iconUrl": "https://ton.org/download/ton_symbol.png",
-  "termsOfUseUrl": "https://profile-settings-14.preview.emergentagent.com/terms",
-  "privacyPolicyUrl": "https://profile-settings-14.preview.emergentagent.com/privacy",
+  "termsOfUseUrl": "https://authflow-ton.preview.emergentagent.com/terms",
+  "privacyPolicyUrl": "https://authflow-ton.preview.emergentagent.com/privacy",
   "network": "mainnet"
 }
