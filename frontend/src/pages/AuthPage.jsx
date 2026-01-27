@@ -311,7 +311,7 @@ export default function AuthPage({ setUser }) {
                   <div className="relative text-left">
                     <UserCircle className="absolute left-3 top-3.5 w-5 h-5 text-cyber-cyan" />
                     <input 
-                      placeholder="Username"
+                      placeholder={lang === 'ru' ? 'Придумайте никнейм' : 'Choose Username'}
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       className="w-full bg-white/5 border border-white/10 p-3 pl-10 rounded-xl text-white outline-none focus:border-cyber-cyan transition-all placeholder:text-white/20"
