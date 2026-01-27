@@ -362,7 +362,7 @@ def test_6_link_wallet():
         log_test("Привязка кошелька", "FAIL", "Нет токена авторизации")
         return False
     
-    test_wallet = "EQTest123456789abcdef"
+    test_wallet = f"EQTest{test_id}123456789abcdef"
     wallet_data = {"wallet_address": test_wallet}
     headers = {"Authorization": f"Bearer {auth_token}"}
     
