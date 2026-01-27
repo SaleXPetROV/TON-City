@@ -22,7 +22,7 @@ function App() {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const res = await fetch('/api/api/auth/me', {
+        const res = await fetch('/api/auth/me', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -34,6 +34,8 @@ function App() {
         }
       } catch (e) {
         console.error("Auth error:", e);
+        localStorage.removeItem('token');
+        setUser(null);
       }
     }
   };
