@@ -280,6 +280,22 @@ def test_4_update_email():
     
     # Обновляем тестовые данные
     TEST_USER["email"] = new_email
+    
+    # Получаем новый токен с обновленным email
+    login_data = {
+        "email": TEST_USER["email"],
+        "password": TEST_USER["password"]
+    }
+    
+    login_result = make_request("POST", "/auth/login", login_data)
+    
+    if login_result["success"] and "token" in login_result["data"]:
+        auth_token = login_result["data"]["token"]
+        log_test("Обновление токена", "PASS", "Токен обновлен после смены email")
+    else:
+        log_test("Обновление токена", "FAIL", "Не удалось получить новый токен")
+        return False
+    
     return True
 
 def test_5_update_password():
