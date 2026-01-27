@@ -5,10 +5,14 @@ from pydantic import BaseModel, EmailStr
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 from typing import Optional
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 # --- КОНФИГУРАЦИЯ ---
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-2025")
 ALGORITHM = "HS256"
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")  # Add to .env
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")  # Add to .env
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
