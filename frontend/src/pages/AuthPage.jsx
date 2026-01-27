@@ -110,14 +110,17 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
       // Validation
       if (mode === 'register' && !username.trim()) {
         toast.error(lang === 'ru' ? 'Введите username' : 'Enter username');
+        setIsVerifying(false);
         return;
       }
       if (!email.trim()) {
         toast.error(lang === 'ru' ? 'Введите email или username' : 'Enter email or username');
+        setIsVerifying(false);
         return;
       }
       if (!password.trim()) {
         toast.error(lang === 'ru' ? 'Введите пароль' : 'Enter password');
+        setIsVerifying(false);
         return;
       }
 
@@ -131,10 +134,14 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
       );
   
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail);
+      
+      if (!res.ok) {
+        throw new Error(data.detail || 'Authentication failed');
+      }
   
       finishAuth(data);
     } catch (e) {
+      console.error("Email auth error:", e);
       toast.error(e.message || 'Auth failed');
     } finally {
       setIsVerifying(false);
