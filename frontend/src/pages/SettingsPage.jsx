@@ -280,13 +280,21 @@ export default function SettingsPage() {
           </button>
 
           <Select value={lang} onValueChange={changeLang}>
-            <SelectTrigger className="w-28 bg-panel border-grid-border text-text-main">
+            <SelectTrigger className="w-36 bg-panel border-grid-border text-text-main">
               <Globe className="w-4 h-4 mr-2" />
-              <SelectValue />
+              <SelectValue>
+                {languages.find(l => l.code === lang)?.flag} {languages.find(l => l.code === lang)?.name}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="en">EN</SelectItem>
-              <SelectItem value="ru">RU</SelectItem>
+              {languages.map(language => (
+                <SelectItem key={language.code} value={language.code}>
+                  <span className="flex items-center gap-2">
+                    <span>{language.flag}</span>
+                    <span>{language.name}</span>
+                  </span>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
