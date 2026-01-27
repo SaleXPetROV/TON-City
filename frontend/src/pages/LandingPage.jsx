@@ -184,13 +184,21 @@ export default function LandingPage() {
               className="flex items-center gap-4"
             >
               <Select value={lang} onValueChange={changeLang}>
-                <SelectTrigger className="w-28 bg-panel/30 border-white/5 text-text-main hover:border-cyber-cyan/50 transition-colors h-10">
+                <SelectTrigger className="w-32 bg-panel/30 border-white/5 text-text-main hover:border-cyber-cyan/50 transition-colors h-10">
                   <Globe className="w-4 h-4 mr-2 text-cyber-cyan" />
-                  <SelectValue />
+                  <SelectValue>
+                    {languages.find(l => l.code === lang)?.flag} {lang.toUpperCase()}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-panel border-grid-border">
-                  <SelectItem value="en">EN</SelectItem>
-                  <SelectItem value="ru">RU</SelectItem>
+                  {languages.map(language => (
+                    <SelectItem key={language.code} value={language.code}>
+                      <span className="flex items-center gap-2">
+                        <span>{language.flag}</span>
+                        <span>{language.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
