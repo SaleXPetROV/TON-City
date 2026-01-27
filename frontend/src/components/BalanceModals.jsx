@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
-=======
-import { useState } from 'react';
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,24 +21,7 @@ export function DepositModal({ isOpen, onClose, onSuccess, receiverAddress }) {
   const [amount, setAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
-  const handleDeposit = async () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      toast.error('Введите корректную сумму');
-      return;
-    }
-
-<<<<<<< HEAD
-    const targetAddress = toUserFriendlyAddress(receiverAddress);
-    if (!targetAddress) {
-      toast.error('❌ Адрес получателя не настроен администратором.');
-=======
-    if (!receiverAddress || receiverAddress === '') {
-      toast.error('❌ Адрес получателя не настроен администратором. Обратитесь к администратору для настройки кошелька в админ-панели.');
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
       return;
     }
 
@@ -54,27 +33,15 @@ export function DepositModal({ isOpen, onClose, onSuccess, receiverAddress }) {
         validUntil: Math.floor(Date.now() / 1000) + 600,
         messages: [
           {
-<<<<<<< HEAD
             address: targetAddress,
             amount: amountNano.toString(),
-=======
-            address: receiverAddress,
-            amount: amountNano.toString(),
-            payload: btoa('Deposit to TON City Builder'),
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
           },
         ],
       };
 
       await tonConnectUI.sendTransaction(transaction);
-<<<<<<< HEAD
       toast.success('Транзакция отправлена! Баланс будет пополнен автоматически через 30-60 секунд.');
 
-=======
-      
-      toast.success('Транзакция отправлена! Баланс будет пополнен автоматически через 30-60 секунд.');
-      
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
       if (onSuccess) onSuccess();
       onClose();
       setAmount('');
@@ -177,7 +144,6 @@ export function DepositModal({ isOpen, onClose, onSuccess, receiverAddress }) {
 export function WithdrawModal({ isOpen, onClose, onSuccess, currentBalance, userWallet }) {
   const [amount, setAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-<<<<<<< HEAD
   const [userDisplayAddress, setUserDisplayAddress] = useState('');
 
   useEffect(() => {
@@ -199,38 +165,6 @@ export function WithdrawModal({ isOpen, onClose, onSuccess, currentBalance, user
       loadUserAddress();
     }
   }, [isOpen, userWallet]);
-=======
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
-
-  const handleWithdraw = async () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      toast.error('Введите корректную сумму');
-      return;
-    }
-<<<<<<< HEAD
-    if (!userWallet) {
-    toast.error('Кошелёк не подключён');
-    return;
-    }
-
-    const destinationAddress = userDisplayAddress || userWallet;
-    if (!destinationAddress) {
-      toast.error('Некорректный адрес TON кошелька для вывода');
-    return;
-    }
-
-    if (parseFloat(amount) > currentBalance) {
-    toast.error('Недостаточно средств');
-    return;
-    }
-=======
-
-    if (parseFloat(amount) > currentBalance) {
-      toast.error('Недостаточно средств');
-      return;
-    }
-
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
     if (parseFloat(amount) < 1) {
       toast.error('Минимальная сумма вывода: 1 TON');
       return;
@@ -242,7 +176,6 @@ export function WithdrawModal({ isOpen, onClose, onSuccess, currentBalance, user
       await axios.post(
         `${API}/withdraw`,
         {
-<<<<<<< HEAD
           amount: parseFloat(amount),
           to_address: userWallet,
         },
@@ -250,18 +183,6 @@ export function WithdrawModal({ isOpen, onClose, onSuccess, currentBalance, user
       );
 
       toast.success('Запрос на вывод отправлен! Ожидайте подтверждения администратора.');
-=======
-          amount_ton: parseFloat(amount),
-          to_address: userWallet,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      toast.success('Запрос на вывод отправлен! Ожидайте подтверждения администратора.');
-      
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
       if (onSuccess) onSuccess();
       onClose();
       setAmount('');
@@ -340,11 +261,7 @@ export function WithdrawModal({ isOpen, onClose, onSuccess, currentBalance, user
               </div>
               <div className="flex justify-between text-xs text-gray-500 mt-2">
                 <span>На кошелёк:</span>
-<<<<<<< HEAD
                 <span className="font-mono text-right break-all">{userDisplayAddress || toUserFriendlyAddress(userWallet)}</span>
-=======
-                <span className="font-mono">{toUserFriendlyAddress(userWallet)}</span>
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
               </div>
             </div>
           )}
