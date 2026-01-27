@@ -7,23 +7,27 @@ import requests
 import json
 import base64
 import time
+import random
 from typing import Dict, Any, Optional
 
 # Конфигурация
 BASE_URL = "https://profile-settings-14.preview.emergentagent.com/api"
 TEST_DATABASE = "test_database"
 
+# Генерируем уникальные тестовые данные для каждого запуска
+test_id = random.randint(1000, 9999)
+
 # Тестовые данные
 TEST_USER = {
-    "email": "testuser@example.com",
+    "email": f"testuser{test_id}@example.com",
     "password": "testpass123",
-    "username": "testuser123"
+    "username": f"testuser{test_id}"
 }
 
 TEST_USER_2 = {
-    "email": "testuser2@example.com", 
+    "email": f"testuser2{test_id}@example.com", 
     "password": "testpass456",
-    "username": "testuser456"
+    "username": f"testuser2{test_id}"
 }
 
 # Глобальные переменные для токенов
