@@ -1,0 +1,312 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { TonConnectButton, useTonWallet } from '@tonconnect/ui-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Building2, ArrowLeft, Globe, UserCircle, Mail, Lock, Chrome, CheckCircle2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTranslation } from '@/lib/translations';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+
+export default function AuthPage({ setUser }) {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const wallet = useTonWallet();
+  const mode = searchParams.get('mode');
+  
+  const [lang, setLang] = useState(localStorage.getItem('ton_city_lang') || 'en');
+  const { t } = useTranslation(lang);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  
+  const [showUsernameStep, setShowUsernameStep] = useState(false);
+
+  const finishAuth = (data) => {
+    localStorage.setItem('token', data.token);
+    setUser(data.user);
+    toast.success(lang === 'ru' ? 'Вход выполнен' : 'Logged in');
+    navigate('/');
+  };
+
+  const handleEmailAuth = async () => {
+    try {
+      const res = await fetch(
+        mode === 'register'
+          ? '/api/api/auth/register'
+          : '/api/api/auth/login',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, username })
+        }
+      );
+  
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail);
+  
+      finishAuth(data);
+    } catch (e) {
+      toast.error(e.message || 'Auth failed');
+    }
+  };  
+
+  const handleGoogleLogin = async (credential) => {
+    const res = await fetch('/api/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential })
+    });
+  
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail);
+  
+    finishAuth(data);
+  };
+  
+
+  const changeLang = (newLang) => {
+    setLang(newLang);
+    localStorage.setItem('ton_city_lang', newLang);
+  };
+
+  const title = showUsernameStep 
+    ? (lang === 'ru' ? 'Завершение регистрации' : 'Complete Registration')
+    : (mode === 'register' ? t('registerTitle') : t('loginTitle'));
+
+  useEffect(() => {
+    const verifyWallet = async () => {
+      if (wallet?.account?.address && !isVerifying && !showUsernameStep) {
+        setIsVerifying(true);
+        try {
+          const response = await fetch('/api/api/auth/verify-wallet', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                address: wallet.account.address,
+                language: lang,
+                username: username,
+                email: email,      
+                password: password 
+              })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.detail || 'Auth failed');
+          }
+
+          if (data.status === 'need_username') {
+            setShowUsernameStep(true);
+            toast.info(lang === 'ru' ? "Придумайте никнейм для вашего города" : "Create a username for your city");
+          } else if (data.token) {
+            localStorage.setItem('token', data.token);
+            toast.success(lang === 'ru' ? "Вход выполнен!" : "Logged in!");
+            navigate('/game');
+          }
+        } catch (error) {
+          console.error("Auth error:", error);
+          toast.error(error.message === 'Failed to fetch' ? "Server Error" : error.message);
+        } finally {
+          setIsVerifying(false);
+        }
+      }
+    };
+
+    verifyWallet();
+  }, [wallet?.account?.address, lang, navigate]);
+
+  const handleFinalRegister = async () => {
+    if (!username.trim()) {
+      toast.error(lang === 'ru' ? "Введите никнейм" : "Enter username");
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      const response = await fetch('/api/api/auth/verify-wallet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          address: wallet.account.address,
+          language: lang,
+          username: username.trim(),
+          email: email,
+          password: password
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.token) {
+        localStorage.setItem('token', data.token);
+        toast.success(lang === 'ru' ? "Город основан!" : "City founded!");
+        navigate('/game');
+      } else {
+        toast.error(data.detail || "Error");
+      }
+    } catch (e) {
+      toast.error("Registration failed");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-void flex items-center justify-center p-4 relative font-rajdhani">
+      <div className="absolute top-6 right-6 z-20">
+        <Select value={lang} onValueChange={changeLang}>
+          <SelectTrigger className="w-32 bg-panel/50 border-grid-border text-white border-white/10">
+            <Globe className="w-4 h-4 mr-2 text-cyber-cyan" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-panel border-white/10 text-white">
+            <SelectItem value="en">English</SelectItem>
+            <SelectItem value="ru">Русский</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass-panel p-8 rounded-3xl w-full max-w-md border border-white/10 text-center relative shadow-2xl"
+      >
+        <button 
+          onClick={() => showUsernameStep ? setShowUsernameStep(false) : navigate('/')} 
+          className="absolute top-6 left-6 text-text-muted hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+        
+        <div className="w-16 h-16 bg-gradient-to-br from-cyber-cyan to-neon-purple rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-cyber-cyan/20">
+          <Building2 className="text-black w-10 h-10" />
+        </div>
+
+        <h1 className="font-unbounded text-xl font-bold text-white mb-8 tracking-tighter uppercase">
+          {title}
+        </h1>
+
+        <div className="space-y-4">
+          <AnimatePresence mode="wait">
+            {showUsernameStep ? (
+              <motion.div 
+                key="username-step"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-4"
+              >
+                <div className="p-4 bg-cyber-cyan/10 border border-cyber-cyan/20 rounded-xl mb-4">
+                  <p className="text-cyber-cyan text-xs uppercase tracking-widest flex items-center justify-center">
+                    <CheckCircle2 className="w-4 h-4 mr-2" /> 
+                    {lang === 'ru' ? 'Кошелек подключен' : 'Wallet Connected'}
+                  </p>
+                  <p className="text-white/40 text-[10px] mt-1 truncate">
+                    {wallet?.account?.address}
+                  </p>
+                </div>
+
+                <div className="relative text-left">
+                  <UserCircle className="absolute left-3 top-3.5 w-5 h-5 text-cyber-cyan" />
+                  <input 
+                    placeholder={lang === 'ru' ? "Придумайте никнейм" : "Enter Username"}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    autoFocus
+                    className="w-full bg-white/5 border border-cyber-cyan/50 p-3 pl-10 rounded-xl text-white outline-none shadow-[0_0_15px_rgba(0,255,243,0.05)] focus:border-cyber-cyan transition-all"
+                  />
+                </div>
+
+                <Button 
+                  onClick={handleFinalRegister}
+                  disabled={isVerifying}
+                  className="w-full bg-cyber-cyan text-black font-bold py-6 hover:brightness-110 transition-all uppercase tracking-widest shadow-lg shadow-cyber-cyan/20"
+                >
+                  {isVerifying ? (lang === 'ru' ? 'Создание...' : 'Creating...') : (lang === 'ru' ? 'Начать игру' : 'Start Game')}
+                </Button>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="login-step"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="space-y-4"
+              >
+                {mode === 'register' && (
+                  <div className="relative text-left">
+                    <UserCircle className="absolute left-3 top-3.5 w-5 h-5 text-cyber-cyan" />
+                    <input 
+                      placeholder="Username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 p-3 pl-10 rounded-xl text-white outline-none focus:border-cyber-cyan transition-all placeholder:text-white/20"
+                    />
+                  </div>
+                )}
+
+                <div className="relative text-left">
+                  <Mail className="absolute left-3 top-3.5 w-5 h-5 text-text-muted" />
+                  <input 
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 p-3 pl-10 rounded-xl text-white outline-none focus:border-cyber-cyan transition-all placeholder:text-white/20"
+                  />
+                </div>
+
+                <div className="relative text-left">
+                  <Lock className="absolute left-3 top-3.5 w-5 h-5 text-text-muted" />
+                  <input 
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 p-3 pl-10 rounded-xl text-white outline-none focus:border-cyber-cyan transition-all placeholder:text-white/20"
+                  />
+                </div>
+
+                <Button 
+                  onClick={handleEmailAuth}
+                  className="w-full bg-cyber-cyan text-black font-bold py-6 hover:brightness-110 transition-all uppercase tracking-widest shadow-lg shadow-cyber-cyan/20">
+                  {mode === 'register' ? (lang === 'ru' ? 'Создать аккаунт' : 'Create Account') : (lang === 'ru' ? 'Войти' : 'Sign In')}
+                </Button>
+
+                <div className="relative flex py-2 items-center">
+                  <div className="flex-grow border-t border-white/5"></div>
+                  <span className="mx-4 text-text-muted text-[10px] uppercase tracking-[0.2em]">{lang === 'ru' ? 'Или через' : 'Or via'}</span>
+                  <div className="flex-grow border-t border-white/5"></div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    onClick={() => toast.info('Google OAuth coming next')}
+                    variant="outline" className="border-white/10 hover:bg-white/5 py-6 text-xs uppercase tracking-widest">
+                    <Chrome className="w-4 h-4 mr-2" /> Google
+                  </Button>
+                  <div className="relative bg-white/5 flex items-center justify-center rounded-xl border border-white/10 hover:border-cyber-cyan/50 transition-all overflow-hidden group">
+                     <div className="scale-75 brightness-90 group-hover:brightness-110 transition-all">
+                       <TonConnectButton />
+                     </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="h-4 mt-2">
+            {isVerifying && (
+              <p className="text-cyber-cyan text-[10px] animate-pulse font-mono uppercase tracking-[0.3em]">
+                {lang === 'ru' ? 'Проверка данных...' : 'Verifying data...'}
+              </p>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
