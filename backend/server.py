@@ -54,6 +54,22 @@ logger = logging.getLogger(__name__)
 online_users = set()
 last_activity = {}
 
+# TON address helper functions
+def to_raw(address_str):
+    """Convert TON address to raw format"""
+    try:
+        return Address(address_str).to_string(is_user_friendly=False)
+    except Exception:
+        return address_str
+
+def to_user_friendly(raw_address):
+    """Convert raw TON address to user-friendly format"""
+    try:
+        return Address(raw_address).to_string(is_user_friendly=True, is_bounceable=True)
+    except Exception:
+        return raw_address
+
+
 class WithdrawRequest(BaseModel):
     amount: float
 
