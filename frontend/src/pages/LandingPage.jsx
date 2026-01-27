@@ -13,7 +13,6 @@ import { getGameStats } from '@/lib/api';
 import { useTranslation, languages } from '@/lib/translations';
 import { toast } from 'sonner';
 import TutorialModal from '@/components/TutorialModal';
-import { useLocation } from 'react-router-dom';
 
 export default function LandingPage({ user, setUser }) {
   const navigate = useNavigate();
