@@ -28,6 +28,30 @@ export default function LandingPage() {
   const [lang, setLang] = useState(localStorage.getItem('ton_city_lang') || 'en');
   const { t } = useTranslation(lang);
 
+  // Features array
+  const features = [
+    {
+      icon: <Building2 className="w-8 h-8" />,
+      title: lang === 'ru' ? 'Строй город' : 'Build City',
+      description: lang === 'ru' ? 'Создавай бизнесы и развивай свою империю' : 'Create businesses and grow your empire'
+    },
+    {
+      icon: <Coins className="w-8 h-8" />,
+      title: lang === 'ru' ? 'Зарабатывай' : 'Earn Money',
+      description: lang === 'ru' ? 'Получай доход от своих предприятий' : 'Get income from your businesses'
+    },
+    {
+      icon: <Users className="w-8 h-8" />,
+      title: lang === 'ru' ? 'Торгуй' : 'Trade',
+      description: lang === 'ru' ? 'Заключай контракты с другими игроками' : 'Make deals with other players'
+    },
+    {
+      icon: <TrendingUp className="w-8 h-8" />,
+      title: lang === 'ru' ? 'Расти' : 'Grow',
+      description: lang === 'ru' ? 'Масштабируй бизнес на блокчейне TON' : 'Scale business on TON blockchain'
+    }
+  ];
+
   const changeLang = (newLang) => {
     setLang(newLang);
     localStorage.setItem('ton_city_lang', newLang);
