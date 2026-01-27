@@ -418,7 +418,15 @@ async def verify_wallet(request: WalletVerifyRequest):
 @api_router.get("/auth/me")
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     """Get current user info"""
-    user_doc = await db.users.find_one({"wallet_address": current_user.wallet_address}, {"_id": 0})
+    # Ищем пользователя по разным полям
+    user_doc = None
+    if current_user.wallet_address:
+        user_doc = await db.users.find_one({"wallet_address": current_user.wallet_address})
+    elif current_user.email:
+        user_doc = await db.users.find_one({"email": current_user.email})
+    elif current_user.username:
+        user_doc = await db.users.find_one({"username": current_user.username})
+    
     if not user_doc:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -426,12 +434,16 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
     display = user_doc.get("wallet_address")
 
     return {
+        "id": user_doc.get("id", str(user_doc.get("_id"))),
+        "username": user_doc.get("username"),
+        "display_name": user_doc.get("display_name") or user_doc.get("username"),
+        "email": user_doc.get("email"),
+        "avatar": user_doc.get("avatar"),
         "wallet_address": user_doc.get("wallet_address"),
         "wallet_address_raw": raw,
         "wallet_address_display": display,
-        "display_name": user_doc.get("display_name"),
         "language": user_doc.get("language", "en"),
-        "level": user_doc.get("level", "novice"),
+        "level": user_doc.get("level", 1),
         "xp": user_doc.get("xp", 0),
         "balance_ton": user_doc.get("balance_ton", 0.0),
         "balance_game": user_doc.get("balance_game", 0.0),
@@ -440,7 +452,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         "plots_owned": user_doc.get("plots_owned", []),
         "businesses_owned": user_doc.get("businesses_owned", []),
         "is_admin": user_doc.get("is_admin", False),
-        "max_plots": PLAYER_LEVELS.get(user_doc.get("level", "novice"), {}).get("max_plots", 3)
+        "max_plots": PLAYER_LEVELS.get(user_doc.get("level", "novice"), {}).get("max_plots", 3) if PLAYER_LEVELS else 3
     }
 
 # ==================== PLOTS ROUTES ====================
