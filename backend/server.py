@@ -398,10 +398,14 @@ async def verify_wallet(request: WalletVerifyRequest):
             "status": "ok",
             "token": token,
             "user": {
+                "id": user_doc.get("id", str(user_doc.get("_id"))),
                 "username": user_doc.get("username"),
+                "display_name": user_doc.get("display_name") or user_doc.get("username"),
                 "wallet_address": wallet_address,
                 "email": user_doc.get("email"),
-                "level": user_doc.get("level", 1)
+                "avatar": user_doc.get("avatar"),
+                "level": user_doc.get("level", 1),
+                "is_admin": user_doc.get("is_admin", False)
             }
         }
 
