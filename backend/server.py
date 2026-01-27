@@ -169,6 +169,13 @@ class CreateContractRequest(BaseModel):
     amount_per_hour: float
     price_per_unit: float
 
+class TradeResourceRequest(BaseModel):
+    seller_business_id: str
+    buyer_id: str
+    resource_type: str
+    amount: float
+    price_per_unit: float
+
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
 
