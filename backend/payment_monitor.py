@@ -43,15 +43,12 @@ class TONPaymentMonitor:
         return settings
     
     async def check_incoming_transactions(self):
-=======
         """Check for new incoming TON transactions"""
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
         try:
             settings = await self.get_game_settings()
             receiver_address = settings.get("receiver_address")
             
             if not receiver_address:
-<<<<<<< HEAD
                 logger.warning("⚠️ Адрес получателя не настроен.")
                 return
             
