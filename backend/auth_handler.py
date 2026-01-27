@@ -84,17 +84,39 @@ async def register(data: EmailRegister):
     token = create_token({"sub": data.email})
     return {"token": token, "type": "bearer"}
 
-# 2. Вход через Email
+# 2. Вход через Email или Username
 @auth_router.post("/login")
 async def login(data: EmailLogin):
     from server import db
-    user = await db.users.find_one({"email": data.email})
+    
+    # Поиск пользователя по email ИЛИ username
+    user = await db.users.find_one({
+        "$or": [
+            {"email": data.email},
+            {"username": data.email}  # Если передан username в поле email
+        ]
+    })
     
     if not user or not pwd_context.verify(data.password, user.get("hashed_password", "")):
-        raise HTTPException(status_code=401, detail="Неверный Email или пароль")
+        raise HTTPException(status_code=401, detail="Неверный Email/Username или пароль")
     
-    token = create_token({"sub": data.email})
-    return {"token": token, "type": "bearer"}
+    # Создаем токен с email или username (что есть)
+    identifier = user.get("email") or user.get("username")
+    token = create_token({"sub": identifier})
+    
+    # Возвращаем токен и информацию о пользователе
+    return {
+        "token": token,
+        "type": "bearer",
+        "user": {
+            "id": user.get("id", str(user.get("_id"))),
+            "username": user.get("username"),
+            "email": user.get("email"),
+            "wallet_address": user.get("wallet_address"),
+            "avatar": user.get("avatar"),
+            "display_name": user.get("display_name") or user.get("username")
+        }
+    }
 
 # 3. Проверка/Вход через Кошелек (Wallet Check)
 @auth_router.post("/wallet-check")
