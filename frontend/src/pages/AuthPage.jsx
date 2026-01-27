@@ -136,23 +136,13 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
         }
       );
   
-      // Клонируем response для безопасного чтения
-      const resClone = res.clone();
-      let data;
+      // Читаем текст ответа и парсим как JSON
+      const responseText = await res.text();
+      let data = null;
       try {
-        data = await res.json();
+        data = JSON.parse(responseText);
       } catch (jsonErr) {
-        // Ответ не содержит JSON - пробуем получить текст
-        try {
-          const textErr = await resClone.text();
-          console.error("Response text:", textErr);
-        } catch (e) {}
-        
-        if (!res.ok) {
-          toast.error(lang === 'ru' ? 'Ошибка авторизации' : 'Auth failed');
-          setIsVerifying(false);
-          return;
-        }
+        console.error("JSON parse error:", jsonErr, "Response:", responseText);
       }
       
       if (!res.ok) {
@@ -163,6 +153,12 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
         return;
       }
   
+      if (!data) {
+        toast.error(lang === 'ru' ? 'Ошибка сервера' : 'Server error');
+        setIsVerifying(false);
+        return;
+      }
+
       await finishAuth(data);
     } catch (e) {
       console.error("Email auth error:", e);
