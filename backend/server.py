@@ -315,6 +315,12 @@ async def verify_wallet(request: WalletVerifyRequest):
                     "wallet_address": wallet_address
                 }
             
+            # Проверка уникальности username
+            existing_username = await db.users.find_one({"username": request.username})
+            if existing_username:
+                print(f"❌ Ошибка: Username {request.username} уже занят")
+                raise HTTPException(status_code=400, detail="Username already taken")
+            
             # Проверка уникальности Email (если он прислан)
             if request.email:
                 existing_email = await db.users.find_one({"email": request.email})
@@ -322,28 +328,45 @@ async def verify_wallet(request: WalletVerifyRequest):
                     print(f"❌ Ошибка: Email {request.email} уже занят")
                     raise HTTPException(status_code=400, detail="Email already registered")
 
+            # Импортируем функцию генерации аватара
+            from auth_handler import generate_avatar_from_initials, pwd_context
+            
+            # Генерируем аватар из username
+            avatar = generate_avatar_from_initials(request.username)
+            
+            # Хешируем пароль если он есть
+            hashed_password = None
+            if request.password:
+                hashed_password = pwd_context.hash(request.password)
+
             # Формируем объект для записи
+            import uuid
             new_user = {
+                "id": str(uuid.uuid4()),
                 "wallet_address": wallet_address,
                 "raw_address": raw_addr,
                 "username": request.username,
+                "display_name": request.username,
                 "email": request.email,
-                "password": request.password, # Здесь будет пароль из инпута
-                "language": request.language,
-                "is_admin": False, # Логика админа ниже
+                "hashed_password": hashed_password,
+                "avatar": avatar,
+                "language": request.language or "en",
+                "is_admin": False,
                 "balance_ton": 0.0,
                 "balance_game": 0.0,
                 "level": 1,
+                "xp": 0,
+                "total_turnover": 0,
+                "total_income": 0.0,
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "last_login": datetime.now(timezone.utc).isoformat(),
                 "plots_owned": [],
-                "businesses_owned": [],
-                "total_income": 0.0
+                "businesses_owned": []
             }
 
             # --- ЛОГ ПЕРЕД ЗАПИСЬЮ В БД ---
             print("📝 ПОПЫТКА ЗАПИСИ В MONGODB:")
-            print(json.dumps(new_user, indent=2, ensure_ascii=False))
+            print(json.dumps({**new_user, "hashed_password": "***" if hashed_password else None}, indent=2, ensure_ascii=False))
             
             try:
                 result = await db.users.insert_one(new_user)
@@ -351,7 +374,7 @@ async def verify_wallet(request: WalletVerifyRequest):
                 user_doc = new_user
             except Exception as db_err:
                 print(f"❌ КРИТИЧЕСКАЯ ОШИБКА MONGODB: {db_err}")
-                raise
+                raise HTTPException(status_code=500, detail=f"Database error: {str(db_err)}")
         else:
             print(f"✅ Пользователь найден: {user_doc.get('username')}. Обновляем вход.")
             update_data = {
