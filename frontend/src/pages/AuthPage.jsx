@@ -136,11 +136,18 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
         }
       );
   
+      // Клонируем response для безопасного чтения
+      const resClone = res.clone();
       let data;
       try {
         data = await res.json();
       } catch (jsonErr) {
-        // Ответ не содержит JSON
+        // Ответ не содержит JSON - пробуем получить текст
+        try {
+          const textErr = await resClone.text();
+          console.error("Response text:", textErr);
+        } catch (e) {}
+        
         if (!res.ok) {
           toast.error(lang === 'ru' ? 'Ошибка авторизации' : 'Auth failed');
           setIsVerifying(false);
