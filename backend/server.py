@@ -1936,6 +1936,13 @@ async def admin_update_wallet_settings(
     if receiver_address and not raw_addr:
         raise HTTPException(status_code=400, detail="Failed to parse wallet address")
     
+    await db.game_settings.update_one(
+        {"type": "ton_wallet"},
+        {
+            "$set": {
+                "network": network,
+                "receiver_address": raw_addr,
+                "receiver_address_display": display_addr,
                 "updated_at": datetime.now(timezone.utc).isoformat()
             }
         },
