@@ -154,6 +154,10 @@ class PurchasePlotRequest(BaseModel):
     plot_x: int
     plot_y: int
 
+class ResalePlotRequest(BaseModel):
+    plot_id: str
+    resale_price: float
+
 class BuildBusinessRequest(BaseModel):
     plot_id: str
     business_type: str
