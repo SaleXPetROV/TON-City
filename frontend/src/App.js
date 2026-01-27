@@ -20,23 +20,32 @@ function App() {
 
   const checkAuth = async () => {
     const token = localStorage.getItem('token');
+    console.log('[App.js] checkAuth: token =', token ? 'exists' : 'null');
+    
     if (token) {
       try {
         const res = await fetch('/api/auth/me', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
+        
+        console.log('[App.js] checkAuth: response status =', res.status);
+        
         if (res.ok) {
           const data = await res.json();
+          console.log('[App.js] checkAuth: user data =', data);
           setUser(data);
         } else {
+          console.log('[App.js] checkAuth: invalid token, removing');
           localStorage.removeItem('token');
           setUser(null);
         }
       } catch (e) {
-        console.error("Auth error:", e);
+        console.error("[App.js] checkAuth error:", e);
         localStorage.removeItem('token');
         setUser(null);
       }
+    } else {
+      setUser(null);
     }
   };
 
