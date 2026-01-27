@@ -2266,7 +2266,7 @@ from auth_handler import auth_router
 # Include routers
 app.include_router(api_router)
 app.include_router(admin_router)
-app.include_router(auth_router)  # Auth endpoints (/api/auth/...)
+app.include_router(auth_router, prefix="/api")  # Auth endpoints (/api/auth/...)
 
 # CORS
 app.add_middleware(
