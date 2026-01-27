@@ -185,9 +185,8 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
             setShowUsernameStep(true);
             toast.info(lang === 'ru' ? "Придумайте никнейм для вашего города" : "Create a username for your city");
           } else if (data.token) {
-            localStorage.setItem('token', data.token);
-            toast.success(lang === 'ru' ? "Вход выполнен!" : "Logged in!");
-            navigate('/game');
+            // Используем finishAuth для правильной обработки
+            finishAuth(data);
           }
         } catch (error) {
           console.error("Auth error:", error);
