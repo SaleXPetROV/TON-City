@@ -8,13 +8,29 @@ import { useTranslation } from '@/lib/translations';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
+// Load Google Identity Services
+const loadGoogleScript = () => {
+  return new Promise((resolve) => {
+    if (window.google) {
+      resolve(window.google);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve(window.google);
+    document.head.appendChild(script);
+  });
+};
+
 export default function AuthPage({ setUser }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const wallet = useTonWallet();
   const mode = searchParams.get('mode');
   
-  const [lang, setLang] = useState(localStorage.getItem('ton_city_lang') || 'en');
+  const [lang, setLang] = useState(localStorage.getItem('ton_city_lang') || 'ru');
   const { t } = useTranslation(lang);
   const [isVerifying, setIsVerifying] = useState(false);
 
@@ -23,20 +39,86 @@ export default function AuthPage({ setUser }) {
   const [password, setPassword] = useState('');
   
   const [showUsernameStep, setShowUsernameStep] = useState(false);
+  const [googleLoaded, setGoogleLoaded] = useState(false);
 
   const finishAuth = (data) => {
     localStorage.setItem('token', data.token);
-    setUser(data.user);
-    toast.success(lang === 'ru' ? 'Вход выполнен' : 'Logged in');
+    if (data.user) {
+      setUser(data.user);
+    }
+    toast.success(lang === 'ru' ? 'Вход выполнен!' : 'Logged in!');
     navigate('/');
+  };
+
+  // Load Google OAuth script
+  useEffect(() => {
+    loadGoogleScript().then(() => {
+      setGoogleLoaded(true);
+    });
+  }, []);
+
+  // Initialize Google Sign In button
+  useEffect(() => {
+    if (googleLoaded && window.google && !showUsernameStep) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com', // Will be configured by user
+          callback: handleGoogleCallback,
+        });
+      } catch (e) {
+        console.error('Google Sign In init error:', e);
+      }
+    }
+  }, [googleLoaded, showUsernameStep]);
+
+  const handleGoogleCallback = async (response) => {
+    try {
+      setIsVerifying(true);
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential })
+      });
+  
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail);
+  
+      finishAuth(data);
+    } catch (e) {
+      toast.error(e.message || 'Google auth failed');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleGoogleSignIn = () => {
+    if (window.google) {
+      window.google.accounts.id.prompt();
+    } else {
+      toast.error('Google Sign In not loaded');
+    }
   };
 
   const handleEmailAuth = async () => {
     try {
+      setIsVerifying(true);
+      
+      // Validation
+      if (mode === 'register' && !username.trim()) {
+        toast.error(lang === 'ru' ? 'Введите username' : 'Enter username');
+        return;
+      }
+      if (!email.trim()) {
+        toast.error(lang === 'ru' ? 'Введите email или username' : 'Enter email or username');
+        return;
+      }
+      if (!password.trim()) {
+        toast.error(lang === 'ru' ? 'Введите пароль' : 'Enter password');
+        return;
+      }
+
       const res = await fetch(
-        mode === 'register'
-          ? '/api/api/auth/register'
-          : '/api/api/auth/login',
+        mode === 'register' ? '/api/auth/register' : '/api/auth/login',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -50,20 +132,9 @@ export default function AuthPage({ setUser }) {
       finishAuth(data);
     } catch (e) {
       toast.error(e.message || 'Auth failed');
+    } finally {
+      setIsVerifying(false);
     }
-  };  
-
-  const handleGoogleLogin = async (credential) => {
-    const res = await fetch('/api/api/auth/google', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ credential })
-    });
-  
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail);
-  
-    finishAuth(data);
   };
   
 
