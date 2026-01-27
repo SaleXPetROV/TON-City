@@ -240,11 +240,19 @@ async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] =
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        wallet_address: str = payload.get("sub")
-        if not wallet_address:
+        identifier: str = payload.get("sub")
+        if not identifier:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        user_doc = await db.users.find_one({"wallet_address": wallet_address}, {"_id": 0})
+        # Ищем пользователя по разным полям (wallet_address, email, username)
+        user_doc = await db.users.find_one({
+            "$or": [
+                {"wallet_address": identifier},
+                {"email": identifier},
+                {"username": identifier}
+            ]
+        })
+        
         if not user_doc:
             raise HTTPException(status_code=404, detail="User not found")
         
