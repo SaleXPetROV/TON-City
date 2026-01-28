@@ -477,6 +477,28 @@ async def link_wallet(data: LinkWalletRequest, current_user: dict = Depends(get_
     
     return {"status": "success", "wallet_address": data.wallet_address}
 
+@auth_router.post("/unlink-wallet")
+async def unlink_wallet(current_user: dict = Depends(get_current_user_local)):
+    """Отвязка кошелька от аккаунта"""
+    from server import db
+    
+    # Проверяем, есть ли у пользователя email (иначе он потеряет доступ к аккаунту)
+    if not current_user.get("email") and not current_user.get("hashed_password"):
+        raise HTTPException(
+            status_code=400, 
+            detail="Невозможно отвязать кошелек - у вас нет email. Сначала добавьте email в настройках."
+        )
+    
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$unset": {
+            "wallet_address": "",
+            "raw_address": ""
+        }}
+    )
+    
+    return {"status": "success", "message": "Кошелек отвязан"}
+
 @auth_router.post("/upload-avatar")
 async def upload_avatar(data: UploadAvatarRequest, current_user: dict = Depends(get_current_user_local)):
     """Загрузка пользовательского аватара"""
