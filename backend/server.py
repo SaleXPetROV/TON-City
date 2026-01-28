@@ -695,6 +695,18 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
 
     raw = user_doc.get("raw_address") or to_raw(user_doc.get("wallet_address") or "")
     display = user_doc.get("wallet_address")
+    
+    # Определяем тип аутентификации
+    has_password = bool(user_doc.get("hashed_password"))
+    has_google = bool(user_doc.get("google_id"))
+    has_wallet = bool(user_doc.get("wallet_address"))
+    
+    if has_google:
+        auth_type = "google"
+    elif has_wallet and not has_password:
+        auth_type = "wallet"
+    else:
+        auth_type = "email"
 
     return {
         "id": user_doc.get("id", str(user_doc.get("_id"))),
@@ -715,7 +727,8 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         "plots_owned": user_doc.get("plots_owned", []),
         "businesses_owned": user_doc.get("businesses_owned", []),
         "is_admin": user_doc.get("is_admin", False),
-        "max_plots": PLAYER_LEVELS.get(user_doc.get("level", "novice"), {}).get("max_plots", 3) if PLAYER_LEVELS else 3
+        "max_plots": PLAYER_LEVELS.get(user_doc.get("level", "novice"), {}).get("max_plots", 3) if PLAYER_LEVELS else 3,
+        "auth_type": auth_type
     }
 
 # ==================== PLOTS ROUTES ====================
