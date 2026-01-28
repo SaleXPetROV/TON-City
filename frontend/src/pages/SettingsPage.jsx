@@ -344,8 +344,9 @@ export default function SettingsPage({ user: propUser, setUser: setAppUser, onLo
     );
   }
 
-  const isGoogleUser = user && !user.hashed_password && user.email;
-  const isWalletOnlyUser = user && user.wallet_address && !user.email;
+  const isGoogleUser = user?.auth_type === 'google';
+  const isWalletOnlyUser = user?.auth_type === 'wallet';
+  const isEmailUser = user?.auth_type === 'email';
 
   return (
     <div className="min-h-screen bg-void relative overflow-hidden font-rajdhani pb-20 lg:pb-0">
