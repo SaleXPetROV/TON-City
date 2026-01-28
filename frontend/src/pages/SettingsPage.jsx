@@ -504,7 +504,7 @@ export default function SettingsPage({ user: propUser, setUser: setAppUser, onLo
           )}
 
           {/* Password (only for email users, not Google or wallet-only) */}
-          {!isGoogleUser && !isWalletOnlyUser && (
+          {isEmailUser && (
             <div className="glass-panel rounded-2xl p-4 sm:p-8 border border-white/10">
               <div className="flex items-center gap-2 mb-4">
                 <Lock className="w-5 h-5 text-cyber-cyan" />
