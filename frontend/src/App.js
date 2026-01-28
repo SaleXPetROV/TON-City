@@ -11,6 +11,7 @@ import TradingPage from "@/pages/TradingPage";
 import AuthPage from '@/pages/AuthPage';
 import SettingsPage from '@/pages/SettingsPage';
 import Sidebar from '@/components/Sidebar';
+import MobileNav from '@/components/MobileNav';
 import "@/App.css";
 
 const manifestUrl = `${window.location.origin}/tonconnect-manifest.json`;
@@ -49,10 +50,15 @@ function App() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+  };
+
   useEffect(() => {
     checkAuth();
     
-    // Добавим слушатель на изменение localStorage (для случая когда token обновляется в другой вкладке)
+    // Слушатель на изменение localStorage
     const handleStorageChange = (e) => {
       if (e.key === 'token') {
         checkAuth();
@@ -72,7 +78,11 @@ function App() {
         <div className="noise-overlay" />
         
         <BrowserRouter>
+          {/* Desktop Sidebar */}
           {user && <Sidebar user={user} />}
+          
+          {/* Mobile Bottom Navigation */}
+          <MobileNav user={user} />
           
           <Routes>
             <Route path="/" element={<LandingPage user={user} setUser={setUser} />} />
@@ -82,7 +92,7 @@ function App() {
             <Route path="/admin" element={<AdminPage user={user} />} />
             <Route path="/income-table" element={<IncomeTablePage user={user} />} />
             <Route path="/trading" element={<TradingPage user={user} />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings" element={<SettingsPage user={user} setUser={setUser} onLogout={handleLogout} />} />
           </Routes>
         </BrowserRouter>
         
