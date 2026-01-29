@@ -592,7 +592,7 @@ export default function GamePage({ user }) {
       <WithdrawModal
         isOpen={showWithdrawModal}
         onClose={() => setShowWithdrawModal(false)}
-        balance={userBalance}
+        currentBalance={userBalance || 0}
         onSuccess={() => {
           loadCityData();
         }}
