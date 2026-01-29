@@ -1,110 +1,65 @@
 # TON City Builder - Product Requirements Document
 
 ## Original Problem Statement
-Пользователь запросил реализацию комплексной системы аутентификации и изменения в пользовательском интерфейсе для игры TON City Builder на блокчейне TON.
+Игра-стратегия на блокчейне TON, где игроки покупают землю, строят бизнесы и зарабатывают криптовалюту.
 
-## Core Requirements
+## Core Architecture (Updated 2026-01-29)
 
-### 1. Аутентификация
-- [x] Регистрация через Email + password + username
-- [x] Вход через Email/username + password
-- [x] Регистрация/вход через TonConnect
-- [ ] Регистрация/вход через Google OAuth (ОТЛОЖЕНО - требуются ключи от пользователя)
+### City System
+- **Коллекция `cities`**: Хранит "скелет" города
+  - `grid`: 2D массив (1 = земля, 0 = вода)
+  - `style`: cyber/tropical/industrial/neon
+  - `base_price`: базовая цена участка
+  - `stats`: кэшированная статистика
 
-### 2. Интерфейс после аутентификации
-- [x] После входа/регистрации перенаправление на главную страницу
-- [x] Кнопки "Вход" и "Регистрация" заменяются на кнопку с аватаром и никнеймом
-- [x] Sidebar отображается после авторизации
+- **Коллекция `plots`**: Участки привязаны к городу
+  - `city_id`: ID города
+  - `x`, `y`: координаты в grid
+  - `owner`: ID владельца
 
-### 3. Поведение Sidebar
-- [x] На главной странице всегда открыт (после авторизации)
-- [x] Содержит пункты: CITY, MAP, MARKET, TRADING, SETTINGS
+### Демо-города (5 штук)
+1. **TON Island** — форма диаманта TON (480 клеток)
+2. **Nebula Bay** — форма полумесяца (460 клеток)
+3. **Nova Archipelago** — архипелаг из 4 островов (470 клеток)
+4. **Genesis Plains** — органическая форма (450 клеток)
+5. **Crystal Reef** — органическая форма (480 клеток)
 
-### 4. Настройки пользователя (P2)
-- [ ] Смена никнейма (эндпоинт готов, UI - заглушка)
-- [ ] Смена почты и пароля (эндпоинты готовы, UI - заглушка)
-- [ ] Привязка кошелька (эндпоинт готов, UI - заглушка)
-- [ ] Загрузка аватара (эндпоинт-заглушка)
+## Technical Stack
+- **Backend**: FastAPI + MongoDB + PixiJS
+- **Frontend**: React + Tailwind + PixiJS (WebGL)
+- **Blockchain**: TON (TonConnect)
 
-### 5. Интернационализация
-- [x] Переводы на 8 языков (включая русский)
-
-## Architecture
-
+## Pages Structure
 ```
-/app/
-├── backend/
-│   ├── server.py          # FastAPI, модели, роуты, игровые константы
-│   ├── auth_handler.py    # Логика аутентификации
-│   ├── ton_integration.py # TON блокчейн интеграция
-│   └── .env               # MONGO_URL, JWT_SECRET, GOOGLE_CLIENT_ID
-├── frontend/
-│   ├── src/
-│   │   ├── App.js         # Централизованное состояние пользователя
-│   │   ├── pages/
-│   │   │   ├── AuthPage.jsx
-│   │   │   ├── LandingPage.jsx
-│   │   │   ├── GamePage.jsx
-│   │   │   └── SettingsPage.jsx (заглушка)
-│   │   ├── components/
-│   │   │   └── Sidebar.jsx
-│   │   └── lib/
-│   │       └── translations.js
-│   └── .env               # REACT_APP_BACKEND_URL
-└── test_reports/
-    └── iteration_1.json
+/                   - Landing (информация о проекте)
+/auth               - Аутентификация (email/TonConnect/Google)
+/map                - Выбор города (список с превью)
+/game/:cityId       - Игра в городе (изометрический вид)
+/settings           - Настройки пользователя
+/trading            - Торговля ресурсами
 ```
 
-## Key API Endpoints
-- `POST /api/auth/register` - Регистрация
-- `POST /api/auth/login` - Вход (email или username)
-- `GET /api/auth/me` - Данные текущего пользователя
-- `POST /api/auth/verify-wallet` - Аутентификация через TonConnect
-- `POST /api/auth/google` - Google OAuth (требует настройки)
+## API Endpoints
+- `GET /api/cities` - Список всех городов
+- `GET /api/cities/{city_id}` - Детали города
+- `GET /api/cities/{city_id}/plots` - Все участки города
+- `POST /api/cities/{city_id}/plots/{x}/{y}/buy` - Покупка участка
 
-## Database Schema (MongoDB)
-```javascript
-users: {
-  id: string,
-  username: string (unique),
-  email: string,
-  hashed_password: string,
-  wallet_address: string,
-  raw_address: string,
-  avatar: string (base64 SVG или URL),
-  level: Union[str, int],
-  xp: int,
-  balance_ton: float,
-  balance_game: float,
-  is_admin: bool
-}
-```
+## What's Implemented ✅
+- [x] Система городов с уникальными формами
+- [x] Изометрический вид (PixiJS WebGL)
+- [x] Страница выбора городов (Map)
+- [x] Аутентификация (Email/TonConnect)
+- [x] Мобильная адаптация (нижняя навигация)
+- [x] Настройки пользователя (выход, смена данных)
+- [x] Интернационализация (8 языков)
 
-## Testing Status
-- Backend: 100% (12/12 тестов)
-- Frontend: 100% (5/5 UI тестов)
-- Test credentials: test_p0_fix@example.com / test123
-
-## What's Working
-- Регистрация и вход через email/password
-- Вход по username
-- Обновление UI после авторизации (sidebar, avatar)
-- Корректные сообщения об ошибках при неверных данных
-- TonConnect интеграция
-- Интернационализация (8 языков)
-
-## Backlog (P2)
-1. **Google OAuth** - требуются GOOGLE_CLIENT_ID/SECRET от пользователя
-2. **Страница настроек** - реализовать UI для смены данных
-3. **Загрузка аватара** - реализовать загрузку на бэкенде
-4. **UI страницы /game** - убрать кнопку "Домой", переместить логотип
-5. **payment_monitor.py** - восстановить логику обработки платежей
-
-## Technical Notes
-- Frontend состояние аутентификации централизовано в App.js
-- Token хранится в localStorage
-- Hot reload включен для backend и frontend
-- Supervisor управляет сервисами
+## Backlog
+- [ ] AI-генерация спрайтов зданий
+- [ ] Google OAuth (требуются ключи)
+- [ ] Строительство бизнесов в городах
+- [ ] Торговля ресурсами между игроками
+- [ ] Загрузка пользовательских аватаров
 
 ## Last Updated
-2026-01-27
+2026-01-29
