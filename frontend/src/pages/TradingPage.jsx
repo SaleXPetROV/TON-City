@@ -93,7 +93,14 @@ export default function TradingPage({ user: propUser }) {
       
       setUser(userData);
       setBusinesses(businessesData.businesses || []);
-      setMyBusinesses((businessesData.businesses || []).filter(b => b.owner === wallet.account.address));
+      
+      // Фильтруем бизнесы по id пользователя или wallet
+      const userId = userData?.id;
+      const userWallet = wallet?.account?.address || userData?.wallet_address;
+      setMyBusinesses((businessesData.businesses || []).filter(b => 
+        b.owner === userId || b.owner === userWallet
+      ));
+      
       setBusinessTypes(typesData.business_types || {});
       setContracts(contractsData.contracts || []);
     } catch (error) {
