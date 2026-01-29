@@ -16,7 +16,7 @@ export default function MobileNav({ user }) {
 
   const navItems = [
     { icon: Home, label: t('home') || 'Home', path: '/' },
-    { icon: Map, label: t('map') || 'Map', path: '/game' },
+    { icon: Map, label: t('map') || 'Map', path: '/map' },
     { icon: ShoppingBag, label: t('market') || 'Market', path: '/trading' },
     { icon: Settings, label: t('settings') || 'Settings', path: '/settings' },
   ];
