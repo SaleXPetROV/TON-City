@@ -38,11 +38,11 @@ const RESOURCE_INFO = {
   textiles: { name: 'Текстиль', icon: '🧵', basePrice: 0.003 },
 };
 
-export default function TradingPage() {
+export default function TradingPage({ user: propUser }) {
   const navigate = useNavigate();
   const wallet = useTonWallet();
   
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(propUser);
   const [businesses, setBusinesses] = useState([]);
   const [myBusinesses, setMyBusinesses] = useState([]);
   const [businessTypes, setBusinessTypes] = useState({});
@@ -72,12 +72,14 @@ export default function TradingPage() {
   });
   
   useEffect(() => {
-    if (!wallet?.account) {
-      navigate('/');
+    // Проверяем авторизацию через token или wallet
+    const token = localStorage.getItem('token');
+    if (!token && !wallet?.account) {
+      navigate('/auth?mode=login');
       return;
     }
     loadData();
-  }, [wallet]);
+  }, [wallet, propUser]);
   
   const loadData = async () => {
     setIsLoading(true);
