@@ -40,7 +40,7 @@ export const verifyWallet = async (address, proof = null, language = 'en') => {
     language,
   });
   if (response.data.token) {
-    localStorage.setItem('ton_city_token', response.data.token);
+    localStorage.setItem('token', response.data.token);
   }
   return response.data;
 };
