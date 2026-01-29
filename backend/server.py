@@ -911,6 +911,89 @@ async def buy_city_plot(city_id: str, x: int, y: int, current_user: User = Depen
     
     return {"status": "success", "plot": plot_data, "new_balance": user.get("balance_ton", 0) - price}
 
+@api_router.post("/cities/{city_id}/plots/{x}/{y}/build")
+async def build_business_in_city(city_id: str, x: int, y: int, request: dict, current_user: User = Depends(get_current_user)):
+    """Build a business on owned plot in a city"""
+    business_type = request.get("business_type")
+    
+    if not business_type or business_type not in BUSINESS_TYPES:
+        raise HTTPException(status_code=400, detail="Invalid business type")
+    
+    bt = BUSINESS_TYPES[business_type]
+    
+    # Find the plot
+    plot = await db.plots.find_one({"city_id": city_id, "x": x, "y": y})
+    if not plot:
+        raise HTTPException(status_code=404, detail="Plot not found")
+    
+    # Get user
+    user = await db.users.find_one({"$or": [
+        {"wallet_address": current_user.wallet_address},
+        {"email": current_user.email},
+        {"username": current_user.username}
+    ]})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check ownership
+    if plot.get("owner") != str(user.get("_id")):
+        raise HTTPException(status_code=403, detail="You don't own this plot")
+    
+    # Check if business already exists
+    if plot.get("business_id"):
+        raise HTTPException(status_code=400, detail="Business already exists on this plot")
+    
+    # Check balance
+    build_cost = bt["cost"]
+    if user.get("balance_ton", 0) < build_cost:
+        raise HTTPException(status_code=400, detail="Insufficient TON balance")
+    
+    # Create business
+    business_id = f"biz_{city_id}_{x}_{y}"
+    business_data = {
+        "id": business_id,
+        "city_id": city_id,
+        "plot_id": plot["id"],
+        "plot_x": x,
+        "plot_y": y,
+        "business_type": business_type,
+        "owner": str(user.get("_id")),
+        "owner_username": user.get("username"),
+        "level": 1,
+        "built_at": datetime.now(timezone.utc).isoformat(),
+        "last_collection": datetime.now(timezone.utc).isoformat(),
+        "total_income": 0,
+        "status": "active"
+    }
+    
+    await db.businesses.insert_one(business_data.copy())
+    
+    # Update plot
+    await db.plots.update_one(
+        {"city_id": city_id, "x": x, "y": y},
+        {"$set": {"business_id": business_id, "business_type": business_type}}
+    )
+    
+    # Update user
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {
+            "$inc": {"balance_ton": -build_cost},
+            "$push": {"businesses_owned": business_id}
+        }
+    )
+    
+    return {
+        "status": "success", 
+        "business": {
+            "id": business_id,
+            "type": business_type,
+            "icon": bt["icon"],
+            "name": bt["name"]
+        },
+        "new_balance": user.get("balance_ton", 0) - build_cost
+    }
+
 # ==================== PLOTS ROUTES (Legacy) ====================
 
 @api_router.get("/plots")
