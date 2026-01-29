@@ -731,7 +731,187 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         "auth_type": auth_type
     }
 
-# ==================== PLOTS ROUTES ====================
+# ==================== CITIES ROUTES ====================
+
+from city_generator import create_demo_cities, calculate_plot_price_in_city
+
+@api_router.get("/cities")
+async def get_all_cities():
+    """Get all cities with basic info for map view"""
+    cities = await db.cities.find({}, {"_id": 0}).to_list(100)
+    
+    if not cities:
+        # Seed demo cities if none exist
+        demo_cities = create_demo_cities()
+        for city in demo_cities:
+            await db.cities.insert_one(city.copy())
+        cities = demo_cities
+    
+    # Return lightweight version for list view
+    result = []
+    for city in cities:
+        # Update stats from actual data
+        owned_plots = await db.plots.count_documents({"city_id": city["id"], "owner": {"$ne": None}})
+        total_businesses = await db.businesses.count_documents({"city_id": city["id"]})
+        
+        result.append({
+            "id": city["id"],
+            "name": city["name"],
+            "description": city["description"],
+            "style": city["style"],
+            "base_price": city["base_price"],
+            "grid_preview": city["grid"],  # For silhouette rendering
+            "stats": {
+                "total_plots": city["stats"]["total_plots"],
+                "owned_plots": owned_plots,
+                "total_businesses": total_businesses,
+                "monthly_volume": city["stats"].get("monthly_volume", 0),
+                "active_players": city["stats"].get("active_players", 0)
+            }
+        })
+    
+    return {"cities": result, "total": len(result)}
+
+@api_router.get("/cities/{city_id}")
+async def get_city(city_id: str):
+    """Get full city data including grid"""
+    city = await db.cities.find_one({"id": city_id}, {"_id": 0})
+    
+    if not city:
+        raise HTTPException(status_code=404, detail="City not found")
+    
+    return city
+
+@api_router.get("/cities/{city_id}/plots")
+async def get_city_plots(city_id: str):
+    """Get all plots for a specific city"""
+    city = await db.cities.find_one({"id": city_id}, {"_id": 0})
+    if not city:
+        raise HTTPException(status_code=404, detail="City not found")
+    
+    # Get existing plots
+    plots = await db.plots.find({"city_id": city_id}, {"_id": 0}).to_list(10000)
+    plots_map = {f"{p['x']}_{p['y']}": p for p in plots}
+    
+    # Get businesses
+    businesses = await db.businesses.find({"city_id": city_id}, {"_id": 0}).to_list(10000)
+    business_map = {b["plot_id"]: b for b in businesses}
+    
+    # Generate full plot list from grid
+    grid = city["grid"]
+    result = []
+    
+    for y, row in enumerate(grid):
+        for x, cell in enumerate(row):
+            if cell == 1:  # Land cell
+                plot_key = f"{x}_{y}"
+                existing_plot = plots_map.get(plot_key)
+                
+                if existing_plot:
+                    business = business_map.get(existing_plot.get("id"))
+                    bt = BUSINESS_TYPES.get(business["business_type"]) if business else None
+                    result.append({
+                        "id": existing_plot["id"],
+                        "x": x,
+                        "y": y,
+                        "city_id": city_id,
+                        "owner": existing_plot.get("owner"),
+                        "price": existing_plot.get("price", calculate_plot_price_in_city(city, x, y)),
+                        "is_available": existing_plot.get("is_available", True),
+                        "business_id": existing_plot.get("business_id"),
+                        "business_type": business["business_type"] if business else None,
+                        "business_icon": bt["icon"] if bt else None,
+                        "business_level": business.get("level", 1) if business else None
+                    })
+                else:
+                    # Plot doesn't exist yet in DB - create virtual entry
+                    result.append({
+                        "id": None,
+                        "x": x,
+                        "y": y,
+                        "city_id": city_id,
+                        "owner": None,
+                        "price": calculate_plot_price_in_city(city, x, y),
+                        "is_available": True,
+                        "business_id": None,
+                        "business_type": None,
+                        "business_icon": None,
+                        "business_level": None
+                    })
+    
+    return {"plots": result, "total": len(result), "city": {"id": city_id, "name": city["name"], "style": city["style"]}}
+
+@api_router.post("/cities/{city_id}/plots/{x}/{y}/buy")
+async def buy_city_plot(city_id: str, x: int, y: int, current_user: User = Depends(get_current_user)):
+    """Buy a plot in a specific city"""
+    city = await db.cities.find_one({"id": city_id}, {"_id": 0})
+    if not city:
+        raise HTTPException(status_code=404, detail="City not found")
+    
+    # Check if coordinates are valid (within grid and is land)
+    grid = city["grid"]
+    if y < 0 or y >= len(grid) or x < 0 or x >= len(grid[0]) or grid[y][x] != 1:
+        raise HTTPException(status_code=400, detail="Invalid plot coordinates")
+    
+    # Check if plot already owned
+    existing_plot = await db.plots.find_one({"city_id": city_id, "x": x, "y": y})
+    if existing_plot and existing_plot.get("owner"):
+        raise HTTPException(status_code=400, detail="Plot already owned")
+    
+    # Get user
+    user = await db.users.find_one({"$or": [
+        {"wallet_address": current_user.wallet_address},
+        {"email": current_user.email},
+        {"username": current_user.username}
+    ]})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check plot limit
+    user_plots = len(user.get("plots_owned", []))
+    max_plots = PLAYER_LEVELS.get(user.get("level", "novice"), {}).get("max_plots", 3)
+    if user_plots >= max_plots:
+        raise HTTPException(status_code=400, detail=t("max_plots_reached", user.get("language", "en")))
+    
+    # Calculate price
+    price = calculate_plot_price_in_city(city, x, y)
+    
+    # Check balance
+    if user.get("balance_ton", 0) < price:
+        raise HTTPException(status_code=400, detail="Insufficient TON balance")
+    
+    # Create or update plot
+    plot_id = f"{city_id}_{x}_{y}"
+    plot_data = {
+        "id": plot_id,
+        "city_id": city_id,
+        "x": x,
+        "y": y,
+        "price": price,
+        "owner": str(user.get("_id")),
+        "owner_username": user.get("username"),
+        "is_available": False,
+        "purchased_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.plots.update_one(
+        {"city_id": city_id, "x": x, "y": y},
+        {"$set": plot_data},
+        upsert=True
+    )
+    
+    # Update user
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {
+            "$inc": {"balance_ton": -price},
+            "$push": {"plots_owned": plot_id}
+        }
+    )
+    
+    return {"status": "success", "plot": plot_data, "new_balance": user.get("balance_ton", 0) - price}
+
+# ==================== PLOTS ROUTES (Legacy) ====================
 
 @api_router.get("/plots")
 async def get_all_plots():
