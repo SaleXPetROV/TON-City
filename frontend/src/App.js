@@ -4,6 +4,7 @@ import { TonConnectUIProvider } from "@tonconnect/ui-react";
 import { Toaster } from "@/components/ui/sonner";
 import LandingPage from "@/pages/LandingPage";
 import GamePage from "@/pages/GamePage";
+import MapPage from "@/pages/MapPage";
 import DashboardPage from "@/pages/DashboardPage";
 import AdminPage from "@/pages/AdminPage";
 import IncomeTablePage from "@/pages/IncomeTablePage";
