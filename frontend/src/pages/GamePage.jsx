@@ -1,945 +1,601 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Stage, Layer, Rect, Group, Text } from 'react-konva';
+import { Application, Container, Graphics, Text as PixiText } from 'pixi.js';
 import { 
-  MapPin, Building2, Wallet, X, ChevronLeft, ChevronRight,
-  ZoomIn, ZoomOut, Home, RefreshCw, Loader2, TrendingUp, 
-  ArrowDownToLine, ArrowUpFromLine, Users
+  MapPin, Building2, Wallet, X, ArrowLeft,
+  ZoomIn, ZoomOut, RefreshCw, Loader2, TrendingUp, 
+  ArrowDownToLine, ArrowUpFromLine, Users, Coins,
+  Info, ShoppingCart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { DepositModal, WithdrawModal } from '@/components/BalanceModals';
-import { 
-  getAllPlots, getPlotByCoords, purchasePlot, confirmPlotPurchase,
-  getBusinessTypes, buildBusiness, confirmBusinessBuild, getCurrentUser,
-  tonToNano
-} from '@/lib/api';
+import { useTranslation } from '@/lib/translations';
 import { toast } from 'sonner';
-import axios from 'axios';
 
-const GRID_SIZE = 100;
-const CELL_SIZE = 20;
-const MIN_SCALE = 0.3;
-const MAX_SCALE = 3;
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
+// Isometric helpers
+const TILE_WIDTH = 64;
+const TILE_HEIGHT = 32;
 
-export default function GamePage() {
+function cartToIso(x, y) {
+  return {
+    x: (x - y) * (TILE_WIDTH / 2),
+    y: (x + y) * (TILE_HEIGHT / 2)
+  };
+}
+
+function isoToCart(isoX, isoY) {
+  return {
+    x: Math.floor((isoX / (TILE_WIDTH / 2) + isoY / (TILE_HEIGHT / 2)) / 2),
+    y: Math.floor((isoY / (TILE_HEIGHT / 2) - isoX / (TILE_WIDTH / 2)) / 2)
+  };
+}
+
+// Style colors
+const STYLE_COLORS = {
+  cyber: { land: 0x00f0ff, landDark: 0x0088aa, water: 0x001a33, owned: 0x00ff88, business: 0xffaa00 },
+  tropical: { land: 0x4ade80, landDark: 0x22c55e, water: 0x0a2f1f, owned: 0x60e0ff, business: 0xff6b6b },
+  industrial: { land: 0xf59e0b, landDark: 0xd97706, water: 0x1a1000, owned: 0x00ffcc, business: 0xff4444 },
+  neon: { land: 0xa855f7, landDark: 0x7c3aed, water: 0x0f001a, owned: 0x00ffaa, business: 0xffdd00 }
+};
+
+export default function GamePage({ user }) {
   const navigate = useNavigate();
+  const { cityId } = useParams();
   const [tonConnectUI] = useTonConnectUI();
   const wallet = useTonWallet();
-  const [onlineCount, setOnlineCount] = useState(0);
-  const stageRef = useRef(null);
   
-  const [user, setUser] = useState(null);
+  const canvasRef = useRef(null);
+  const appRef = useRef(null);
+  const containerRef = useRef(null);
+  
+  const [city, setCity] = useState(null);
   const [plots, setPlots] = useState([]);
-  const [businessTypes, setBusinessTypes] = useState({});
   const [selectedPlot, setSelectedPlot] = useState(null);
-  const [selectedPlotDetails, setSelectedPlotDetails] = useState(null);
-  
-  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
-  const [showBuildModal, setShowBuildModal] = useState(false);
-  const [showDepositModal, setShowDepositModal] = useState(false);
-  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [receiverAddress, setReceiverAddress] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isPurchasing, setIsPurchasing] = useState(false);
-  const [isBuilding, setIsBuilding] = useState(false);
-  
+  const [loading, setLoading] = useState(true);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [viewportSize, setViewportSize] = useState({ width: 800, height: 600 });
+  
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [userBalance, setUserBalance] = useState(user?.balance_ton || 0);
+  
+  const lang = localStorage.getItem('ton_city_lang') || 'en';
+  const { t } = useTranslation(lang);
 
-  // Calculate visible cells for virtualization (memoized)
-  const visibleCells = useMemo(() => {
-    const mapWidth = viewportSize.width - 320; // Subtract right panel width
-    const cellPixelSize = CELL_SIZE * scale;
-    
-    if (cellPixelSize === 0) {
-      return { startX: 0, startY: 0, endX: GRID_SIZE, endY: GRID_SIZE };
+  // Load city data
+  useEffect(() => {
+    if (cityId) {
+      loadCityData();
+    } else {
+      // No city selected, redirect to map
+      navigate('/map');
     }
-    
-    // Calculate viewport bounds in grid coordinates
-    const startX = Math.max(0, Math.floor(-position.x / cellPixelSize));
-    const startY = Math.max(0, Math.floor(-position.y / cellPixelSize));
-    const endX = Math.min(GRID_SIZE, Math.ceil((-position.x + mapWidth) / cellPixelSize) + 1);
-    const endY = Math.min(GRID_SIZE, Math.ceil((-position.y + viewportSize.height) / cellPixelSize) + 1);
-    
-    return { startX, startY, endX, endY };
-  }, [position.x, position.y, scale, viewportSize.width, viewportSize.height]);
+  }, [cityId]);
 
-  // Load initial data
-  useEffect(() => {
-    if (!wallet?.account) {
-      navigate('/');
-      return;
-    }
-    loadData();
-  }, [wallet]);
-
-  // Handle viewport resize
-  useEffect(() => {
-    const handleResize = () => {
-      const container = document.getElementById('map-container');
-      if (container) {
-        const width = container.clientWidth || window.innerWidth - 320;
-        const height = container.clientHeight || window.innerHeight - 64; // minus header
-        setViewportSize({
-          width: Math.max(width, 400),
-          height: Math.max(height, 400),
-        });
-      }
-    };
-    
-    // Initial resize with small delay to ensure DOM is ready
-    setTimeout(handleResize, 100);
-    handleResize();
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Fetch online count and send heartbeat
-  useEffect(() => {
-    const fetchOnline = async () => {
-      try {
-        const response = await axios.get(`${API_URL}/stats/online`);
-        setOnlineCount(response.data.online_count || 0);
-      } catch (e) {
-        console.log('Could not fetch online count');
-      }
-    };
-    
-    const sendHeartbeat = async () => {
-      const token = localStorage.getItem('ton_city_token');
-      if (token) {
-        try {
-          await axios.post(`${API_URL}/stats/heartbeat`, {}, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-        } catch (e) {}
-      }
-    };
-    
-    fetchOnline();
-    sendHeartbeat();
-    
-    const interval = setInterval(() => {
-      fetchOnline();
-      sendHeartbeat();
-    }, 60000); // every minute
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadData = async () => {
-    setIsLoading(true);
+  const loadCityData = async () => {
     try {
-      const [plotsData, typesData, userData] = await Promise.all([
-        getAllPlots(),
-        getBusinessTypes(),
-        getCurrentUser().catch(() => null),
-      ]);
+      setLoading(true);
       
-      setPlots(plotsData.plots || []);
-      setBusinessTypes(typesData.business_types || {});
-      setUser(userData);
+      // Load city plots
+      const res = await fetch(`/api/cities/${cityId}/plots`);
+      if (!res.ok) throw new Error('City not found');
       
-      // Загрузить адрес получателя для пополнения
-      try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/wallet-settings/public`);
-        if (response.ok) {
-          const settings = await response.json();
-          setReceiverAddress(settings.receiver_address || '');
-        }
-      } catch (err) {
-        console.log('Could not load wallet settings');
-      }
+      const data = await res.json();
+      setCity(data.city);
+      setPlots(data.plots || []);
       
-      // Center view on the center of the map (50, 50)
-      // Use setTimeout to ensure viewport is ready
-      setTimeout(() => {
-        const centerX = 50;
-        const centerY = 50;
-        const currentViewport = {
-          width: document.getElementById('map-container')?.clientWidth || window.innerWidth - 320,
-          height: document.getElementById('map-container')?.clientHeight || window.innerHeight - 64
-        };
-        setPosition({
-          x: currentViewport.width / 2 - (centerX * CELL_SIZE),
-          y: currentViewport.height / 2 - (centerY * CELL_SIZE),
+      // Load user balance
+      const token = localStorage.getItem('token');
+      if (token) {
+        const userRes = await fetch('/api/auth/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
         });
-      }, 200);
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          setUserBalance(userData.balance_ton || 0);
+        }
+      }
     } catch (error) {
-      console.error('Failed to load data:', error);
-      toast.error('Ошибка загрузки данных');
+      console.error('Failed to load city:', error);
+      toast.error(t('cityNotFound') || 'City not found');
+      navigate('/map');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleCellClick = async (x, y) => {
-    setSelectedPlot({ x, y });
-    try {
-      const details = await getPlotByCoords(x, y);
-      setSelectedPlotDetails(details);
-    } catch (error) {
-      console.error('Failed to get plot details:', error);
-    }
+  // Initialize PixiJS
+  useEffect(() => {
+    if (!canvasRef.current || loading || !city) return;
+    
+    const initPixi = async () => {
+      // Cleanup existing app
+      if (appRef.current) {
+        appRef.current.destroy(true);
+      }
+      
+      const app = new Application();
+      await app.init({
+        width: canvasRef.current.clientWidth,
+        height: canvasRef.current.clientHeight,
+        backgroundColor: STYLE_COLORS[city.style]?.water || 0x001a33,
+        antialias: true,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true
+      });
+      
+      canvasRef.current.innerHTML = '';
+      canvasRef.current.appendChild(app.canvas);
+      appRef.current = app;
+      
+      // Create main container for zoom/pan
+      const container = new Container();
+      container.eventMode = 'static';
+      app.stage.addChild(container);
+      containerRef.current = container;
+      
+      // Draw the city
+      drawCity(container, city.style);
+      
+      // Center the view
+      centerView(app.screen.width, app.screen.height);
+      
+      // Handle resize
+      const handleResize = () => {
+        if (appRef.current && canvasRef.current) {
+          appRef.current.renderer.resize(
+            canvasRef.current.clientWidth,
+            canvasRef.current.clientHeight
+          );
+        }
+      };
+      
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    };
+    
+    initPixi();
+    
+    return () => {
+      if (appRef.current) {
+        appRef.current.destroy(true);
+        appRef.current = null;
+      }
+    };
+  }, [loading, city, plots]);
+
+  const drawCity = (container, style) => {
+    container.removeChildren();
+    
+    const colors = STYLE_COLORS[style] || STYLE_COLORS.cyber;
+    
+    // Create plots map for quick lookup
+    const plotsMap = {};
+    plots.forEach(p => {
+      plotsMap[`${p.x}_${p.y}`] = p;
+    });
+    
+    // Draw in isometric order (back to front)
+    const sortedPlots = [...plots].sort((a, b) => {
+      return (a.x + a.y) - (b.x + b.y);
+    });
+    
+    sortedPlots.forEach(plot => {
+      const { x: isoX, y: isoY } = cartToIso(plot.x, plot.y);
+      
+      const tile = new Graphics();
+      
+      // Determine tile color
+      let fillColor = colors.land;
+      if (plot.owner) {
+        fillColor = plot.business_type ? colors.business : colors.owned;
+      }
+      
+      // Draw isometric tile (diamond shape)
+      tile.fill({ color: fillColor });
+      tile.moveTo(TILE_WIDTH / 2, 0);
+      tile.lineTo(TILE_WIDTH, TILE_HEIGHT / 2);
+      tile.lineTo(TILE_WIDTH / 2, TILE_HEIGHT);
+      tile.lineTo(0, TILE_HEIGHT / 2);
+      tile.closePath();
+      tile.fill();
+      
+      // Add subtle border
+      tile.stroke({ width: 1, color: colors.landDark, alpha: 0.5 });
+      tile.moveTo(TILE_WIDTH / 2, 0);
+      tile.lineTo(TILE_WIDTH, TILE_HEIGHT / 2);
+      tile.lineTo(TILE_WIDTH / 2, TILE_HEIGHT);
+      tile.lineTo(0, TILE_HEIGHT / 2);
+      tile.closePath();
+      tile.stroke();
+      
+      tile.position.set(isoX, isoY);
+      tile.eventMode = 'static';
+      tile.cursor = 'pointer';
+      
+      // Click handler
+      tile.on('pointerdown', () => {
+        setSelectedPlot(plot);
+        if (!plot.owner) {
+          setShowPurchaseModal(true);
+        }
+      });
+      
+      // Hover effect
+      tile.on('pointerover', () => {
+        tile.alpha = 0.8;
+      });
+      tile.on('pointerout', () => {
+        tile.alpha = 1;
+      });
+      
+      container.addChild(tile);
+      
+      // Add business icon if exists
+      if (plot.business_icon) {
+        const icon = new PixiText({
+          text: plot.business_icon,
+          style: {
+            fontSize: 16,
+            fill: 0xffffff
+          }
+        });
+        icon.position.set(isoX + TILE_WIDTH / 2 - 8, isoY + TILE_HEIGHT / 2 - 12);
+        container.addChild(icon);
+      }
+    });
+  };
+
+  const centerView = (screenWidth, screenHeight) => {
+    if (!containerRef.current || plots.length === 0) return;
+    
+    // Find bounds of the city
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    plots.forEach(p => {
+      const { x: isoX, y: isoY } = cartToIso(p.x, p.y);
+      minX = Math.min(minX, isoX);
+      minY = Math.min(minY, isoY);
+      maxX = Math.max(maxX, isoX + TILE_WIDTH);
+      maxY = Math.max(maxY, isoY + TILE_HEIGHT);
+    });
+    
+    const cityWidth = maxX - minX;
+    const cityHeight = maxY - minY;
+    
+    // Calculate scale to fit
+    const scaleX = (screenWidth - 100) / cityWidth;
+    const scaleY = (screenHeight - 100) / cityHeight;
+    const newScale = Math.min(scaleX, scaleY, 1.5);
+    
+    containerRef.current.scale.set(newScale);
+    containerRef.current.position.set(
+      (screenWidth - cityWidth * newScale) / 2 - minX * newScale,
+      (screenHeight - cityHeight * newScale) / 2 - minY * newScale
+    );
+    
+    setScale(newScale);
+  };
+
+  const handleZoom = (delta) => {
+    if (!containerRef.current) return;
+    
+    const newScale = Math.max(0.3, Math.min(2, scale + delta));
+    containerRef.current.scale.set(newScale);
+    setScale(newScale);
   };
 
   const handlePurchase = async () => {
-    if (!selectedPlotDetails || !wallet?.account) return;
-    
-    // Проверка баланса
-    const plotPrice = selectedPlotDetails.price || 1;
-    if (!user || user.balance_game < plotPrice) {
-      toast.error(
-        `Недостаточно средств! Нужно ${plotPrice.toFixed(2)} TON, у вас ${(user?.balance_game || 0).toFixed(2)} TON`,
-        {
-          action: {
-            label: 'Пополнить',
-            onClick: () => setShowDepositModal(true)
-          }
-        }
-      );
-      return;
-    }
+    if (!selectedPlot || !user) return;
     
     setIsPurchasing(true);
     try {
-      // Покупка с внутреннего баланса
-      const purchaseData = await purchasePlot(selectedPlot.x, selectedPlot.y);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/cities/${cityId}/plots/${selectedPlot.x}/${selectedPlot.y}/buy`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       
-      toast.success(`Участок (${selectedPlot.x}, ${selectedPlot.y}) куплен!`);
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.detail || 'Purchase failed');
+      }
+      
+      toast.success(t('plotPurchased') || 'Plot purchased!');
       setShowPurchaseModal(false);
-      setSelectedPlotDetails(null);
-      loadData();
+      setSelectedPlot(null);
+      setUserBalance(data.new_balance);
+      
+      // Reload city data
+      loadCityData();
     } catch (error) {
-      console.error('Purchase failed:', error);
-      toast.error(error.response?.data?.detail || 'Ошибка покупки');
+      toast.error(error.message);
     } finally {
       setIsPurchasing(false);
     }
   };
 
-  const handleBuild = async (businessType) => {
-    if (!selectedPlotDetails || !wallet?.account) return;
-    
-    // Проверка баланса
-    const businessPrice = businessTypes[businessType]?.cost || 10;
-    if (!user || user.balance_game < businessPrice) {
-      toast.error(
-        `Недостаточно средств! Нужно ${businessPrice.toFixed(2)} TON, у вас ${(user?.balance_game || 0).toFixed(2)} TON`,
-        {
-          action: {
-            label: 'Пополнить',
-            onClick: () => setShowDepositModal(true)
-          }
-        }
-      );
-      return;
-    }
-    
-    setIsBuilding(true);
-    try {
-      // Строительство с внутреннего баланса
-      const buildData = await buildBusiness(selectedPlotDetails.id, businessType);
-      
-      toast.success(`${businessTypes[businessType]?.name || 'Бизнес'} построен!`);
-      setShowBuildModal(false);
-      setSelectedPlotDetails(null);
-      loadData();
-    } catch (error) {
-      console.error('Build failed:', error);
-      toast.error(error.response?.data?.detail || 'Ошибка строительства');
-    } finally {
-      setIsBuilding(false);
-    }
-  };
-
-  const handleWheel = useCallback((e) => {
-    e.evt.preventDefault();
-    const scaleBy = 1.1;
-    const stage = stageRef.current;
-    const oldScale = scale;
-    
-    const pointer = stage.getPointerPosition();
-    const mousePointTo = {
-      x: (pointer.x - position.x) / oldScale,
-      y: (pointer.y - position.y) / oldScale,
-    };
-    
-    const newScale = e.evt.deltaY < 0 
-      ? Math.min(oldScale * scaleBy, MAX_SCALE)
-      : Math.max(oldScale / scaleBy, MIN_SCALE);
-    
-    setScale(newScale);
-    setPosition({
-      x: pointer.x - mousePointTo.x * newScale,
-      y: pointer.y - mousePointTo.y * newScale,
-    });
-  }, [scale, position]);
-
-  const handleDragStart = () => setIsDragging(true);
-  const handleDragEnd = (e) => {
-    setIsDragging(false);
-    setPosition({
-      x: e.target.x(),
-      y: e.target.y(),
-    });
-  };
-
-  const centerView = () => {
-    setScale(1);
-    const centerX = 50;
-    const centerY = 50;
-    setPosition({
-      x: viewportSize.width / 2 - (centerX * CELL_SIZE),
-      y: viewportSize.height / 2 - (centerY * CELL_SIZE),
-    });
-  };
-
-  const zoomIn = () => setScale(Math.min(scale * 1.2, MAX_SCALE));
-  const zoomOut = () => setScale(Math.max(scale / 1.2, MIN_SCALE));
-
-  // Calculate plot price based on distance from center
-  const calculatePrice = (x, y) => {
-    const centerX = 50, centerY = 50;
-    const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-    const maxDistance = Math.sqrt(50 * 50 + 50 * 50);
-    return (10 + 90 * (1 - distance / maxDistance)).toFixed(2);
-  };
-
-  // Get zone color based on distance from center
-  const getZoneColor = (x, y) => {
-    const centerX = 50, centerY = 50;
-    const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-    
-    // Define zone colors
-    if (distance < 10) {
-      return '#4ECDC4'; // Center - cyan
-    } else if (distance < 25) {
-      return '#45B7D1'; // Business - blue
-    } else if (distance < 40) {
-      return '#96CEB4'; // Residential - green
-    } else if (distance < 50) {
-      return '#DDA0DD'; // Industrial - purple
-    } else {
-      return '#6B6B6B'; // Outskirts - gray
-    }
-  };
-
-  // Get cell color based on ownership and zone
-  const getCellColor = (x, y) => {
-    const plot = plots.find(p => p.x === x && p.y === y);
-    
-    // If plot is owned and has business - bright gold
-    if (plot?.business_id) {
-      return 'rgba(255, 214, 0, 0.6)';
-    }
-    
-    // If plot is owned but no business - cyan
-    if (plot && !plot.is_available && plot.owner) {
-      if (plot.owner === wallet?.account?.address) {
-        return 'rgba(0, 240, 255, 0.5)'; // My plot - brighter
-      }
-      return 'rgba(0, 240, 255, 0.3)'; // Other player's plot
-    }
-    
-    // Available or empty plot - zone color
-    const zoneColor = getZoneColor(x, y);
-    const rgb = zoneColor.match(/\w\w/g)?.map(x => parseInt(x, 16));
-    if (rgb) {
-      return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.3)`;
-    }
-    return 'rgba(112, 0, 255, 0.2)';
-  };
-
-  const getCellStroke = (x, y) => {
-    const plot = plots.find(p => p.x === x && p.y === y);
-    if (selectedPlot?.x === x && selectedPlot?.y === y) return '#00F0FF';
-    if (plot?.business_id) return '#FFD600';
-    return '#1F1F22';
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-void flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-cyber-cyan animate-spin mx-auto mb-4" />
-          <p className="text-text-muted font-rajdhani">Загрузка карты...</p>
+      <div className="min-h-screen bg-void flex items-center justify-center font-rajdhani">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 text-cyber-cyan animate-spin" />
+          <p className="text-cyber-cyan animate-pulse">{t('loadingCity') || 'Loading city...'}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-void flex flex-col">
+    <div className="h-screen bg-void relative overflow-hidden font-rajdhani flex flex-col">
       {/* Header */}
-      <header className="glass-panel border-b border-grid-border px-4 py-3 flex items-center justify-between z-20">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate('/')}
-            className="text-text-muted hover:text-text-main"
-            data-testid="back-to-home-btn"
-          >
-            <Home className="w-4 h-4 mr-2" />
-            Главная
-          </Button>
-          <div className="h-6 w-px bg-grid-border" />
-          <h1 className="font-unbounded text-lg font-bold text-text-main flex items-center gap-3">
-            TON City
-            {/* Online users count */}
-            <span className="flex items-center gap-1.5 px-2 py-1 bg-success/10 border border-success/30 rounded-lg text-sm font-normal">
-              <span className="w-2 h-2 bg-success rounded-full animate-pulse" />
-              <Users className="w-3.5 h-3.5 text-success" />
-              <span className="text-success font-mono">{onlineCount}</span>
-            </span>
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-2 md:gap-4">
-          {user && (
-            <>
-              {/* Баланс - адаптивный */}
-              <div className="flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 bg-gradient-to-r from-green-500/10 to-green-600/10 border border-green-500/30 rounded-lg">
-                <Wallet className="w-4 h-4 md:w-5 md:h-5 text-green-400" />
-                <div>
-                  <div className="text-xs text-gray-400 hidden md:block">Баланс</div>
-                  <div className="text-base md:text-lg font-bold text-green-400 font-mono">
-                    {user.balance_game?.toFixed(2) || '0.00'} TON
+      <header className="flex-shrink-0 bg-black/80 backdrop-blur-xl border-b border-white/5 px-4 py-3 z-20">
+        <div className="flex items-center justify-between max-w-screen-2xl mx-auto">
+          {/* Left: Back + City Name */}
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/map')}
+              className="text-white/60 hover:text-white"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {t('map') || 'Map'}
+            </Button>
+            
+            <div className="hidden sm:flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyber-cyan to-neon-purple flex items-center justify-center">
+                <MapPin className="w-4 h-4 text-black" />
+              </div>
+              <div>
+                <h1 className="font-unbounded text-sm font-bold text-white uppercase tracking-tight">
+                  {city?.name?.[lang] || city?.name?.en || cityId}
+                </h1>
+                <p className="text-[10px] text-cyber-cyan uppercase tracking-widest">
+                  {plots.length} {t('plots') || 'plots'}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Right: Balance + User */}
+          <div className="flex items-center gap-3">
+            {/* Balance */}
+            <div className="flex items-center gap-2 bg-white/5 px-3 py-2 rounded-lg border border-white/10">
+              <Coins className="w-4 h-4 text-signal-amber" />
+              <span className="text-white font-mono text-sm font-bold">
+                {userBalance?.toFixed(2) || '0.00'}
+              </span>
+              <span className="text-text-muted text-xs">TON</span>
+            </div>
+            
+            {/* Deposit/Withdraw */}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowDepositModal(true)}
+              className="text-green-400 hover:bg-green-400/10"
+            >
+              <ArrowDownToLine className="w-4 h-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowWithdrawModal(true)}
+              className="text-red-400 hover:bg-red-400/10"
+            >
+              <ArrowUpFromLine className="w-4 h-4" />
+            </Button>
+            
+            {/* User */}
+            {user && (
+              <div 
+                onClick={() => navigate('/settings')}
+                className="flex items-center gap-2 cursor-pointer hover:opacity-80"
+              >
+                {user.avatar ? (
+                  <img src={user.avatar} alt="" className="w-8 h-8 rounded-full border border-cyber-cyan" />
+                ) : (
+                  <div className="w-8 h-8 bg-gradient-to-br from-cyber-cyan to-neon-purple rounded-full flex items-center justify-center text-sm font-bold text-black">
+                    {(user.username || 'U')[0].toUpperCase()}
                   </div>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Button
-                    size="sm"
-                    onClick={() => setShowDepositModal(true)}
-                    className="h-6 md:h-7 px-1.5 md:px-2 bg-green-600 hover:bg-green-700 text-xs"
-                    data-testid="deposit-btn"
-                    title="Пополнить"
-                  >
-                    <ArrowDownToLine className="w-3 h-3 md:mr-1" />
-                    <span className="hidden sm:inline">Пополнить</span>
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowWithdrawModal(true)}
-                    className="h-6 md:h-7 px-1.5 md:px-2 border-orange-500/30 text-orange-400 hover:bg-orange-500/10 text-xs"
-                    data-testid="withdraw-btn"
-                    title="Вывести"
-                  >
-                    <ArrowUpFromLine className="w-3 h-3 md:mr-1" />
-                    <span className="hidden sm:inline">Вывести</span>
-                  </Button>
-                </div>
+                )}
               </div>
-              
-              <div className="h-10 w-px bg-grid-border hidden lg:block" />
-              
-              {/* Статистика - скрыта на мобильных */}
-              <div className="hidden lg:flex items-center gap-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-cyber-cyan" />
-                  <span className="text-text-muted">Участков:</span>
-                  <span className="font-mono text-cyber-cyan">{user.plots_owned?.length || 0}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-signal-amber" />
-                  <span className="text-text-muted">Бизнесов:</span>
-                  <span className="font-mono text-signal-amber">{user.businesses_owned?.length || 0}</span>
-                </div>
-              </div>
-            </>
-          )}
-          
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/trading')}
-            className="border-neon-purple/30 text-neon-purple hover:bg-neon-purple/10 hidden md:flex"
-            data-testid="trading-btn"
-          >
-            <TrendingUp className="w-4 h-4 mr-2" />
-            Торговля
-          </Button>
-          
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/dashboard')}
-            className="border-cyber-cyan/30 text-cyber-cyan hover:bg-cyber-cyan/10"
-            data-testid="dashboard-btn"
-          >
-            <Wallet className="w-4 h-4 md:mr-2" />
-            <span className="hidden sm:inline">Dashboard</span>
-          </Button>
+            )}
+          </div>
         </div>
       </header>
 
-      {/* Main content - карта по центру, список справа */}
-      <div className="flex-1 flex">
-        {/* Map - по центру */}
-        <div id="map-container" className="flex-1 relative overflow-hidden bg-void">
-          {viewportSize.width > 320 ? (
-            <Stage
-              ref={stageRef}
-              width={viewportSize.width - 320}
-              height={viewportSize.height}
-              onWheel={handleWheel}
-              draggable
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-              x={position.x}
-              y={position.y}
-              scaleX={scale}
-              scaleY={scale}
-            >
-            <Layer>
-              {/* Debug info */}
-              <Text
-                x={10}
-                y={10}
-                text={`Visible: ${visibleCells.startX},${visibleCells.startY} to ${visibleCells.endX},${visibleCells.endY} | Cells: ${(visibleCells.endX - visibleCells.startX) * (visibleCells.endY - visibleCells.startY)}`}
-                fontSize={12}
-                fill="#FFFFFF"
-                listening={false}
-              />
-              
-              {/* Grid cells - only render visible ones */}
-              {(() => {
-                const { startX, startY, endX, endY } = visibleCells;
-                const cells = [];
-                
-                // Safety check
-                if (endX <= startX || endY <= startY) {
-                  return <Text x={50} y={50} text="No cells to render!" fontSize={20} fill="#FF0000" />;
-                }
-                
-                for (let y = startY; y < endY; y++) {
-                  for (let x = startX; x < endX; x++) {
-                    const plot = plots.find(p => p.x === x && p.y === y);
-                    const isSelected = selectedPlot?.x === x && selectedPlot?.y === y;
-                    
-                    cells.push(
-                      <Group key={`${x}-${y}`}>
-                        <Rect
-                          x={x * CELL_SIZE}
-                          y={y * CELL_SIZE}
-                          width={CELL_SIZE}
-                          height={CELL_SIZE}
-                          fill={getCellColor(x, y)}
-                          stroke={isSelected ? '#00F0FF' : (plot?.business_id ? '#FFD600' : '#1F1F22')}
-                          strokeWidth={isSelected ? 2 : 0.5}
-                          onClick={() => handleCellClick(x, y)}
-                          onTap={() => handleCellClick(x, y)}
-                          perfectDrawEnabled={false}
-                          shadowForStrokeEnabled={false}
-                          listening={true}
-                        />
-                        {plot?.business_icon && scale > 0.8 && (
-                          <Text
-                            x={x * CELL_SIZE + CELL_SIZE / 2}
-                            y={y * CELL_SIZE + CELL_SIZE / 2}
-                            text={plot.business_icon}
-                            fontSize={12}
-                            offsetX={6}
-                            offsetY={6}
-                            perfectDrawEnabled={false}
-                          />
-                        )}
-                      </Group>
-                    );
-                  }
-                }
-                
-                return cells;
-              })()}
-              
-              {/* Center marker */}
-              <Group>
-                <Rect
-                  x={50 * CELL_SIZE - 5}
-                  y={50 * CELL_SIZE - 5}
-                  width={10}
-                  height={10}
-                  fill="#FF0055"
-                  stroke="#FFFFFF"
-                  strokeWidth={2}
-                />
-                <Text
-                  x={50 * CELL_SIZE}
-                  y={50 * CELL_SIZE - 20}
-                  text="CENTER"
-                  fontSize={14}
-                  fill="#FFFFFF"
-                  fontStyle="bold"
-                  offsetX={30}
-                />
-              </Group>
-            </Layer>
-          </Stage>
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-text-muted">Загрузка карты... (viewport: {viewportSize.width}x{viewportSize.height})</p>
-            </div>
-          )}
-
-          {/* Zoom controls */}
-          <div className="absolute bottom-4 left-4 flex flex-col gap-2">
-            <Button
-              size="icon"
-              variant="secondary"
-              onClick={zoomIn}
-              className="glass-panel w-10 h-10"
-              data-testid="zoom-in-btn"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              onClick={zoomOut}
-              className="glass-panel w-10 h-10"
-              data-testid="zoom-out-btn"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              onClick={centerView}
-              className="glass-panel w-10 h-10"
-              data-testid="center-view-btn"
-            >
-              <Home className="w-4 h-4" />
-            </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              onClick={loadData}
-              className="glass-panel w-10 h-10"
-              data-testid="refresh-btn"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
-          </div>
-
-          {/* Scale indicator */}
-          <div className="absolute bottom-4 right-4 glass-panel rounded-lg px-3 py-2 text-sm font-mono text-text-muted">
-            {Math.round(scale * 100)}%
-          </div>
-          
-          {/* Legend - Легенда зон */}
-          <div className="absolute top-4 left-4 glass-panel rounded-lg p-3 text-xs">
-            <div className="font-bold mb-2 text-text-main">Зоны:</div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-[#4ECDC4]"></span> Центр</div>
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-[#45B7D1]"></span> Бизнес</div>
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-[#96CEB4]"></span> Жилая</div>
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-[#DDA0DD]"></span> Промышл.</div>
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-[#6B6B6B]"></span> Окраина</div>
-            </div>
-          </div>
+      {/* Main Content - Canvas */}
+      <div className="flex-1 relative">
+        {/* Canvas Container */}
+        <div 
+          ref={canvasRef} 
+          className="absolute inset-0"
+          style={{ touchAction: 'none' }}
+        />
+        
+        {/* Zoom Controls */}
+        <div className="absolute bottom-20 lg:bottom-6 right-4 flex flex-col gap-2 z-10">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleZoom(0.2)}
+            className="bg-black/60 border-white/10 text-white hover:bg-black/80"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleZoom(-0.2)}
+            className="bg-black/60 border-white/10 text-white hover:bg-black/80"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={loadCityData}
+            className="bg-black/60 border-white/10 text-white hover:bg-black/80"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
         </div>
-
-        {/* Right Panel - Список участков */}
-        <div className="w-80 glass-panel border-l border-grid-border flex flex-col">
-          {/* Panel Header */}
-          <div className="p-4 border-b border-grid-border">
-            <h2 className="font-unbounded text-lg font-bold text-text-main mb-2">
-              Доступные участки
-            </h2>
-            <p className="text-xs text-text-muted">
-              Выберите участок для покупки
-            </p>
-          </div>
-          
-          {/* Available Plots List */}
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-3">
-              {/* Доступные участки - по 1 из каждой зоны */}
-              <div className="text-sm font-bold text-text-main mb-2">Доступные участки:</div>
-              {['center', 'business', 'residential', 'industrial', 'outskirts'].map(zone => {
-                // Generate ONE plot for each zone
-                const generateZonePlot = (zoneName) => {
-                  const centerX = 50, centerY = 50;
-                  
-                  // Define zone boundaries
-                  const zoneBounds = {
-                    center: { minDist: 0, maxDist: 10 },
-                    business: { minDist: 10, maxDist: 25 },
-                    residential: { minDist: 25, maxDist: 40 },
-                    industrial: { minDist: 40, maxDist: 50 },
-                    outskirts: { minDist: 50, maxDist: 71 }
-                  };
-                  
-                  const bounds = zoneBounds[zoneName];
-                  
-                  // Generate 1 random plot in this zone
-                  for (let i = 0; i < 100; i++) {
-                    const angle = Math.random() * Math.PI * 2;
-                    const dist = bounds.minDist + Math.random() * (bounds.maxDist - bounds.minDist);
-                    const x = Math.round(centerX + dist * Math.cos(angle));
-                    const y = Math.round(centerY + dist * Math.sin(angle));
-                    
-                    if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
-                      const plot = plots.find(p => p.x === x && p.y === y);
-                      if (!plot || plot.is_available) {
-                        const price = parseFloat(calculatePrice(x, y));
-                        return { x, y, price, zone: zoneName };
-                      }
-                    }
-                  }
-                  
-                  return null;
-                };
-                
-                const plot = generateZonePlot(zone);
-                if (!plot) return null;
-                
-                const zoneConfig = {
-                  center: { name: 'Центр', bgColor: 'bg-[#4ECDC4]/20', borderColor: 'border-[#4ECDC4]/50', textColor: 'text-[#4ECDC4]' },
-                  business: { name: 'Бизнес', bgColor: 'bg-[#45B7D1]/20', borderColor: 'border-[#45B7D1]/50', textColor: 'text-[#45B7D1]' },
-                  residential: { name: 'Жилая', bgColor: 'bg-[#96CEB4]/20', borderColor: 'border-[#96CEB4]/50', textColor: 'text-[#96CEB4]' },
-                  industrial: { name: 'Промышл.', bgColor: 'bg-[#DDA0DD]/20', borderColor: 'border-[#DDA0DD]/50', textColor: 'text-[#DDA0DD]' },
-                  outskirts: { name: 'Окраина', bgColor: 'bg-[#6B6B6B]/20', borderColor: 'border-[#6B6B6B]/50', textColor: 'text-[#6B6B6B]' }
-                };
-                
-                const config = zoneConfig[zone];
-                const isSelected = selectedPlot?.x === plot.x && selectedPlot?.y === plot.y;
-                
-                return (
-                  <button
-                    key={zone}
-                    onClick={() => handleCellClick(plot.x, plot.y)}
-                    className={`w-full text-left p-3 rounded-lg transition-all border ${
-                      isSelected
-                        ? 'bg-cyber-cyan/30 border-cyber-cyan scale-105'
-                        : `${config.bgColor} ${config.borderColor} hover:scale-102`
-                    }`}
-                  >
-                    <div className="flex flex-col gap-1">
-                      <div className={`text-xs font-bold ${config.textColor}`}>
-                        {config.name}
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="font-mono text-sm text-text-main">
-                          ({plot.x}, {plot.y})
-                        </span>
-                        <span className="text-signal-amber font-bold text-sm">
-                          {plot.price} TON
-                        </span>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </ScrollArea>
-          
-          {/* Selected Plot Details */}
-          {selectedPlotDetails && (
-            <div className="border-t border-grid-border p-4 bg-void/50">
-              <div className="flex items-center justify-between mb-3">
+        
+        {/* Selected Plot Info */}
+        <AnimatePresence>
+          {selectedPlot && !showPurchaseModal && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="absolute bottom-20 lg:bottom-6 left-4 right-20 lg:right-auto lg:w-80 bg-black/80 backdrop-blur-xl rounded-xl border border-white/10 p-4 z-10"
+            >
+              <div className="flex items-start justify-between mb-3">
                 <div>
-                  <div className="text-xs text-text-muted">Выбран участок</div>
-                  <div className="font-mono text-lg text-cyber-cyan">
-                    ({selectedPlotDetails.x}, {selectedPlotDetails.y})
-                  </div>
+                  <h3 className="font-bold text-white text-sm uppercase tracking-wide">
+                    {t('plot') || 'Plot'} ({selectedPlot.x}, {selectedPlot.y})
+                  </h3>
+                  <p className="text-xs text-text-muted">
+                    {selectedPlot.owner ? (
+                      <span className="text-green-400">{t('owned') || 'Owned'}</span>
+                    ) : (
+                      <span className="text-cyber-cyan">{t('available') || 'Available'}</span>
+                    )}
+                  </p>
                 </div>
-                <div className="text-right">
-                  <div className="text-xs text-text-muted">Цена</div>
-                  <div className="font-mono text-lg text-signal-amber">
-                    {selectedPlotDetails.price} TON
-                  </div>
-                </div>
-              </div>
-              
-              <div className="text-xs text-text-muted mb-3">
-                Зона: <span className="text-text-main capitalize">{selectedPlotDetails.zone}</span>
-              </div>
-              
-              {selectedPlotDetails.is_available ? (
                 <Button
-                  onClick={() => setShowPurchaseModal(true)}
-                  className="w-full btn-cyber"
-                  disabled={isPurchasing || !user || user.balance_game < selectedPlotDetails.price}
-                  data-testid="buy-plot-btn"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setSelectedPlot(null)}
+                  className="text-white/60 hover:text-white -mr-2 -mt-2"
                 >
-                  {isPurchasing ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <MapPin className="w-4 h-4 mr-2" />
-                  )}
-                  Купить за {selectedPlotDetails.price} TON
+                  <X className="w-4 h-4" />
                 </Button>
-              ) : selectedPlotDetails.owner === wallet?.account?.address ? (
-                selectedPlotDetails.business ? (
-                  <div className="glass-panel rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xl">{selectedPlotDetails.business_icon}</span>
-                      <span className="font-bold text-text-main">{selectedPlotDetails.business_name}</span>
-                    </div>
-                    <div className="text-xs text-text-muted">
-                      Уровень {selectedPlotDetails.business?.level || 1}
-                    </div>
-                  </div>
-                ) : (
-                  <Button
-                    onClick={() => setShowBuildModal(true)}
-                    className="w-full bg-neon-purple hover:bg-neon-purple/80"
-                    data-testid="build-btn"
-                  >
-                    <Building2 className="w-4 h-4 mr-2" />
-                    Построить бизнес
-                  </Button>
-                )
-              ) : (
-                <div className="text-center text-text-muted text-sm py-2">
-                  Этот участок уже куплен
-                </div>
-              )}
+              </div>
               
-              {user && user.balance_game < (selectedPlotDetails.price || 0) && selectedPlotDetails.is_available && (
-                <div className="mt-2 text-xs text-error text-center">
-                  Недостаточно средств. 
-                  <button 
-                    onClick={() => setShowDepositModal(true)}
-                    className="text-cyber-cyan underline ml-1"
-                  >
-                    Пополнить
-                  </button>
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-signal-amber font-mono font-bold text-lg">
+                    {selectedPlot.price?.toFixed(2)} TON
+                  </span>
                 </div>
-              )}
-            </div>
+                
+                {!selectedPlot.owner && (
+                  <Button
+                    size="sm"
+                    onClick={() => setShowPurchaseModal(true)}
+                    className="bg-cyber-cyan text-black hover:bg-cyber-cyan/80"
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    {t('buy') || 'Buy'}
+                  </Button>
+                )}
+              </div>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
       </div>
 
       {/* Purchase Modal */}
       <Dialog open={showPurchaseModal} onOpenChange={setShowPurchaseModal}>
-        <DialogContent className="glass-panel border-grid-border text-text-main">
+        <DialogContent className="bg-panel border-grid-border max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-unbounded">Покупка участка</DialogTitle>
+            <DialogTitle className="font-unbounded text-white uppercase tracking-tight">
+              {t('buyPlot') || 'Buy Plot'}
+            </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="font-mono text-4xl text-signal-amber mb-2">
-                {selectedPlotDetails?.price} TON
+          {selectedPlot && (
+            <div className="space-y-4">
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-text-muted text-sm">{t('coordinates') || 'Coordinates'}</span>
+                  <span className="text-white font-mono">({selectedPlot.x}, {selectedPlot.y})</span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-text-muted text-sm">{t('price') || 'Price'}</span>
+                  <span className="text-signal-amber font-mono font-bold">{selectedPlot.price?.toFixed(2)} TON</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-text-muted text-sm">{t('yourBalance') || 'Your Balance'}</span>
+                  <span className={`font-mono font-bold ${userBalance >= selectedPlot.price ? 'text-green-400' : 'text-red-400'}`}>
+                    {userBalance?.toFixed(2)} TON
+                  </span>
+                </div>
               </div>
-              <div className="text-text-muted">
-                Координаты: ({selectedPlotDetails?.x}, {selectedPlotDetails?.y})
-              </div>
-            </div>
-
-            <div className="glass-panel rounded-lg p-4 text-sm text-text-muted">
-              После покупки вы сможете построить бизнес на этом участке и получать доход от взаимодействия с соседними бизнесами.
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setShowPurchaseModal(false)}
-              >
-                Отмена
-              </Button>
-              <Button
-                className="flex-1 btn-cyber"
-                onClick={handlePurchase}
-                disabled={isPurchasing}
-                data-testid="confirm-purchase-btn"
-              >
-                {isPurchasing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Покупка...
-                  </>
-                ) : (
-                  'Подтвердить'
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Build Modal */}
-      <Dialog open={showBuildModal} onOpenChange={setShowBuildModal}>
-        <DialogContent className="glass-panel border-grid-border text-text-main max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="font-unbounded">Выберите бизнес</DialogTitle>
-          </DialogHeader>
-          
-          <ScrollArea className="max-h-96">
-            <div className="grid gap-3">
-              {Object.entries(businessTypes).map(([key, type]) => (
-                <button
-                  key={key}
-                  onClick={() => handleBuild(key)}
-                  disabled={isBuilding}
-                  className="glass-panel glass-panel-hover rounded-xl p-4 text-left flex items-center gap-4 transition-all hover:border-cyber-cyan/30"
-                  data-testid={`build-${key}-btn`}
+              
+              {userBalance < selectedPlot.price && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
+                  <p className="text-red-400 text-sm">
+                    {t('insufficientBalance') || 'Insufficient balance'}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setShowPurchaseModal(false);
+                      setShowDepositModal(true);
+                    }}
+                    className="mt-2 border-red-500/30 text-red-400 hover:bg-red-500/10"
+                  >
+                    {t('deposit') || 'Deposit TON'}
+                  </Button>
+                </div>
+              )}
+              
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPurchaseModal(false)}
+                  className="flex-1 border-white/10"
                 >
-                  <span className="text-4xl">{type.icon}</span>
-                  <div className="flex-1">
-                    <div className="font-unbounded font-bold text-text-main">
-                      {type.name}
-                    </div>
-                    <div className="text-sm text-text-muted">
-                      {type.requires 
-                        ? `Требует: ${type.requires}` 
-                        : 'Не требует ресурсов'}
-                    </div>
-                    <div className="text-sm text-text-muted">
-                      Производит: {type.produces}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-mono text-xl text-signal-amber">
-                      {type.cost} TON
-                    </div>
-                    <div className="text-xs text-success">
-                      +{type.base_income} TON/день
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </ScrollArea>
-
-          {isBuilding && (
-            <div className="flex items-center justify-center gap-2 text-text-muted">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Строительство...
+                  {t('cancel') || 'Cancel'}
+                </Button>
+                <Button
+                  onClick={handlePurchase}
+                  disabled={isPurchasing || userBalance < selectedPlot.price}
+                  className="flex-1 bg-cyber-cyan text-black hover:bg-cyber-cyan/80"
+                >
+                  {isPurchasing ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                  )}
+                  {t('confirmPurchase') || 'Confirm'}
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
-      
+
       {/* Deposit Modal */}
-      <DepositModal
-        isOpen={showDepositModal}
+      <DepositModal 
+        isOpen={showDepositModal} 
         onClose={() => setShowDepositModal(false)}
-        onSuccess={loadData}
-        receiverAddress={receiverAddress}
+        onSuccess={() => {
+          loadCityData();
+        }}
       />
       
       {/* Withdraw Modal */}
       <WithdrawModal
         isOpen={showWithdrawModal}
         onClose={() => setShowWithdrawModal(false)}
-        onSuccess={loadData}
-        currentBalance={user?.balance_game || 0}
-        userWallet={wallet?.account?.address}
+        balance={userBalance}
+        onSuccess={() => {
+          loadCityData();
+        }}
       />
     </div>
   );
