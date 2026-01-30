@@ -21,27 +21,39 @@ user_problem_statement: |
 backend:
   - task: "Регистрация пользователей"
     implemented: true
-    working: "NA"
+    working: true
     file: "auth_handler.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: POST /api/auth/register работает корректно. Регистрация пользователя 'NewPlayer' с email 'newplayer@test.com' успешна. Возвращает токен и данные пользователя. Корректно обрабатывает дублирующие регистрации."
 
   - task: "Marketplace - продажа ресурсов"
     implemented: true
-    working: "NA"
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: Marketplace API работает корректно. GET /api/market/listings возвращает структурированный ответ {'listings': [], 'total': 0}. POST /api/market/list корректно валидирует входные данные и требует business_id. API правильно обрабатывает ошибки авторизации и валидации."
 
   - task: "AI-генерация спрайтов"
     implemented: true
-    working: "NA"
+    working: true
     file: "sprite_generator.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: Sprites API работает корректно. GET /api/sprites/farm?level=1 возвращает спрайт фермы уровня 1 в формате base64. GET /api/sprites/construction/placeholder возвращает спрайт строительства. Система кэширования работает (cached: true). Все спрайты в правильном формате data:image/."
 
   - task: "Вход через Email/Username + password"
     implemented: true
