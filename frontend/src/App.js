@@ -100,8 +100,12 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage user={user} />} />
             <Route path="/admin" element={<AdminPage user={user} />} />
             <Route path="/income-table" element={<IncomeTablePage user={user} />} />
+            <Route path="/calculator" element={<IncomeTablePage user={user} />} />
             <Route path="/trading" element={<TradingPage user={user} />} />
             <Route path="/marketplace" element={<MarketplacePage user={user} />} />
+            <Route path="/my-businesses" element={<MyBusinessesPage user={user} />} />
+            <Route path="/leaderboard" element={<LeaderboardPage user={user} />} />
+            <Route path="/tutorial" element={<TutorialPage user={user} />} />
             <Route path="/settings" element={<SettingsPage user={user} setUser={setUser} onLogout={handleLogout} />} />
           </Routes>
         </BrowserRouter>
