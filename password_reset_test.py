@@ -59,28 +59,27 @@ def test_password_reset_request():
     """Тест 1: POST /api/auth/request-password-reset"""
     print("🧪 ТЕСТ 1: POST /api/auth/request-password-reset")
     
-    # Создаем тестового пользователя
+    # Создаем уникального тестового пользователя
     test_id = random.randint(10000, 99999)
     test_user = {
-        "email": "test@example.com",
+        "email": f"passwordtest{test_id}@example.com",
         "password": "Test123!",
-        "username": "TestPlayer"
+        "username": f"PasswordTestUser{test_id}"
     }
     
-    # Сначала регистрируем пользователя (если его еще нет)
+    # Регистрируем нового пользователя
+    print(f"   Создание пользователя: {test_user['email']}")
     register_result = make_request("POST", "/auth/register", test_user)
     
     if register_result["success"]:
-        log_test("Создание тестового пользователя", "PASS", "Пользователь test@example.com создан")
-    elif register_result["status_code"] == 400:
-        log_test("Тестовый пользователь", "INFO", "Пользователь test@example.com уже существует")
+        log_test("Создание тестового пользователя", "PASS", f"Пользователь {test_user['email']} создан")
     else:
         log_test("Создание тестового пользователя", "FAIL", f"Ошибка: {register_result}")
         return False
     
     # Тест 1A: Запрос с существующим email
-    print("   Тест 1A: Запрос с email test@example.com")
-    reset_data = {"email": "test@example.com"}
+    print(f"   Тест 1A: Запрос с email {test_user['email']}")
+    reset_data = {"email": test_user['email']}
     result = make_request("POST", "/auth/request-password-reset", reset_data)
     
     if result["status_code"] == 520:
