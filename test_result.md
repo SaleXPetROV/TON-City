@@ -283,6 +283,8 @@ test_plan:
   stuck_tasks: []
   test_all: false
   test_priority: "sequential"
+  completed_game_cycle: 
+    - "Полный игровой цикл TON City Builder"
   completed_new_endpoints: 
     - "Land Marketplace API"
     - "User Resources API" 
