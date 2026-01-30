@@ -514,3 +514,107 @@ async def upload_avatar(data: UploadAvatarRequest, current_user: dict = Depends(
     )
     
     return {"status": "success", "avatar": data.avatar_data}
+
+
+
+# ==================== PASSWORD RESET ====================
+
+class RequestPasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class VerifyResetCodeRequest(BaseModel):
+    email: EmailStr
+    code: str
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    code: str
+    new_password: str
+
+@auth_router.post("/request-password-reset")
+async def request_password_reset(data: RequestPasswordResetRequest):
+    """Запрос сброса пароля - отправляет код на email"""
+    from server import db
+    from email_service import generate_reset_code, store_reset_code, send_reset_email
+    
+    # Проверяем существование пользователя
+    user = await db.users.find_one({"email": data.email})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="user_not_found")
+    
+    # Проверяем что у пользователя есть пароль (не только wallet/google auth)
+    if not user.get("hashed_password"):
+        raise HTTPException(status_code=400, detail="no_password_account")
+    
+    # Генерируем и сохраняем код
+    code = generate_reset_code()
+    store_reset_code(data.email, code)
+    
+    # Отправляем email
+    language = user.get("language", "en")
+    email_sent = send_reset_email(data.email, code, language)
+    
+    if not email_sent:
+        raise HTTPException(status_code=500, detail="email_send_failed")
+    
+    return {"status": "success", "message": "code_sent"}
+
+@auth_router.post("/verify-reset-code")
+async def verify_reset_code_endpoint(data: VerifyResetCodeRequest):
+    """Проверка кода сброса (без смены пароля)"""
+    from email_service import verify_reset_code, store_reset_code, generate_reset_code
+    
+    # Получаем текущий код для проверки без удаления
+    from email_service import reset_codes
+    email_lower = data.email.lower()
+    
+    if email_lower not in reset_codes:
+        raise HTTPException(status_code=400, detail="no_code_requested")
+    
+    stored = reset_codes[email_lower]
+    
+    from datetime import datetime, timezone
+    if datetime.now(timezone.utc) > stored["expires_at"]:
+        del reset_codes[email_lower]
+        raise HTTPException(status_code=400, detail="code_expired")
+    
+    if stored["attempts"] >= 5:
+        del reset_codes[email_lower]
+        raise HTTPException(status_code=400, detail="too_many_attempts")
+    
+    if stored["code"] != data.code:
+        stored["attempts"] += 1
+        raise HTTPException(status_code=400, detail="invalid_code")
+    
+    # Код верный, но не удаляем его - пользователь еще будет менять пароль
+    return {"status": "success", "valid": True}
+
+@auth_router.post("/reset-password")
+async def reset_password(data: ResetPasswordRequest):
+    """Сброс пароля с использованием кода"""
+    from server import db
+    from email_service import verify_reset_code
+    
+    # Проверяем код
+    success, message = verify_reset_code(data.email, data.code)
+    
+    if not success:
+        raise HTTPException(status_code=400, detail=message)
+    
+    # Проверяем длину нового пароля
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="password_too_short")
+    
+    # Обновляем пароль
+    new_hash = pwd_context.hash(data.new_password)
+    
+    result = await db.users.update_one(
+        {"email": data.email},
+        {"$set": {"hashed_password": new_hash}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="user_not_found")
+    
+    return {"status": "success", "message": "password_changed"}
