@@ -479,7 +479,7 @@ export default function AdminPage() {
                           {(user.total_income || 0).toFixed(2)} TON income
                         </div>
                         <div className="text-xs text-text-muted">
-                          Balance: {(user.balance_game || 0).toFixed(2)} TON
+                          Balance: {(user.balance_ton || 0).toFixed(2)} TON
                         </div>
                       </div>
                       <Button

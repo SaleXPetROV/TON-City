@@ -197,7 +197,7 @@ export default function TradingPage({ user: propUser }) {
             <div className="flex items-center gap-4">
               <div className="text-right">
                 <p className="text-sm text-gray-400">Баланс</p>
-                <p className="text-lg font-bold text-neon-blue">{user?.balance_game?.toFixed(2) || '0.00'} TON</p>
+                <p className="text-lg font-bold text-neon-blue">{user?.balance_ton?.toFixed(2) || '0.00'} TON</p>
               </div>
               <Button onClick={loadData} variant="outline" size="sm">
                 <RefreshCw className="w-4 h-4" />

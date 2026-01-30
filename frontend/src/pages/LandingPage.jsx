@@ -291,7 +291,7 @@ export default function LandingPage({ user, setUser }) {
                   <div className="glass-panel rounded-xl p-4 sm:p-5 border border-neon-purple/20 bg-neon-purple/5">
                     <Coins className="w-5 h-5 text-neon-purple mb-2" />
                     <div className="text-xl sm:text-2xl font-mono text-white font-bold">
-                      {user.balance_game?.toFixed(0) || '0'}
+                      {user.balance_ton?.toFixed(0) || '0'}
                     </div>
                     <div className="text-[10px] text-text-muted uppercase tracking-wider">{t('coins') || 'Coins'}</div>
                   </div>
