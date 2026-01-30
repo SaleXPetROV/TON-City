@@ -204,7 +204,7 @@ export default function MapPage({ user }) {
               {t('worldMap') || 'World Map'}
             </h1>
             <p className="text-text-muted max-w-xl mx-auto">
-              {t('chooseCity') || 'Choose a city to explore, buy land and build your business empire'}
+              Выберите город для покупки земли и строительства бизнес-империи
             </p>
           </motion.div>
 
@@ -220,7 +220,7 @@ export default function MapPage({ user }) {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('searchCities') || 'Search cities...'}
+                placeholder="Поиск городов..."
                 className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-text-muted"
               />
             </div>
@@ -231,9 +231,9 @@ export default function MapPage({ user }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-panel border-grid-border">
-                <SelectItem value="name">{t('sortByName') || 'By Name'}</SelectItem>
-                <SelectItem value="price">{t('sortByPrice') || 'By Price'}</SelectItem>
-                <SelectItem value="players">{t('sortByPlayers') || 'By Players'}</SelectItem>
+                <SelectItem value="name">По названию</SelectItem>
+                <SelectItem value="price">По цене</SelectItem>
+                <SelectItem value="players">По игрокам</SelectItem>
               </SelectContent>
             </Select>
           </motion.div>
