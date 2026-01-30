@@ -84,7 +84,7 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
   const handleGoogleCallback = async (response) => {
     try {
       setIsVerifying(true);
-      const res = await fetch('/api/auth/google', {
+      const res = await fetch(`${API}/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential: response.credential })
@@ -131,7 +131,7 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
       }
 
       const res = await fetch(
-        mode === 'register' ? '/api/auth/register' : '/api/auth/login',
+        mode === 'register' ? `${API}/auth/register` : `${API}/auth/login`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -194,7 +194,7 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
       if (wallet?.account?.address && !isVerifying && !showUsernameStep) {
         setIsVerifying(true);
         try {
-          const response = await fetch('/api/auth/verify-wallet', {
+          const response = await fetch(`${API}/auth/verify-wallet`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
