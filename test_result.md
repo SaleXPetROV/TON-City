@@ -63,6 +63,18 @@ backend:
         agent: "testing"
         comment: "✅ ПРОТЕСТИРОВАНО: Покупка участков корректно привязывает owner к user.id (не к wallet_address). Система идентификации пользователей работает правильно."
 
+  - task: "Подсчёт полей в городах"
+    implemented: true
+    working: true
+    file: "server.py, city_generator.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: GET /api/cities корректно подсчитывает total_plots как количество клеток земли (grid == 1). Подсчёт: 427 клеток земли соответствует stats.total_plots."
+
   - task: "Вход через Email/Username + password"
     implemented: true
     working: true
