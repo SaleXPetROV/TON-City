@@ -331,10 +331,10 @@ def test_7_collect_income():
         log_test("Сбор дохода", "FAIL", "Бизнес не создан")
         return False
     
-    print(f"🧪 ТЕСТ 7: POST /api/businesses/{business_data['id']}/collect - Сбор дохода с бизнеса")
+    print(f"🧪 ТЕСТ 7: POST /api/businesses/collect/{business_data['id']} - Сбор дохода с бизнеса")
     
     headers = {"Authorization": f"Bearer {auth_token}"}
-    result = make_request("POST", f"/businesses/{business_data['id']}/collect", {}, headers)
+    result = make_request("POST", f"/businesses/collect/{business_data['id']}", {}, headers)
     
     if not result["success"]:
         log_test("Сбор дохода", "FAIL", 
@@ -344,11 +344,11 @@ def test_7_collect_income():
     data = result["data"]
     
     # Проверяем успешность сбора
-    if "income_collected" not in data and "message" not in data:
+    if "collected" not in data and "message" not in data:
         log_test("Сбор дохода", "FAIL", "Неожиданная структура ответа")
         return False
     
-    income = data.get("income_collected", 0)
+    income = data.get("collected", 0)
     message = data.get("message", "")
     
     if income > 0:
