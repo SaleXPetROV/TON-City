@@ -1909,6 +1909,182 @@ async def get_user_contracts(current_user: User = Depends(get_current_user)):
     
     return {"contracts": contracts}
 
+# ==================== MARKETPLACE ====================
+
+class MarketListing(BaseModel):
+    resource_type: str
+    amount: float
+    price_per_unit: float  # Цена устанавливается продавцом
+    business_id: str
+
+class BuyFromMarketRequest(BaseModel):
+    listing_id: str
+    amount: float
+
+@api_router.post("/market/list")
+async def create_market_listing(data: MarketListing, current_user: User = Depends(get_current_user)):
+    """Выставить ресурсы на продажу с собственной ценой"""
+    # Проверяем что бизнес принадлежит пользователю
+    business = await db.businesses.find_one({"id": data.business_id}, {"_id": 0})
+    if not business or business["owner"] != current_user.wallet_address:
+        raise HTTPException(status_code=404, detail="Business not found or not owned")
+    
+    bt = BUSINESS_TYPES.get(business["business_type"], {})
+    if bt.get("produces") != data.resource_type:
+        raise HTTPException(status_code=400, detail=f"This business doesn't produce {data.resource_type}")
+    
+    # Проверяем минимальную цену (не ниже 50% от базовой)
+    base_price = RESOURCE_PRICES.get(data.resource_type, 0.001)
+    min_price = base_price * 0.5
+    if data.price_per_unit < min_price:
+        raise HTTPException(status_code=400, detail=f"Price too low. Minimum: {min_price} TON")
+    
+    listing = {
+        "id": str(uuid.uuid4()),
+        "seller_id": current_user.wallet_address,
+        "seller_username": current_user.username or current_user.display_name,
+        "business_id": data.business_id,
+        "resource_type": data.resource_type,
+        "amount": data.amount,
+        "price_per_unit": data.price_per_unit,
+        "total_price": data.amount * data.price_per_unit,
+        "status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.market_listings.insert_one(listing.copy())
+    
+    logger.info(f"Market listing created: {data.amount} {data.resource_type} @ {data.price_per_unit} TON by {current_user.username}")
+    
+    return {"status": "listed", "listing": listing}
+
+@api_router.get("/market/listings")
+async def get_market_listings(resource_type: str = None, sort_by: str = "price"):
+    """Получить все активные предложения на рынке"""
+    query = {"status": "active"}
+    if resource_type:
+        query["resource_type"] = resource_type
+    
+    sort_field = "price_per_unit" if sort_by == "price" else "created_at"
+    sort_order = 1 if sort_by == "price" else -1
+    
+    listings = await db.market_listings.find(query, {"_id": 0}).sort(sort_field, sort_order).to_list(100)
+    
+    return {"listings": listings, "total": len(listings)}
+
+@api_router.post("/market/buy")
+async def buy_from_market(data: BuyFromMarketRequest, current_user: User = Depends(get_current_user)):
+    """Купить ресурсы с рынка"""
+    listing = await db.market_listings.find_one({"id": data.listing_id, "status": "active"}, {"_id": 0})
+    
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found or no longer active")
+    
+    if listing["seller_id"] == current_user.wallet_address:
+        raise HTTPException(status_code=400, detail="Cannot buy your own listing")
+    
+    if data.amount > listing["amount"]:
+        raise HTTPException(status_code=400, detail=f"Not enough resources. Available: {listing['amount']}")
+    
+    # Рассчитываем стоимость
+    total_cost = data.amount * listing["price_per_unit"]
+    
+    # Проверяем баланс покупателя
+    buyer = await db.users.find_one({"wallet_address": current_user.wallet_address}, {"_id": 0})
+    if buyer["balance_ton"] < total_cost:
+        raise HTTPException(status_code=400, detail=f"Insufficient balance. Need {total_cost} TON")
+    
+    # Налог с продавца (10%)
+    seller_tax = total_cost * BASE_TAX_RATE
+    seller_receives = total_cost - seller_tax
+    
+    # Обновляем баланс покупателя
+    await db.users.update_one(
+        {"wallet_address": current_user.wallet_address},
+        {"$inc": {"balance_ton": -total_cost}}
+    )
+    
+    # Обновляем баланс продавца
+    await db.users.update_one(
+        {"wallet_address": listing["seller_id"]},
+        {"$inc": {"balance_ton": seller_receives, "total_income": seller_receives}}
+    )
+    
+    # Обновляем листинг
+    new_amount = listing["amount"] - data.amount
+    if new_amount <= 0:
+        await db.market_listings.update_one(
+            {"id": data.listing_id},
+            {"$set": {"status": "sold", "sold_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    else:
+        await db.market_listings.update_one(
+            {"id": data.listing_id},
+            {"$set": {"amount": new_amount, "total_price": new_amount * listing["price_per_unit"]}}
+        )
+    
+    # Налог в казну
+    await db.admin_stats.update_one(
+        {"type": "treasury"},
+        {"$inc": {"market_tax": seller_tax, "total_tax": seller_tax}},
+        upsert=True
+    )
+    
+    # Записываем транзакцию
+    tx = {
+        "id": str(uuid.uuid4()),
+        "tx_type": "market_purchase",
+        "from_address": current_user.wallet_address,
+        "to_address": listing["seller_id"],
+        "amount_ton": total_cost,
+        "tax": seller_tax,
+        "resource_type": listing["resource_type"],
+        "resource_amount": data.amount,
+        "listing_id": data.listing_id,
+        "status": "completed",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.transactions.insert_one(tx)
+    
+    logger.info(f"Market purchase: {data.amount} {listing['resource_type']} for {total_cost} TON")
+    
+    return {
+        "status": "purchased",
+        "amount": data.amount,
+        "resource_type": listing["resource_type"],
+        "total_paid": total_cost,
+        "seller_received": seller_receives,
+        "tax": seller_tax
+    }
+
+@api_router.delete("/market/listing/{listing_id}")
+async def cancel_market_listing(listing_id: str, current_user: User = Depends(get_current_user)):
+    """Отменить свой листинг"""
+    listing = await db.market_listings.find_one({"id": listing_id}, {"_id": 0})
+    
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    if listing["seller_id"] != current_user.wallet_address:
+        raise HTTPException(status_code=403, detail="Not your listing")
+    
+    await db.market_listings.update_one(
+        {"id": listing_id},
+        {"$set": {"status": "cancelled", "cancelled_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"status": "cancelled", "listing_id": listing_id}
+
+@api_router.get("/market/my-listings")
+async def get_my_listings(current_user: User = Depends(get_current_user)):
+    """Получить свои листинги"""
+    listings = await db.market_listings.find(
+        {"seller_id": current_user.wallet_address},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    
+    return {"listings": listings}
+
 # ==================== WITHDRAWAL ROUTES ====================
 
 @api_router.post("/withdraw")
