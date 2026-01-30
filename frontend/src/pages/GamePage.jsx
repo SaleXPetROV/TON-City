@@ -360,7 +360,7 @@ export default function GamePage({ user }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Build failed');
       
-      toast.success(t('businessBuilt') || 'Business built!');
+      toast.success('Бизнес построен!');
       setShowBuildModal(false);
       setSelectedPlot(null);
       setSelectedBusinessType(null);
