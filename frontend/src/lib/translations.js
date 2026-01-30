@@ -276,6 +276,18 @@ export const translations = {
     passwordTooShort: "Пароль слишком короткий",
     passwordUpdated: "Пароль обновлён!",
     avatarUpdated: "Аватар обновлён!",
+    
+    // Password Reset
+    forgotPassword: "Забыли пароль?",
+    passwordRecovery: "Восстановление пароля",
+    sendCode: "Отправить код",
+    enterCode: "Введите код",
+    codeSent: "Код отправлен на ваш email",
+    invalidCode: "Неверный код",
+    codeExpired: "Код истёк",
+    verifyCode: "Подтвердить",
+    passwordChanged: "Пароль успешно изменён!",
+    userNotFound: "Пользователь не найден",
   },
 
   // Spanish (Español)
