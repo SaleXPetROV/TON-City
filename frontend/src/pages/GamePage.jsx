@@ -419,11 +419,13 @@ export default function GamePage({ user }) {
               <span className="text-text-muted text-xs">TON</span>
             </div>
             
-            <Button size="sm" variant="ghost" onClick={() => setShowDepositModal(true)} className="text-green-400 hover:bg-green-400/10">
+            <Button size="sm" variant="ghost" onClick={() => setShowDepositModal(true)} className="text-green-400 hover:bg-green-400/10 gap-1">
               <ArrowDownToLine className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs">Пополнить</span>
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setShowWithdrawModal(true)} className="text-red-400 hover:bg-red-400/10">
+            <Button size="sm" variant="ghost" onClick={() => setShowWithdrawModal(true)} className="text-red-400 hover:bg-red-400/10 gap-1">
               <ArrowUpFromLine className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs">Вывести</span>
             </Button>
             
             {user && (
