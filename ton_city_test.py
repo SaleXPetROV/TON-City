@@ -185,6 +185,9 @@ def test_1_get_jwt_token():
     auth_token = data["token"]
     user_data = user
     
+    # Устанавливаем баланс пользователя
+    set_test_user_balance()
+    
     log_test("Получение JWT токена", "PASS", 
             f"Токен получен для пользователя {user.get('username')} (ID: {user.get('id')})")
     return True
