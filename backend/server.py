@@ -1035,7 +1035,7 @@ async def build_business_in_city(city_id: str, x: int, y: int, request: dict, cu
         "plot_x": x,
         "plot_y": y,
         "business_type": business_type,
-        "owner": str(user.get("_id")),
+        "owner": user_id,  # Use consistent user ID
         "owner_username": user.get("username"),
         "level": 1,
         "built_at": datetime.now(timezone.utc).isoformat(),
