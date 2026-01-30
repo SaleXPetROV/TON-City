@@ -765,6 +765,46 @@ async def get_my_businesses(current_user: User = Depends(get_current_user)):
     
     return {"businesses": businesses, "total": len(businesses)}
 
+# ==================== LEADERBOARD ====================
+
+@api_router.get("/leaderboard")
+async def get_leaderboard(sort_by: str = "balance", limit: int = 50):
+    """Получить рейтинг игроков"""
+    sort_field_map = {
+        "balance": "balance_ton",
+        "income": "total_income",
+        "businesses": "businesses_count",
+        "plots": "plots_count"
+    }
+    
+    sort_field = sort_field_map.get(sort_by, "balance_ton")
+    
+    # Получаем всех пользователей
+    users = await db.users.find({}, {"_id": 0, "hashed_password": 0}).to_list(1000)
+    
+    # Добавляем подсчёт бизнесов и участков
+    for user in users:
+        wallet = user.get("wallet_address")
+        user_id = user.get("id")
+        
+        # Считаем бизнесы
+        biz_count = await db.businesses.count_documents({"owner": wallet}) if wallet else 0
+        user["businesses_count"] = biz_count
+        
+        # Считаем участки
+        plots_count = await db.plots.count_documents({
+            "$or": [
+                {"owner": user_id},
+                {"owner": wallet}
+            ]
+        }) if (user_id or wallet) else 0
+        user["plots_count"] = plots_count
+    
+    # Сортируем
+    users.sort(key=lambda x: x.get(sort_field, 0), reverse=True)
+    
+    return {"players": users[:limit], "total": len(users)}
+
 # ==================== CITIES ROUTES ====================
 
 from city_generator import create_demo_cities, calculate_plot_price_in_city
