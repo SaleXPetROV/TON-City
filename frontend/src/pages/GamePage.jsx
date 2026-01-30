@@ -378,7 +378,7 @@ export default function GamePage({ user }) {
       <div className="min-h-screen bg-void flex items-center justify-center font-rajdhani">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 text-cyber-cyan animate-spin" />
-          <p className="text-cyber-cyan animate-pulse">{t('loadingCity') || 'Loading city...'}</p>
+          <p className="text-cyber-cyan animate-pulse">Загрузка города...</p>
         </div>
       </div>
     );
