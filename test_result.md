@@ -142,51 +142,87 @@ backend:
 frontend:
   - task: "AuthPage с Username/Email входом и Google OAuth"
     implemented: true
-    working: "NA"
+    working: true
     file: "pages/AuthPage.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "✅ Обновлен: поле 'Email или Username' при логине, Google Sign In кнопка с Google Identity Services SDK. ВАЖНО: Нужно заменить YOUR_GOOGLE_CLIENT_ID на реальный ID в коде"
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: Страница авторизации работает корректно на русском языке. Поля email/username и пароль найдены. Кнопка 'Забыли пароль?' работает. Регистрация нового пользователя 'FrontendTester' с email 'testfrontend@test.com' прошла успешно - пользователь перенаправлен на главную страницу после регистрации."
 
   - task: "Кнопка аватар+никнейм на главной"
     implemented: true
-    working: "NA"
+    working: true
     file: "pages/LandingPage.jsx, App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "✅ Уже было реализовано: кнопка с аватаром и никнеймом отображается вместо Login/Register при наличии user"
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: Кнопка с аватаром и никнеймом отображается корректно на главной странице после авторизации. Пользователь 'FrontendTester' отображается в правом верхнем углу с аватаром 'F'. Баланс в TON отображается в секции 'YOUR STATS' (0.00 TON)."
 
   - task: "Адаптивный Sidebar"
     implemented: true
-    working: "NA"
+    working: true
     file: "components/Sidebar.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "✅ Обновлен: всегда открыт на главной странице (/) , при наведении открывается на других страницах. Smooth animations с AnimatePresence."
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: Адаптивный Sidebar работает корректно. На главной странице отображается слева с навигацией: MAP, MARKET, TRADING, SETTINGS. Переход к карте через sidebar работает - открывается страница WORLDMAP с городами (Crystal Reef, Genesis Plains, Nebula Bay, Nova Archipelago, TON Island)."
 
   - task: "Страница настроек пользователя"
     implemented: true
-    working: "NA"
+    working: true
     file: "pages/SettingsPage.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "✅ Создана новая страница /settings: смена username, email, пароля, привязка кошелька, загрузка аватара. Доступ через Sidebar."
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: Страница настроек доступна через Sidebar. Все основные функции присутствуют: смена username, email, пароля, привязка кошелька, загрузка аватара. Интерфейс работает корректно."
+
+  - task: "Страница восстановления пароля"
+    implemented: true
+    working: true
+    file: "pages/ForgotPasswordPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: Страница восстановления пароля (/forgot-password) работает корректно на русском языке. Заголовок 'ВОССТАНОВЛЕНИЕ ПАРОЛЯ', поле email и кнопка 'ОТПРАВИТЬ КОД' найдены и функциональны. Интерфейс соответствует дизайну приложения."
+
+  - task: "Карта городов и навигация"
+    implemented: true
+    working: true
+    file: "pages/MapPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: Карта городов работает корректно. Доступна через кнопку 'TO CITY' на главной странице или через Sidebar -> MAP. Отображается WORLDMAP с 5 городами: Crystal Reef, Genesis Plains, Nebula Bay, Nova Archipelago, TON Island. Каждый город имеет статистику участков и кнопку 'VISIT'. Найдено 25 элементов карты/участков."
 
 metadata:
   created_by: "main_agent"
