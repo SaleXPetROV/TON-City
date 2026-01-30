@@ -2829,6 +2829,71 @@ async def get_treasury_health(admin: User = Depends(get_admin_user)):
         "days_active": days_active
     }
 
+# ==================== SPRITE GENERATION ====================
+
+from sprite_generator import (
+    generate_building_sprite, 
+    get_construction_sprite, 
+    generate_placeholder_sprite,
+    get_cached_sprite
+)
+
+@api_router.get("/sprites/{building_type}")
+async def get_sprite(building_type: str, level: int = 1):
+    """
+    Get sprite for a building type and level.
+    Returns base64 encoded image (PNG or SVG placeholder).
+    """
+    if building_type not in BUSINESS_TYPES and building_type != "construction":
+        raise HTTPException(status_code=400, detail="Invalid building type")
+    
+    if level < 1 or level > 10:
+        level = max(1, min(10, level))
+    
+    # First try to get from cache
+    cached = get_cached_sprite(building_type, level)
+    if cached:
+        return {"sprite": cached, "cached": True, "building_type": building_type, "level": level}
+    
+    # Generate sprite (this may take time for AI generation)
+    sprite = await generate_building_sprite(building_type, level)
+    
+    return {
+        "sprite": sprite,
+        "cached": False,
+        "building_type": building_type,
+        "level": level
+    }
+
+@api_router.get("/sprites/construction/placeholder")
+async def get_construction_placeholder():
+    """Get the construction/building sprite"""
+    sprite = await get_construction_sprite()
+    return {"sprite": sprite, "building_type": "construction"}
+
+@api_router.post("/sprites/generate-batch")
+async def generate_sprite_batch(
+    building_types: list = ["farm", "shop", "factory"],
+    levels: list = [1, 5, 10],
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Generate sprites for multiple building types and levels.
+    Admin only - used to pre-warm sprite cache.
+    """
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin only")
+    
+    from sprite_generator import pregenerate_sprites
+    await pregenerate_sprites(building_types, levels)
+    
+    return {
+        "status": "completed",
+        "building_types": building_types,
+        "levels": levels,
+        "message": "Sprites generated and cached"
+    }
+
 # ==================== HEALTH ====================
 
 @api_router.get("/")
