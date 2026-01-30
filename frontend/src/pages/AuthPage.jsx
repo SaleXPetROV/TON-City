@@ -8,6 +8,9 @@ import { useTranslation, languages } from '@/lib/translations';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
+const API = `${BACKEND_URL}/api`;
+
 // Load Google Identity Services
 const loadGoogleScript = () => {
   return new Promise((resolve) => {
