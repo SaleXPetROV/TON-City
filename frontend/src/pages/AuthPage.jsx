@@ -396,6 +396,15 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
                   {isVerifying ? '...' : (mode === 'register' ? (lang === 'ru' ? 'Создать аккаунт' : 'Create Account') : (lang === 'ru' ? 'Войти' : 'Sign In'))}
                 </Button>
 
+                {mode !== 'register' && (
+                  <button 
+                    onClick={() => navigate('/forgot-password')}
+                    className="text-text-muted text-sm hover:text-cyber-cyan transition-colors"
+                  >
+                    {lang === 'ru' ? 'Забыли пароль?' : 'Forgot password?'}
+                  </button>
+                )}
+
                 <div className="relative flex py-2 items-center">
                   <div className="flex-grow border-t border-white/5"></div>
                   <span className="mx-4 text-text-muted text-[10px] uppercase tracking-[0.2em]">{lang === 'ru' ? 'Или через' : 'Or via'}</span>
