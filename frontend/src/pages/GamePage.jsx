@@ -333,7 +333,7 @@ export default function GamePage({ user }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Purchase failed');
       
-      toast.success(t('plotPurchased') || 'Plot purchased!');
+      toast.success('Участок куплен!');
       setShowPurchaseModal(false);
       setSelectedPlot(null);
       setUserBalance(data.new_balance);
