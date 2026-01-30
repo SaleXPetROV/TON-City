@@ -177,7 +177,7 @@ async def auto_collect_income():
                     {"wallet_address": owner},
                     {
                         "$inc": {
-                            "balance_game": net_income,
+                            "balance_ton": net_income,
                             "total_income": net_income
                         }
                     }

@@ -719,7 +719,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         "level": user_doc.get("level", 1),
         "xp": user_doc.get("xp", 0),
         "balance_ton": user_doc.get("balance_ton", 0.0),
-        "balance_game": user_doc.get("balance_game", 0.0),
+        "balance_ton": user_doc.get("balance_ton", 0.0),
         "total_turnover": user_doc.get("total_turnover", 0.0),
         "total_income": user_doc.get("total_income", 0.0),
         "plots_owned": user_doc.get("plots_owned", []),
@@ -1070,10 +1070,10 @@ async def purchase_plot(request: PurchasePlotRequest, current_user: User = Depen
     
     # Check balance
     plot_price = plot["price"]
-    if current_user.balance_game < plot_price:
+    if current_user.balance_ton < plot_price:
         raise HTTPException(
             status_code=400, 
-            detail=f"Insufficient balance. Need {plot_price} TON, have {current_user.balance_game} TON"
+            detail=f"Insufficient balance. Need {plot_price} TON, have {current_user.balance_ton} TON"
         )
     
     # Check zone limits
@@ -1089,7 +1089,7 @@ async def purchase_plot(request: PurchasePlotRequest, current_user: User = Depen
     # Deduct from internal balance
     await db.users.update_one(
         {"wallet_address": current_user.wallet_address},
-        {"$inc": {"balance_game": -plot_price}}
+        {"$inc": {"balance_ton": -plot_price}}
     )
     
     # Update plot owner
@@ -1141,7 +1141,7 @@ async def purchase_plot(request: PurchasePlotRequest, current_user: User = Depen
         "success": True,
         "plot_id": plot["id"],
         "amount_paid": plot_price,
-        "new_balance": current_user.balance_game - plot_price,
+        "new_balance": current_user.balance_ton - plot_price,
         "message": f"Plot ({x}, {y}) purchased successfully!"
     }
 
@@ -1264,7 +1264,7 @@ async def buy_resale_plot(plot_id: str, current_user: User = Depends(get_current
     
     # Check buyer balance
     buyer = await db.users.find_one({"wallet_address": current_user.wallet_address}, {"_id": 0})
-    if buyer["balance_game"] < price:
+    if buyer["balance_ton"] < price:
         raise HTTPException(status_code=400, detail=f"Insufficient balance. Need {price} TON")
     
     # Transfer ownership
@@ -1281,13 +1281,13 @@ async def buy_resale_plot(plot_id: str, current_user: User = Depends(get_current
     # Update buyer balance
     await db.users.update_one(
         {"wallet_address": current_user.wallet_address},
-        {"$inc": {"balance_game": -price}, "$push": {"plots_owned": f"{plot['x']},{plot['y']}"}}
+        {"$inc": {"balance_ton": -price}, "$push": {"plots_owned": f"{plot['x']},{plot['y']}"}}
     )
     
     # Update seller balance
     await db.users.update_one(
         {"wallet_address": seller_address},
-        {"$inc": {"balance_game": seller_amount}, "$pull": {"plots_owned": f"{plot['x']},{plot['y']}"}}
+        {"$inc": {"balance_ton": seller_amount}, "$pull": {"plots_owned": f"{plot['x']},{plot['y']}"}}
     )
     
     # If plot has business, transfer it too
@@ -1432,16 +1432,16 @@ async def build_business(request: BuildBusinessRequest, current_user: User = Dep
     total_cost = bt["cost"] + materials_cost
     
     # Check balance
-    if current_user.balance_game < total_cost:
+    if current_user.balance_ton < total_cost:
         raise HTTPException(
             status_code=400,
-            detail=f"Insufficient balance. Need {total_cost} TON, have {current_user.balance_game} TON"
+            detail=f"Insufficient balance. Need {total_cost} TON, have {current_user.balance_ton} TON"
         )
     
     # Deduct from internal balance
     await db.users.update_one(
         {"wallet_address": current_user.wallet_address},
-        {"$inc": {"balance_game": -total_cost}}
+        {"$inc": {"balance_ton": -total_cost}}
     )
     
     # Create business
@@ -1503,7 +1503,7 @@ async def build_business(request: BuildBusinessRequest, current_user: User = Dep
         "business_id": business.id,
         "business_type": request.business_type,
         "amount_paid": total_cost,
-        "new_balance": current_user.balance_game - total_cost,
+        "new_balance": current_user.balance_ton - total_cost,
         "message": f"{bt['name']['en']} built successfully!"
     }
 
@@ -1609,13 +1609,13 @@ async def demolish_business(business_id: str, current_user: User = Depends(get_c
     
     # Check balance
     user = await db.users.find_one({"wallet_address": current_user.wallet_address}, {"_id": 0})
-    if user["balance_game"] < demolish_cost:
+    if user["balance_ton"] < demolish_cost:
         raise HTTPException(status_code=400, detail=f"Insufficient balance. Need {demolish_cost} TON for demolition")
     
     # Deduct demolish cost
     await db.users.update_one(
         {"wallet_address": current_user.wallet_address},
-        {"$inc": {"balance_game": -demolish_cost}}
+        {"$inc": {"balance_ton": -demolish_cost}}
     )
     
     # Remove business from plot
@@ -1748,7 +1748,7 @@ async def collect_income(business_id: str, current_user: User = Depends(get_curr
     # Update user balance
     await db.users.update_one(
         {"wallet_address": current_user.wallet_address},
-        {"$inc": {"balance_game": net_income, "total_income": net_income}}
+        {"$inc": {"balance_ton": net_income, "total_income": net_income}}
     )
     
     # Record tax
@@ -1857,13 +1857,13 @@ async def spot_trade(request: TradeResourceRequest, current_user: User = Depends
     # Update seller balance
     await db.users.update_one(
         {"wallet_address": seller_biz["owner"]},
-        {"$inc": {"balance_game": seller_receives, "total_income": seller_receives}}
+        {"$inc": {"balance_ton": seller_receives, "total_income": seller_receives}}
     )
     
     # Update buyer balance (full payment)
     await db.users.update_one(
         {"wallet_address": buyer_biz["owner"]},
-        {"$inc": {"balance_game": -total_value}}
+        {"$inc": {"balance_ton": -total_value}}
     )
     
     # Record tax to treasury
@@ -1924,7 +1924,7 @@ async def create_withdraw(
     if data.amount <= 0:
         raise HTTPException(status_code=400, detail="Invalid amount")
 
-    if user["balance_game"] < data.amount:
+    if user["balance_ton"] < data.amount:
         raise HTTPException(status_code=400, detail="Insufficient balance")
 
     commission = round(data.amount * WITHDRAWAL_COMMISSION, 6)
@@ -1952,7 +1952,7 @@ async def create_withdraw(
     # 🔒 БЛОКИРУЕМ СРЕДСТВА
     await db.users.update_one(
         {"wallet_address": user["wallet_address"]},
-        {"$inc": {"balance_game": -data.amount}}
+        {"$inc": {"balance_ton": -data.amount}}
     )
 
     await db.transactions.insert_one({**withdrawal, "tx_type": "withdrawal"})
@@ -1980,10 +1980,10 @@ async def reject_withdrawal(
         raise HTTPException(status_code=400, detail="Можно отклонить только заявку в статусе pending")
 
     # 2. ВОЗВРАЩАЕМ ДЕНЬГИ ПОЛЬЗОВАТЕЛЮ
-    # Важно: используем поле balance_game и полную сумму (amount)
+    # Важно: используем поле balance_ton и полную сумму (amount)
     await db.users.update_one(
         {"wallet_address": withdrawal["user_wallet"]},
-        {"$inc": {"balance_game": withdrawal["amount"]}}
+        {"$inc": {"balance_ton": withdrawal["amount"]}}
     )
 
     # 3. Обновляем статус заявки
@@ -2122,7 +2122,7 @@ async def get_ton_balance(address: str):
         balance = await ton_client.get_balance(address)
         return {
             "address": address,
-            "balance_game": balance,
+            "balance_ton": balance,
             "balance_nano": int(balance * 1e9)
         }
     except Exception as e:
@@ -2238,7 +2238,7 @@ async def collect_all_income(current_user: User = Depends(get_current_user)):
                 {"wallet_address": current_user.wallet_address},
                 {
                     "$inc": {
-                        "balance_game": total_collected,
+                        "balance_ton": total_collected,
                         "total_income": total_collected
                     }
                 }
@@ -2418,7 +2418,7 @@ async def admin_approve_withdrawal(tx_id: str, admin: User = Depends(get_current
         # ВОЗВРАТ СРЕДСТВ ПРИ ОШИБКЕ БЛОКЧЕЙНА
         await db.users.update_one(
             {"wallet_address": user_wallet},
-            {"$inc": {"balance_game": total_amount}}
+            {"$inc": {"balance_ton": total_amount}}
         )
         await db.transactions.update_one(
             {"id": tx_id},
@@ -2428,7 +2428,7 @@ async def admin_approve_withdrawal(tx_id: str, admin: User = Depends(get_current
     
 @admin_router.post("/withdrawal/reject/{tx_id}")
 async def admin_reject_withdrawal(tx_id: str, admin: User = Depends(get_current_admin)):
-    """Отклонение заявки с гарантированным возвратом на balance_game"""
+    """Отклонение заявки с гарантированным возвратом на balance_ton"""
     # 1. Ищем саму транзакцию
     tx = await db.transactions.find_one({"id": tx_id})
     if not tx:
@@ -2450,7 +2450,7 @@ async def admin_reject_withdrawal(tx_id: str, admin: User = Depends(get_current_
                 {"raw_address": user_address}
             ]
         },
-        {"$inc": {"balance_game": amount_to_return}}
+        {"$inc": {"balance_ton": amount_to_return}}
     )
 
     if update_result.modified_count == 0:
@@ -2459,7 +2459,7 @@ async def admin_reject_withdrawal(tx_id: str, admin: User = Depends(get_current_
         if raw_addr:
             update_result = await db.users.update_one(
                 {"raw_address": raw_addr},
-                {"$inc": {"balance_game": amount_to_return}}
+                {"$inc": {"balance_ton": amount_to_return}}
             )
 
     # 3. Фиксируем результат в базе
@@ -2470,7 +2470,7 @@ async def admin_reject_withdrawal(tx_id: str, admin: User = Depends(get_current_
                 "$set": {
                     "status": "rejected",
                     "rejected_at": datetime.now(timezone.utc).isoformat(),
-                    "admin_note": "Возвращено на balance_game"
+                    "admin_note": "Возвращено на balance_ton"
                 }
             }
         )
@@ -2662,7 +2662,7 @@ async def admin_manual_credit_deposit(
         {"wallet_address": wallet_address},
         {
             "$inc": {
-                "balance_game": amount_ton,
+                "balance_ton": amount_ton,
                 "total_deposited": amount_ton
             }
         }

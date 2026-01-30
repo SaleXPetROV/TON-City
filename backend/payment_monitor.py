@@ -147,7 +147,7 @@ class TONPaymentMonitor:
                 {"_id": user["_id"]},
                 {
                     "$inc": {
-                        "balance_game": amount_ton,
+                        "balance_ton": amount_ton,
                         "total_deposited": amount_ton
                     }
                 }

@@ -129,7 +129,7 @@ async def register(data: EmailRegister):
         "wallet_address": None,
         "raw_address": None,
         "avatar": avatar,
-        "balance_game": 0,
+        "balance_ton": 0,
         "balance_ton": 0,
         "language": "ru",
         "level": "novice",
@@ -276,7 +276,7 @@ async def google_auth(data: GoogleAuth):
                 "raw_address": None,
                 "avatar": avatar,
                 "avatar_uploaded": bool(picture),  # Track if using Google avatar
-                "balance_game": 0,
+                "balance_ton": 0,
                 "balance_ton": 0,
                 "language": "ru",
                 "level": "novice",
@@ -326,7 +326,7 @@ async def wallet_check(data: WalletAuth):
             "username": None,
             "email": None,
             "wallet_address": data.address,
-            "balance_game": 0,
+            "balance_ton": 0,
             "created_at": datetime.now(timezone.utc)
         }
         await db.users.insert_one(new_user)
