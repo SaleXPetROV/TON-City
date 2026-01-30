@@ -1054,7 +1054,7 @@ async def build_business_in_city(city_id: str, x: int, y: int, request: dict, cu
     
     # Update user
     await db.users.update_one(
-        {"_id": user["_id"]},
+        {"id": user_id},  # Use consistent user ID field
         {
             "$inc": {"balance_ton": -build_cost},
             "$push": {"businesses_owned": business_id}
