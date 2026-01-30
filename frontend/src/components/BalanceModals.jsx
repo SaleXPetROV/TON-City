@@ -300,6 +300,7 @@ export function WithdrawModal({ isOpen, onClose, onSuccess, currentBalance, user
             <Button
               onClick={handleWithdraw}
               disabled={
+                !hasWallet ||
                 !amount ||
                 parseFloat(amount) <= 0 ||
                 parseFloat(amount) > currentBalance ||
