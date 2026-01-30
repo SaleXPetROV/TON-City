@@ -340,7 +340,6 @@ class User(BaseModel):
     level: Union[str, int] = "novice"  # Поддержка и str и int
     xp: int = 0
     balance_ton: float = 0.0
-    balance_game: float = 0.0
     total_turnover: float = 0.0
     total_income: float = 0.0
     plots_owned: List[str] = []
@@ -616,7 +615,6 @@ async def verify_wallet(request: WalletVerifyRequest):
                 "language": request.language or "en",
                 "is_admin": False,
                 "balance_ton": 0.0,
-                "balance_game": 0.0,
                 "level": 1,
                 "xp": 0,
                 "total_turnover": 0,
