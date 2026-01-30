@@ -18,6 +18,7 @@ import SettingsPage from '@/pages/SettingsPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
+import SupportButton from '@/components/SupportButton';
 import "@/App.css";
 
 const manifestUrl = `${window.location.origin}/tonconnect-manifest.json`;
