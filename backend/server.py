@@ -728,6 +728,43 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         "auth_type": auth_type
     }
 
+@api_router.get("/users/me/plots")
+async def get_my_plots(current_user: User = Depends(get_current_user)):
+    """Получить все участки пользователя"""
+    user = await db.users.find_one({"wallet_address": current_user.wallet_address}, {"_id": 0})
+    user_id = user.get("id", str(user.get("_id")))
+    
+    # Ищем участки по user_id или wallet_address
+    plots = await db.plots.find({
+        "$or": [
+            {"owner": user_id},
+            {"owner": current_user.wallet_address}
+        ]
+    }, {"_id": 0}).to_list(100)
+    
+    # Добавляем информацию о городах
+    for plot in plots:
+        city = await db.cities.find_one({"id": plot.get("city_id")}, {"_id": 0, "name": 1})
+        plot["city_name"] = city.get("name") if city else "Unknown"
+    
+    return {"plots": plots, "total": len(plots)}
+
+@api_router.get("/users/me/businesses")
+async def get_my_businesses(current_user: User = Depends(get_current_user)):
+    """Получить все бизнесы пользователя"""
+    businesses = await db.businesses.find(
+        {"owner": current_user.wallet_address},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Добавляем информацию о типе бизнеса
+    for biz in businesses:
+        bt = BUSINESS_TYPES.get(biz.get("business_type"), {})
+        biz["produces"] = bt.get("produces")
+        biz["consumes"] = bt.get("consumes", [])
+    
+    return {"businesses": businesses, "total": len(businesses)}
+
 # ==================== CITIES ROUTES ====================
 
 from city_generator import create_demo_cities, calculate_plot_price_in_city
