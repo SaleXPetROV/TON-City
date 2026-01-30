@@ -9,6 +9,7 @@ import DashboardPage from "@/pages/DashboardPage";
 import AdminPage from "@/pages/AdminPage";
 import IncomeTablePage from "@/pages/IncomeTablePage";
 import TradingPage from "@/pages/TradingPage";
+import MarketplacePage from "@/pages/MarketplacePage";
 import AuthPage from '@/pages/AuthPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
