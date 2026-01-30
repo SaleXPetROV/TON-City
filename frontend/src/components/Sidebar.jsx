@@ -45,8 +45,9 @@ export default function Sidebar({ user }) {
 
         <div className="flex flex-col gap-1.5 p-2 bg-black/70 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl overflow-hidden">
           <NavItem icon={<Map className="w-5 h-5" />} label={t('map') || 'Map'} path="/map" isExpanded={isExpanded} />
-          <NavItem icon={<ShoppingBag className="w-5 h-5" />} label={t('market') || 'Market'} path="/trading" isExpanded={isExpanded} />
-          <NavItem icon={<Users className="w-5 h-5" />} label={t('trading') || 'Trading'} path="/income-table" isExpanded={isExpanded} />
+          <NavItem icon={<Store className="w-5 h-5" />} label={t('marketplace') || 'Marketplace'} path="/marketplace" isExpanded={isExpanded} />
+          <NavItem icon={<ShoppingBag className="w-5 h-5" />} label={t('trading') || 'Trading'} path="/trading" isExpanded={isExpanded} />
+          <NavItem icon={<Users className="w-5 h-5" />} label={t('leaderboard') || 'Leaderboard'} path="/income-table" isExpanded={isExpanded} />
           {user.is_admin && (
             <NavItem icon={<Lock className="w-5 h-5" />} label={t('admin') || 'Admin'} path="/admin" isExpanded={isExpanded} />
           )}
