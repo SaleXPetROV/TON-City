@@ -76,6 +76,16 @@ export const translations = {
     grow: "Grow",
     growDesc: "Scale business on TON blockchain",
     
+    // Marketplace
+    marketplace: "Marketplace",
+    leaderboard: "Leaderboard",
+    deposit: "Deposit",
+    withdraw: "Withdraw",
+    sellResources: "Sell Resources",
+    sellLand: "Sell Land",
+    buyNow: "Buy Now",
+    myListings: "My Listings",
+    
     // Stats
     players: "Players",
     plotsBought: "Plots Bought",
