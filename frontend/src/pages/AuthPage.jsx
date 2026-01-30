@@ -399,14 +399,33 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
                   {isVerifying ? '...' : (mode === 'register' ? (lang === 'ru' ? 'Создать аккаунт' : 'Create Account') : (lang === 'ru' ? 'Войти' : 'Sign In'))}
                 </Button>
 
-                {mode !== 'register' && (
-                  <button 
-                    onClick={() => navigate('/forgot-password')}
-                    className="text-text-muted text-sm hover:text-cyber-cyan transition-colors"
-                  >
-                    {lang === 'ru' ? 'Забыли пароль?' : 'Forgot password?'}
-                  </button>
-                )}
+                {/* Кнопки переключения между входом и регистрацией */}
+                <div className="flex items-center justify-center gap-4 text-sm">
+                  {mode !== 'register' ? (
+                    <>
+                      <button 
+                        onClick={() => navigate('/forgot-password')}
+                        className="text-text-muted hover:text-cyber-cyan transition-colors"
+                      >
+                        {lang === 'ru' ? 'Забыли пароль?' : 'Forgot password?'}
+                      </button>
+                      <span className="text-white/20">|</span>
+                      <button 
+                        onClick={() => navigate('/auth?mode=register')}
+                        className="text-cyber-cyan hover:text-cyber-cyan/80 transition-colors font-medium"
+                      >
+                        {lang === 'ru' ? 'Зарегистрироваться' : 'Register'}
+                      </button>
+                    </>
+                  ) : (
+                    <button 
+                      onClick={() => navigate('/auth?mode=login')}
+                      className="text-cyber-cyan hover:text-cyber-cyan/80 transition-colors font-medium"
+                    >
+                      {lang === 'ru' ? 'Уже есть аккаунт? Войти' : 'Already have account? Sign In'}
+                    </button>
+                  )}
+                </div>
 
                 <div className="relative flex py-2 items-center">
                   <div className="flex-grow border-t border-white/5"></div>
