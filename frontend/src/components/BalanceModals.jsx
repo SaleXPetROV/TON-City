@@ -206,7 +206,10 @@ export function WithdrawModal({ isOpen, onClose, onSuccess, currentBalance, user
   
   const withdrawalFee = amount ? (parseFloat(amount) * WITHDRAWAL_FEE_PERCENT) / 100 : 0;
   const totalDeducted = amount ? parseFloat(amount) : 0;
-  const receivedAmount = totalDeducted - withdrawalFee - NETWORK_FEE_TON;
+  const receivedAmount = totalDeducted - withdrawalFee;
+
+  // Check if wallet is connected
+  const hasWallet = userWallet || userDisplayAddress;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -219,12 +222,21 @@ export function WithdrawModal({ isOpen, onClose, onSuccess, currentBalance, user
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
-          <Alert className="bg-yellow-500/10 border-yellow-500/30">
-            <AlertCircle className="h-4 w-4 text-yellow-400" />
-            <AlertDescription className="text-sm text-yellow-300">
-              Вывод средств требует подтверждения администратора. Обычно это занимает до 24 часов.
-            </AlertDescription>
-          </Alert>
+          {!hasWallet ? (
+            <Alert className="bg-red-500/10 border-red-500/30">
+              <AlertCircle className="h-4 w-4 text-red-400" />
+              <AlertDescription className="text-sm text-red-300">
+                ⚠️ Подключите кошелёк для вывода средств
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert className="bg-yellow-500/10 border-yellow-500/30">
+              <AlertCircle className="h-4 w-4 text-yellow-400" />
+              <AlertDescription className="text-sm text-yellow-300">
+                Вывод средств требует подтверждения администратора. Обычно это занимает до 24 часов.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div>
             <Label>Доступно для вывода</Label>
@@ -233,47 +245,47 @@ export function WithdrawModal({ isOpen, onClose, onSuccess, currentBalance, user
             </div>
           </div>
 
-          <div>
-            <Label>Сумма вывода (TON)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              min="1"
-              max={currentBalance}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Минимум 1 TON"
-              className="mt-2 text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              data-testid="withdraw-amount-input"
-            />
-          </div>
+          {hasWallet && (
+            <>
+              <div>
+                <Label>Сумма вывода (TON)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="1"
+                  max={currentBalance}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="Минимум 1 TON"
+                  className="mt-2 text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  data-testid="withdraw-amount-input"
+                />
+              </div>
 
-          {amount && parseFloat(amount) > 0 && (
-            <div className="p-4 bg-white/5 rounded-lg space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Сумма запроса:</span>
-                <span className="font-bold text-white">{parseFloat(amount).toFixed(2)} TON</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Комиссия вывода ({WITHDRAWAL_FEE_PERCENT}%):</span>
-                <span className="text-red-400">-{withdrawalFee.toFixed(4)} TON</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Комиссия сети (~):</span>
-                <span className="text-red-400">-{NETWORK_FEE_TON} TON</span>
-              </div>
-              <div className="h-px bg-white/10 my-2"></div>
-              <div className="flex justify-between text-base">
-                <span className="text-gray-300">Вы получите:</span>
-                <span className="font-bold text-green-400">
-                  {receivedAmount > 0 ? receivedAmount.toFixed(4) : '0.00'} TON
-                </span>
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-2">
-                <span>На кошелёк:</span>
-                <span className="font-mono text-right break-all">{userDisplayAddress || toUserFriendlyAddress(userWallet)}</span>
-              </div>
-            </div>
+              {amount && parseFloat(amount) > 0 && (
+                <div className="p-4 bg-white/5 rounded-lg space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Сумма запроса:</span>
+                    <span className="font-bold text-white">{parseFloat(amount).toFixed(2)} TON</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Подоходный налог ({WITHDRAWAL_FEE_PERCENT}%):</span>
+                    <span className="text-red-400">-{withdrawalFee.toFixed(4)} TON</span>
+                  </div>
+                  <div className="h-px bg-white/10 my-2"></div>
+                  <div className="flex justify-between text-base">
+                    <span className="text-gray-300">Вы получите:</span>
+                    <span className="font-bold text-green-400">
+                      {receivedAmount > 0 ? receivedAmount.toFixed(4) : '0.00'} TON
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500 mt-2">
+                    <span>На кошелёк:</span>
+                    <span className="font-mono text-right break-all">{userDisplayAddress || userWallet}</span>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           <div className="flex gap-3">
