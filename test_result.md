@@ -20,39 +20,48 @@ user_problem_statement: |
 backend:
   - task: "Унификация баланса на balance_ton"
     implemented: true
-    working: "NA"
+    working: true
     file: "server.py, auth_handler.py, payment_monitor.py, background_tasks.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "✅ Заменены все использования balance_game на balance_ton во всех файлах backend"
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: GET /api/auth/me возвращает balance_ton, поле balance_game отсутствует. Унификация баланса работает корректно."
 
   - task: "Покупка земли в городе"
     implemented: true
-    working: "NA"
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Требуется тестирование POST /api/cities/{city_id}/plots/{x}/{y}/buy"
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: POST /api/cities/{city_id}/plots/{x}/{y}/buy работает корректно. API правильно проверяет баланс, возвращает ошибку при недостатке средств. Структура ответа корректна."
 
   - task: "Привязка данных к user.id"
     implemented: true
-    working: "NA"
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "✅ Owner в plots привязывается к user.id вместо _id"
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: Покупка участков корректно привязывает owner к user.id (не к wallet_address). Система идентификации пользователей работает правильно."
 
   - task: "Вход через Email/Username + password"
     implemented: true
