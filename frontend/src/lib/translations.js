@@ -131,6 +131,18 @@ export const translations = {
     passwordTooShort: "Password too short",
     passwordUpdated: "Password updated!",
     avatarUpdated: "Avatar updated!",
+    
+    // Password Reset
+    forgotPassword: "Forgot password?",
+    passwordRecovery: "Password Recovery",
+    sendCode: "Send Code",
+    enterCode: "Enter code",
+    codeSent: "Code sent to your email",
+    invalidCode: "Invalid code",
+    codeExpired: "Code expired",
+    verifyCode: "Verify",
+    passwordChanged: "Password changed successfully!",
+    userNotFound: "User not found",
   },
 
   // Russian (Русский)
