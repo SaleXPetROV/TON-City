@@ -1012,8 +1012,9 @@ async def build_business_in_city(city_id: str, x: int, y: int, request: dict, cu
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Check ownership
-    if plot.get("owner") != str(user.get("_id")):
+    # Check ownership - use consistent user ID logic
+    user_id = user.get("id", str(user.get("_id")))
+    if plot.get("owner") != user_id:
         raise HTTPException(status_code=403, detail="You don't own this plot")
     
     # Check if business already exists
