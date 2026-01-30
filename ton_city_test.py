@@ -167,15 +167,15 @@ def test_2_marketplace_get_listings():
     
     data = result["data"]
     
-    # Проверяем структуру ответа
-    if not isinstance(data, list):
+    # API возвращает список напрямую, не в обертке
+    if isinstance(data, list):
+        log_test("Получение листингов", "PASS", 
+                f"Получено {len(data)} листингов")
+        return True
+    else:
         log_test("Получение листингов", "FAIL", 
-                f"Ожидался список, получен: {type(data)}")
+                f"Ожидался список, получен: {type(data)}, данные: {data}")
         return False
-    
-    log_test("Получение листингов", "PASS", 
-            f"Получено {len(data)} листингов")
-    return True
 
 def test_3_marketplace_create_listing():
     """Тест 3: POST /api/market/list - создать листинг (нужен авторизованный пользователь)"""
