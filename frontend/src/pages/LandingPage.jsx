@@ -197,7 +197,7 @@ export default function LandingPage({ user, setUser }) {
                       onClick={() => navigate('/auth?mode=register')}
                       className="bg-cyber-cyan text-black hover:bg-cyber-cyan/80 px-3 sm:px-5 h-7 sm:h-9 font-unbounded text-[9px] sm:text-[10px] font-bold rounded-lg shadow-lg shadow-cyber-cyan/20"
                     >
-                      {t('playNow') || 'PLAY'}
+                      {t('register') || 'Register'}
                     </Button>
                   </div>
                 )}
