@@ -2085,6 +2085,231 @@ async def get_my_listings(current_user: User = Depends(get_current_user)):
     
     return {"listings": listings}
 
+# ==================== LAND MARKETPLACE ====================
+
+class LandListingRequest(BaseModel):
+    plot_id: str
+    price: float  # Цена устанавливается продавцом
+
+class BuyLandRequest(BaseModel):
+    listing_id: str
+
+@api_router.post("/market/land/list")
+async def create_land_listing(data: LandListingRequest, current_user: User = Depends(get_current_user)):
+    """Выставить участок земли на продажу"""
+    # Получаем участок
+    plot = await db.plots.find_one({"id": data.plot_id}, {"_id": 0})
+    
+    if not plot:
+        raise HTTPException(status_code=404, detail="Plot not found")
+    
+    # Проверяем владельца (по user.id)
+    user = await db.users.find_one({"wallet_address": current_user.wallet_address}, {"_id": 0})
+    user_id = user.get("id", str(user.get("_id")))
+    
+    if plot.get("owner") != user_id and plot.get("owner") != current_user.wallet_address:
+        raise HTTPException(status_code=403, detail="You don't own this plot")
+    
+    # Проверяем что участок не уже на продаже
+    existing = await db.land_listings.find_one({"plot_id": data.plot_id, "status": "active"})
+    if existing:
+        raise HTTPException(status_code=400, detail="Plot already listed for sale")
+    
+    # Минимальная цена - 50% от изначальной
+    min_price = plot.get("price", 0.1) * 0.5
+    if data.price < min_price:
+        raise HTTPException(status_code=400, detail=f"Price too low. Minimum: {min_price:.4f} TON")
+    
+    # Получаем информацию о городе
+    city = await db.cities.find_one({"id": plot.get("city_id")}, {"_id": 0, "name": 1})
+    
+    # Получаем бизнес на участке (если есть)
+    business = await db.businesses.find_one({
+        "city_id": plot.get("city_id"),
+        "plot_x": plot.get("x"),
+        "plot_y": plot.get("y")
+    }, {"_id": 0})
+    
+    business_info = None
+    if business:
+        # Считаем связи
+        connections_count = len(business.get("connected_businesses", []))
+        business_info = {
+            "type": business.get("business_type"),
+            "level": business.get("level", 1),
+            "connections": connections_count,
+            "xp": business.get("xp", 0)
+        }
+    
+    listing = {
+        "id": str(uuid.uuid4()),
+        "plot_id": data.plot_id,
+        "city_id": plot.get("city_id"),
+        "city_name": city.get("name") if city else "Unknown",
+        "x": plot.get("x"),
+        "y": plot.get("y"),
+        "seller_id": current_user.wallet_address,
+        "seller_username": user.get("username") or user.get("display_name", "Anonymous"),
+        "original_price": plot.get("price", 0),
+        "price": data.price,
+        "business": business_info,
+        "status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.land_listings.insert_one(listing.copy())
+    
+    logger.info(f"Land listing created: plot {data.plot_id} @ {data.price} TON by {current_user.username}")
+    
+    return {"status": "listed", "listing": listing}
+
+@api_router.get("/market/land/listings")
+async def get_land_listings(city_id: str = None, sort_by: str = "price", has_business: bool = None):
+    """Получить все активные предложения земли"""
+    query = {"status": "active"}
+    
+    if city_id:
+        query["city_id"] = city_id
+    
+    if has_business is not None:
+        if has_business:
+            query["business"] = {"$ne": None}
+        else:
+            query["business"] = None
+    
+    sort_field = "price" if sort_by == "price" else "created_at"
+    sort_order = 1 if sort_by == "price" else -1
+    
+    listings = await db.land_listings.find(query, {"_id": 0}).sort(sort_field, sort_order).to_list(100)
+    
+    return {"listings": listings, "total": len(listings)}
+
+@api_router.post("/market/land/buy")
+async def buy_land_from_market(data: BuyLandRequest, current_user: User = Depends(get_current_user)):
+    """Купить участок земли с маркетплейса"""
+    listing = await db.land_listings.find_one({"id": data.listing_id, "status": "active"}, {"_id": 0})
+    
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found or no longer active")
+    
+    if listing["seller_id"] == current_user.wallet_address:
+        raise HTTPException(status_code=400, detail="Cannot buy your own listing")
+    
+    # Проверяем баланс покупателя
+    buyer = await db.users.find_one({"wallet_address": current_user.wallet_address}, {"_id": 0})
+    if buyer["balance_ton"] < listing["price"]:
+        raise HTTPException(status_code=400, detail=f"Insufficient balance. Need {listing['price']} TON")
+    
+    buyer_id = buyer.get("id", str(buyer.get("_id")))
+    
+    # Налог с продавца (10%)
+    seller_tax = listing["price"] * BASE_TAX_RATE
+    seller_receives = listing["price"] - seller_tax
+    
+    # Обновляем баланс покупателя
+    await db.users.update_one(
+        {"wallet_address": current_user.wallet_address},
+        {"$inc": {"balance_ton": -listing["price"]}}
+    )
+    
+    # Обновляем баланс продавца
+    await db.users.update_one(
+        {"wallet_address": listing["seller_id"]},
+        {"$inc": {"balance_ton": seller_receives, "total_income": seller_receives}}
+    )
+    
+    # Передаём владение участком
+    await db.plots.update_one(
+        {"id": listing["plot_id"]},
+        {"$set": {
+            "owner": buyer_id,
+            "owner_username": buyer.get("username"),
+            "purchased_at": datetime.now(timezone.utc).isoformat(),
+            "price": listing["price"]  # Обновляем цену участка
+        }}
+    )
+    
+    # Если есть бизнес - передаём его тоже
+    if listing.get("business"):
+        await db.businesses.update_one(
+            {"city_id": listing["city_id"], "plot_x": listing["x"], "plot_y": listing["y"]},
+            {"$set": {"owner": current_user.wallet_address}}
+        )
+    
+    # Закрываем листинг
+    await db.land_listings.update_one(
+        {"id": data.listing_id},
+        {"$set": {
+            "status": "sold",
+            "buyer_id": current_user.wallet_address,
+            "buyer_username": buyer.get("username"),
+            "sold_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Налог в казну
+    await db.admin_stats.update_one(
+        {"type": "treasury"},
+        {"$inc": {"land_market_tax": seller_tax, "total_tax": seller_tax}},
+        upsert=True
+    )
+    
+    # Записываем транзакцию
+    tx = {
+        "id": str(uuid.uuid4()),
+        "tx_type": "land_purchase",
+        "from_address": current_user.wallet_address,
+        "to_address": listing["seller_id"],
+        "amount_ton": listing["price"],
+        "tax": seller_tax,
+        "plot_id": listing["plot_id"],
+        "city_id": listing["city_id"],
+        "listing_id": data.listing_id,
+        "status": "completed",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.transactions.insert_one(tx)
+    
+    logger.info(f"Land purchase: plot {listing['plot_id']} for {listing['price']} TON")
+    
+    return {
+        "status": "purchased",
+        "plot_id": listing["plot_id"],
+        "city_name": listing["city_name"],
+        "total_paid": listing["price"],
+        "seller_received": seller_receives,
+        "tax": seller_tax,
+        "has_business": listing.get("business") is not None
+    }
+
+@api_router.delete("/market/land/listing/{listing_id}")
+async def cancel_land_listing(listing_id: str, current_user: User = Depends(get_current_user)):
+    """Отменить листинг земли"""
+    listing = await db.land_listings.find_one({"id": listing_id}, {"_id": 0})
+    
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    if listing["seller_id"] != current_user.wallet_address:
+        raise HTTPException(status_code=403, detail="Not your listing")
+    
+    await db.land_listings.update_one(
+        {"id": listing_id},
+        {"$set": {"status": "cancelled", "cancelled_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"status": "cancelled", "listing_id": listing_id}
+
+@api_router.get("/market/land/my-listings")
+async def get_my_land_listings(current_user: User = Depends(get_current_user)):
+    """Получить свои листинги земли"""
+    listings = await db.land_listings.find(
+        {"seller_id": current_user.wallet_address},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    
+    return {"listings": listings}
+
 # ==================== WITHDRAWAL ROUTES ====================
 
 @api_router.post("/withdraw")
