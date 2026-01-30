@@ -1793,7 +1793,22 @@ async def collect_income(business_id: str, current_user: User = Depends(get_curr
     """Collect accumulated income from business"""
     business = await db.businesses.find_one({"id": business_id}, {"_id": 0})
     
-    if not business or business["owner"] != current_user.wallet_address:
+    if not business:
+        raise HTTPException(status_code=404, detail="Business not found")
+    
+    # Check ownership using consistent user ID logic
+    user = await db.users.find_one({"$or": [
+        {"wallet_address": current_user.wallet_address},
+        {"email": current_user.email},
+        {"username": current_user.username}
+    ]})
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_id = user.get("id", str(user.get("_id")))
+    
+    if business["owner"] != user_id and business["owner"] != current_user.wallet_address:
         raise HTTPException(status_code=404, detail="Business not found")
     
     if business.get("building_progress", 100) < 100:
