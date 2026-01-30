@@ -893,7 +893,43 @@ def run_all_tests():
     passed = 0
     failed = 0
     
-    for test_func in tests:
+    print("🔐 ФАЗА 1: ТЕСТИРОВАНИЕ АУТЕНТИФИКАЦИИ")
+    print("-" * 50)
+    
+    # Выполняем базовые тесты аутентификации
+    for test_func in auth_tests:
+        try:
+            if test_func():
+                passed += 1
+            else:
+                failed += 1
+        except Exception as e:
+            print(f"❌ ОШИБКА в {test_func.__name__}: {str(e)}")
+            failed += 1
+        
+        time.sleep(0.5)
+    
+    print("\n🏗️ ФАЗА 2: ТЕСТИРОВАНИЕ НОВЫХ API ENDPOINTS")
+    print("-" * 50)
+    
+    # Выполняем тесты новых API endpoints
+    for test_func in api_tests:
+        try:
+            if test_func():
+                passed += 1
+            else:
+                failed += 1
+        except Exception as e:
+            print(f"❌ ОШИБКА в {test_func.__name__}: {str(e)}")
+            failed += 1
+        
+        time.sleep(0.5)
+    
+    print("\n🔧 ФАЗА 3: ДОПОЛНИТЕЛЬНЫЕ ТЕСТЫ АУТЕНТИФИКАЦИИ")
+    print("-" * 50)
+    
+    # Выполняем дополнительные тесты
+    for test_func in additional_auth_tests:
         try:
             if test_func():
                 passed += 1
