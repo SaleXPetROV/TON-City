@@ -175,6 +175,18 @@ backend:
         agent: "testing"
         comment: "✅ ПРОТЕСТИРОВАНО: GET /api/market/listings продолжает работать корректно. Возвращает листинги ресурсов в формате {'listings': [], 'total': 0}. Совместимость с существующими функциями сохранена."
 
+  - task: "Полный игровой цикл TON City Builder"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: Полный игровой цикл работает на 100%. Тестирован весь процесс: вход пользователя (citymaster@test.com) → получение городов → получение участков → покупка участка → строительство фермы → сбор дохода → проверка рейтинга → проверка админских настроек. Все 9 этапов пройдены успешно. Исправлены проблемы с владением участками и бизнесами."
+
 frontend:
   - task: "AuthPage с Username/Email входом и Google OAuth"
     implemented: true
