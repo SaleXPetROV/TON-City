@@ -879,13 +879,16 @@ async def buy_city_plot(city_id: str, x: int, y: int, current_user: User = Depen
     
     # Create or update plot
     plot_id = f"{city_id}_{x}_{y}"
+    # Используем user.id как основной идентификатор
+    user_id = user.get("id", str(user.get("_id")))
+    
     plot_data = {
         "id": plot_id,
         "city_id": city_id,
         "x": x,
         "y": y,
         "price": price,
-        "owner": str(user.get("_id")),
+        "owner": user_id,
         "owner_username": user.get("username"),
         "is_available": False,
         "purchased_at": datetime.now(timezone.utc).isoformat()
@@ -897,9 +900,9 @@ async def buy_city_plot(city_id: str, x: int, y: int, current_user: User = Depen
         upsert=True
     )
     
-    # Update user
+    # Update user by id field
     await db.users.update_one(
-        {"_id": user["_id"]},
+        {"id": user_id},
         {
             "$inc": {"balance_ton": -price},
             "$push": {"plots_owned": plot_id}
