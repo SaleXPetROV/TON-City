@@ -790,7 +790,7 @@ export default function MarketplacePage({ user }) {
                   ) : (
                     myPlots.map(plot => (
                       <SelectItem key={plot.id} value={plot.id}>
-                        [{plot.x}, {plot.y}] - {plot.city_name || 'Город'} ({plot.price?.toFixed(4)} TON)
+                        [{plot.x}, {plot.y}] - {typeof plot.city_name === 'object' ? (plot.city_name?.ru || plot.city_name?.en || 'Город') : (plot.city_name || 'Город')} ({(plot.price || 0).toFixed(4)} TON)
                       </SelectItem>
                     ))
                   )}
