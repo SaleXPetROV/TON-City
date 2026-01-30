@@ -668,18 +668,213 @@ def test_reset_password():
     
     return True
 
+def test_land_marketplace_api():
+    """Тест API маркетплейса земли"""
+    print("🧪 ТЕСТ: GET /api/market/land/listings - Получение листингов земли")
+    
+    result = make_request("GET", "/market/land/listings")
+    
+    if not result["success"]:
+        log_test("Land Marketplace API", "FAIL", 
+                f"HTTP {result['status_code']}: {result['data']}")
+        return False
+    
+    data = result["data"]
+    
+    # Проверяем структуру ответа
+    if "listings" not in data:
+        log_test("Land Marketplace API", "FAIL", "Отсутствует поле 'listings' в ответе")
+        return False
+    
+    if "total" not in data:
+        log_test("Land Marketplace API", "FAIL", "Отсутствует поле 'total' в ответе")
+        return False
+    
+    # Проверяем типы данных
+    if not isinstance(data["listings"], list):
+        log_test("Land Marketplace API", "FAIL", "Поле 'listings' должно быть массивом")
+        return False
+    
+    if not isinstance(data["total"], int):
+        log_test("Land Marketplace API", "FAIL", "Поле 'total' должно быть числом")
+        return False
+    
+    log_test("Land Marketplace API", "PASS", 
+            f"Получено {data['total']} листингов земли, структура ответа корректна")
+    return True
+
+def test_user_plots_api():
+    """Тест API получения участков пользователя"""
+    global auth_token
+    
+    print("🧪 ТЕСТ: GET /api/users/me/plots - Получение участков пользователя")
+    
+    if not auth_token:
+        log_test("User Plots API", "FAIL", "Нет токена авторизации")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    result = make_request("GET", "/users/me/plots", headers=headers)
+    
+    if not result["success"]:
+        log_test("User Plots API", "FAIL", 
+                f"HTTP {result['status_code']}: {result['data']}")
+        return False
+    
+    data = result["data"]
+    
+    # Проверяем структуру ответа
+    if "plots" not in data:
+        log_test("User Plots API", "FAIL", "Отсутствует поле 'plots' в ответе")
+        return False
+    
+    if "total" not in data:
+        log_test("User Plots API", "FAIL", "Отсутствует поле 'total' в ответе")
+        return False
+    
+    # Проверяем типы данных
+    if not isinstance(data["plots"], list):
+        log_test("User Plots API", "FAIL", "Поле 'plots' должно быть массивом")
+        return False
+    
+    if not isinstance(data["total"], int):
+        log_test("User Plots API", "FAIL", "Поле 'total' должно быть числом")
+        return False
+    
+    log_test("User Plots API", "PASS", 
+            f"Получено {data['total']} участков пользователя, структура ответа корректна")
+    return True
+
+def test_user_businesses_api():
+    """Тест API получения бизнесов пользователя"""
+    global auth_token
+    
+    print("🧪 ТЕСТ: GET /api/users/me/businesses - Получение бизнесов пользователя")
+    
+    if not auth_token:
+        log_test("User Businesses API", "FAIL", "Нет токена авторизации")
+        return False
+    
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    result = make_request("GET", "/users/me/businesses", headers=headers)
+    
+    if not result["success"]:
+        log_test("User Businesses API", "FAIL", 
+                f"HTTP {result['status_code']}: {result['data']}")
+        return False
+    
+    data = result["data"]
+    
+    # Проверяем структуру ответа
+    if "businesses" not in data:
+        log_test("User Businesses API", "FAIL", "Отсутствует поле 'businesses' в ответе")
+        return False
+    
+    if "total" not in data:
+        log_test("User Businesses API", "FAIL", "Отсутствует поле 'total' в ответе")
+        return False
+    
+    # Проверяем типы данных
+    if not isinstance(data["businesses"], list):
+        log_test("User Businesses API", "FAIL", "Поле 'businesses' должно быть массивом")
+        return False
+    
+    if not isinstance(data["total"], int):
+        log_test("User Businesses API", "FAIL", "Поле 'total' должно быть числом")
+        return False
+    
+    log_test("User Businesses API", "PASS", 
+            f"Получено {data['total']} бизнесов пользователя, структура ответа корректна")
+    return True
+
+def test_marketplace_resources_api():
+    """Тест API маркетплейса ресурсов (проверка что всё ещё работает)"""
+    print("🧪 ТЕСТ: GET /api/market/listings - Получение листингов ресурсов")
+    
+    result = make_request("GET", "/market/listings")
+    
+    if not result["success"]:
+        log_test("Marketplace Resources API", "FAIL", 
+                f"HTTP {result['status_code']}: {result['data']}")
+        return False
+    
+    data = result["data"]
+    
+    # Проверяем структуру ответа
+    if "listings" not in data:
+        log_test("Marketplace Resources API", "FAIL", "Отсутствует поле 'listings' в ответе")
+        return False
+    
+    if "total" not in data:
+        log_test("Marketplace Resources API", "FAIL", "Отсутствует поле 'total' в ответе")
+        return False
+    
+    # Проверяем типы данных
+    if not isinstance(data["listings"], list):
+        log_test("Marketplace Resources API", "FAIL", "Поле 'listings' должно быть массивом")
+        return False
+    
+    if not isinstance(data["total"], int):
+        log_test("Marketplace Resources API", "FAIL", "Поле 'total' должно быть числом")
+        return False
+    
+    log_test("Marketplace Resources API", "PASS", 
+            f"Получено {data['total']} листингов ресурсов, структура ответа корректна")
+    return True
+
+def test_authorization_required():
+    """Тест проверки требования авторизации"""
+    print("🧪 ТЕСТ: Проверка требования авторизации для защищенных endpoints")
+    
+    # Тестируем endpoints без токена
+    endpoints_requiring_auth = [
+        "/users/me/plots",
+        "/users/me/businesses"
+    ]
+    
+    for endpoint in endpoints_requiring_auth:
+        result = make_request("GET", endpoint)
+        
+        if result["success"]:
+            log_test(f"Авторизация для {endpoint}", "FAIL", 
+                    "Endpoint доступен без авторизации")
+            return False
+        
+        if result["status_code"] != 401:
+            log_test(f"Авторизация для {endpoint}", "FAIL", 
+                    f"Неожиданный код ошибки: {result['status_code']}, ожидался 401")
+            return False
+    
+    log_test("Проверка авторизации", "PASS", 
+            "Все защищенные endpoints корректно требуют авторизацию")
+    return True
+
 def run_all_tests():
     """Запуск всех тестов"""
     print("=" * 80)
-    print("🚀 ЗАПУСК ТЕСТОВ СИСТЕМЫ АУТЕНТИФИКАЦИИ TON CITY BUILDER")
+    print("🚀 ЗАПУСК ТЕСТОВ TON CITY BUILDER API ENDPOINTS")
     print("=" * 80)
     print(f"🌐 Backend URL: {BASE_URL}")
     print(f"🗄️ База данных: {TEST_DATABASE}")
     print()
     
-    tests = [
+    # Сначала тестируем аутентификацию для получения токена
+    auth_tests = [
         test_1_register_email,
         test_2a_login_email,
+    ]
+    
+    # Затем тестируем новые API endpoints
+    api_tests = [
+        test_land_marketplace_api,
+        test_marketplace_resources_api,
+        test_authorization_required,
+        test_user_plots_api,
+        test_user_businesses_api,
+    ]
+    
+    # Дополнительные тесты аутентификации
+    additional_auth_tests = [
         test_2b_login_username,
         test_3_update_username,
         test_4_update_email,
@@ -692,6 +887,8 @@ def run_all_tests():
         test_verify_reset_code,
         test_reset_password
     ]
+    
+    all_tests = auth_tests + api_tests + additional_auth_tests
     
     passed = 0
     failed = 0
