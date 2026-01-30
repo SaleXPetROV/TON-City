@@ -204,9 +204,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Backend: Регистрация через Email (с генерацией аватара)"
-    - "Backend: Вход через Username"
-    - "Backend: API настроек пользователя"
     - "Frontend: AuthPage регистрация/вход"
     - "Frontend: Страница настроек"
     - "Frontend: Sidebar адаптивность"
