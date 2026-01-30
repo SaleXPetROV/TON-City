@@ -130,7 +130,6 @@ async def register(data: EmailRegister):
         "raw_address": None,
         "avatar": avatar,
         "balance_ton": 0,
-        "balance_ton": 0,
         "language": "ru",
         "level": "novice",
         "xp": 0,
