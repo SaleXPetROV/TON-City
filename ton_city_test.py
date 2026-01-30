@@ -129,26 +129,35 @@ def set_test_user_balance():
         print("✅ Баланс уже установлен корректно")
         return True
     
-    # Попробуем использовать admin API для пополнения баланса
-    # Сначала попробуем создать фиктивный депозит
+    # Попробуем создать промо-код для пополнения баланса
     try:
         admin_headers = {"Authorization": f"Bearer {auth_token}"}
-        credit_data = {
-            "tx_hash": f"test_deposit_{int(time.time())}",
-            "wallet_address": TEST_USER["wallet_address"],
-            "amount_ton": TEST_USER["balance_ton"]
-        }
         
-        admin_result = make_request("POST", f"/admin/deposits/{credit_data['tx_hash']}/credit", 
-                                  credit_data, admin_headers)
+        # Сначала создаем промо-код
+        promo_result = make_request("POST", "/admin/promo/create", {
+            "name": "Test Balance",
+            "amount": TEST_USER["balance_ton"],
+            "max_uses": 1
+        }, admin_headers)
         
-        if admin_result["success"]:
-            print("✅ Баланс установлен через admin API")
-            return True
+        if promo_result["success"]:
+            promo_code = promo_result["data"]["code"]
+            print(f"✅ Создан промо-код: {promo_code}")
+            
+            # Используем промо-код
+            use_promo_result = make_request("POST", "/promo/use", {
+                "code": promo_code
+            }, headers)
+            
+            if use_promo_result["success"]:
+                print("✅ Баланс пополнен через промо-код")
+                return True
+            else:
+                print(f"⚠️ Ошибка использования промо-кода: {use_promo_result}")
         else:
-            print(f"⚠️ Admin API недоступен: {admin_result}")
+            print(f"⚠️ Ошибка создания промо-кода: {promo_result}")
     except Exception as e:
-        print(f"⚠️ Ошибка admin API: {e}")
+        print(f"⚠️ Ошибка с промо-кодом: {e}")
     
     # Обновляем ожидаемый баланс для тестов
     TEST_USER["balance_ton"] = current_balance
