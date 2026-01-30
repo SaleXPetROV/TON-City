@@ -11,6 +11,7 @@ import IncomeTablePage from "@/pages/IncomeTablePage";
 import TradingPage from "@/pages/TradingPage";
 import AuthPage from '@/pages/AuthPage';
 import SettingsPage from '@/pages/SettingsPage';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import "@/App.css";
