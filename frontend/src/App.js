@@ -111,6 +111,9 @@ function App() {
           </Routes>
         </BrowserRouter>
         
+        {/* Support Button on all pages */}
+        <SupportButton />
+        
         <Toaster position="bottom-right" theme="dark" closeButton richColors />
       </div>
     </TonConnectUIProvider>
