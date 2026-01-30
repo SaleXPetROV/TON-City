@@ -11,7 +11,7 @@ import random
 from typing import Dict, Any, Optional
 
 # Конфигурация
-BASE_URL = "https://authflow-ton.preview.emergentagent.com/api"
+BASE_URL = "https://field-counter-1.preview.emergentagent.com/api"
 TEST_DATABASE = "test_database"
 
 # Генерируем уникальные тестовые данные для каждого запуска
