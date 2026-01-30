@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Globe, ShoppingBag, Users, Lock, Settings, Map } from 'lucide-react';
+import { LayoutDashboard, Globe, ShoppingBag, Users, Lock, Settings, Map, Store } from 'lucide-react';
 import { useTranslation } from '@/lib/translations';
 
 export default function Sidebar({ user }) {
