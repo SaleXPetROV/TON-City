@@ -514,6 +514,160 @@ def test_google_oauth_configuration():
             f"Неожиданный ответ: HTTP {result['status_code']}: {result['data']}")
     return True
 
+def test_password_reset_request():
+    """Тест запроса восстановления пароля"""
+    print("🧪 ТЕСТ: POST /api/auth/request-password-reset - Запрос восстановления пароля")
+    
+    # Тест с существующим email
+    reset_data = {"email": "test@example.com"}
+    
+    result = make_request("POST", "/auth/request-password-reset", reset_data)
+    
+    if not result["success"]:
+        # Проверяем, что это ошибка user_not_found (ожидаемая)
+        if result["status_code"] == 404 and "user_not_found" in str(result["data"]):
+            log_test("Запрос восстановления (несуществующий email)", "PASS", 
+                    "Корректно возвращает ошибку user_not_found для несуществующего email")
+        else:
+            log_test("Запрос восстановления пароля", "FAIL", 
+                    f"HTTP {result['status_code']}: {result['data']}")
+            return False
+    else:
+        # Если успешно - значит пользователь существует
+        data = result["data"]
+        if data.get("status") == "success":
+            log_test("Запрос восстановления пароля", "PASS", 
+                    "Успешно отправлен запрос (SMTP не настроен, но endpoint работает)")
+        else:
+            log_test("Запрос восстановления пароля", "FAIL", f"Неожиданный ответ: {data}")
+            return False
+    
+    # Создаем тестового пользователя для полного тестирования
+    test_user_data = {
+        "email": "test@example.com",
+        "password": "Test123!",
+        "username": "TestPlayer"
+    }
+    
+    # Регистрируем пользователя
+    register_result = make_request("POST", "/auth/register", test_user_data)
+    
+    if register_result["success"]:
+        log_test("Создание тестового пользователя", "PASS", "Пользователь test@example.com создан")
+        
+        # Теперь тестируем запрос восстановления для существующего пользователя
+        result = make_request("POST", "/auth/request-password-reset", reset_data)
+        
+        if result["success"]:
+            data = result["data"]
+            if data.get("status") == "success":
+                log_test("Запрос восстановления (существующий email)", "PASS", 
+                        "Успешно принят запрос для существующего пользователя")
+            else:
+                log_test("Запрос восстановления (существующий email)", "FAIL", 
+                        f"Неожиданный ответ: {data}")
+                return False
+        else:
+            # Проверяем, что это ошибка отправки email (SMTP не настроен)
+            if result["status_code"] == 500 and "email_send_failed" in str(result["data"]):
+                log_test("Запрос восстановления (существующий email)", "PASS", 
+                        "Endpoint работает, ошибка отправки email (SMTP не настроен)")
+            else:
+                log_test("Запрос восстановления (существующий email)", "FAIL", 
+                        f"HTTP {result['status_code']}: {result['data']}")
+                return False
+    else:
+        # Пользователь уже существует
+        if register_result["status_code"] == 400:
+            log_test("Тестовый пользователь", "INFO", "Пользователь test@example.com уже существует")
+            
+            # Тестируем с существующим пользователем
+            result = make_request("POST", "/auth/request-password-reset", reset_data)
+            
+            if result["success"]:
+                data = result["data"]
+                if data.get("status") == "success":
+                    log_test("Запрос восстановления (существующий email)", "PASS", 
+                            "Успешно принят запрос для существующего пользователя")
+                else:
+                    log_test("Запрос восстановления (существующий email)", "FAIL", 
+                            f"Неожиданный ответ: {data}")
+                    return False
+            else:
+                # Проверяем, что это ошибка отправки email (SMTP не настроен)
+                if result["status_code"] == 500 and "email_send_failed" in str(result["data"]):
+                    log_test("Запрос восстановления (существующий email)", "PASS", 
+                            "Endpoint работает, ошибка отправки email (SMTP не настроен)")
+                else:
+                    log_test("Запрос восстановления (существующий email)", "FAIL", 
+                            f"HTTP {result['status_code']}: {result['data']}")
+                    return False
+        else:
+            log_test("Создание тестового пользователя", "FAIL", 
+                    f"Не удалось создать пользователя: {register_result}")
+            return False
+    
+    return True
+
+def test_verify_reset_code():
+    """Тест проверки кода восстановления"""
+    print("🧪 ТЕСТ: POST /api/auth/verify-reset-code - Проверка кода восстановления")
+    
+    # Тест с неверным кодом
+    verify_data = {
+        "email": "test@example.com",
+        "code": "INVALID123"
+    }
+    
+    result = make_request("POST", "/auth/verify-reset-code", verify_data)
+    
+    if not result["success"]:
+        # Ожидаем ошибку - либо no_code_requested, либо invalid_code
+        error_detail = str(result["data"].get("detail", ""))
+        if "no_code_requested" in error_detail or "invalid_code" in error_detail:
+            log_test("Проверка неверного кода", "PASS", 
+                    f"Корректно отклонен неверный код: {error_detail}")
+        else:
+            log_test("Проверка неверного кода", "FAIL", 
+                    f"Неожиданная ошибка: HTTP {result['status_code']}: {result['data']}")
+            return False
+    else:
+        log_test("Проверка неверного кода", "FAIL", 
+                "Неверный код был принят как валидный")
+        return False
+    
+    return True
+
+def test_reset_password():
+    """Тест сброса пароля"""
+    print("🧪 ТЕСТ: POST /api/auth/reset-password - Сброс пароля")
+    
+    # Тест с неверным кодом
+    reset_data = {
+        "email": "test@example.com",
+        "code": "INVALID123",
+        "new_password": "NewPassword123!"
+    }
+    
+    result = make_request("POST", "/auth/reset-password", reset_data)
+    
+    if not result["success"]:
+        # Ожидаем ошибку - либо no_code_requested, либо invalid_code
+        error_detail = str(result["data"].get("detail", ""))
+        if "no_code_requested" in error_detail or "invalid_code" in error_detail:
+            log_test("Сброс пароля с неверным кодом", "PASS", 
+                    f"Корректно отклонен неверный код: {error_detail}")
+        else:
+            log_test("Сброс пароля с неверным кодом", "FAIL", 
+                    f"Неожиданная ошибка: HTTP {result['status_code']}: {result['data']}")
+            return False
+    else:
+        log_test("Сброс пароля с неверным кодом", "FAIL", 
+                "Неверный код был принят для сброса пароля")
+        return False
+    
+    return True
+
 def run_all_tests():
     """Запуск всех тестов"""
     print("=" * 80)
@@ -533,7 +687,10 @@ def run_all_tests():
         test_6_link_wallet,
         test_7_upload_avatar,
         test_validation_errors,
-        test_google_oauth_configuration
+        test_google_oauth_configuration,
+        test_password_reset_request,
+        test_verify_reset_code,
+        test_reset_password
     ]
     
     passed = 0
