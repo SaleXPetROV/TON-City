@@ -185,6 +185,16 @@ export const translations = {
     yourStats: "Ваша статистика",
     coins: "Монеты",
     
+    // Marketplace
+    marketplace: "Маркетплейс",
+    leaderboard: "Рейтинг",
+    deposit: "Пополнить",
+    withdraw: "Вывести",
+    sellResources: "Продать ресурсы",
+    sellLand: "Продать землю",
+    buyNow: "Купить",
+    myListings: "Мои листинги",
+    
     // How it works section
     howItWorks: "Как это работает",
     howItWorksDesc: "TON City Builder — это экономическая стратегия на блокчейне, где вы можете построить бизнес-империю и зарабатывать настоящую криптовалюту.",
