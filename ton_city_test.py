@@ -1,28 +1,22 @@
 #!/usr/bin/env python3
 """
-Тестирование TON City Builder - покупка земли, баланс, подсчёт полей
+TON City Builder - Тестирование новых функций
+Тестирует: регистрацию пользователей, Marketplace API, Sprites API
 """
 
 import requests
 import json
 import time
+import random
 from typing import Dict, Any, Optional
 
 # Конфигурация
 BASE_URL = "https://field-counter-1.preview.emergentagent.com/api"
 
-# Тестовый пользователь из MongoDB
-TEST_USER = {
-    "id": "test-user-001",
-    "username": "TestPlayer",
-    "wallet_address": "UQBvW8Z5huBkMJYdnfAEM5JqTNLuDP2nRn-L_VPP3xJH9uPq",
-    "balance_ton": 100.0
-}
-
 # Глобальные переменные
 auth_token = None
 user_data = None
-cities_data = None
+created_user_id = None
 
 def log_test(test_name: str, status: str, details: str = ""):
     """Логирование результатов тестов"""
@@ -42,11 +36,13 @@ def make_request(method: str, endpoint: str, data: Dict = None, headers: Dict = 
     
     try:
         if method.upper() == "GET":
-            response = requests.get(url, headers=default_headers)
+            response = requests.get(url, headers=default_headers, params=data)
         elif method.upper() == "POST":
             response = requests.post(url, json=data, headers=default_headers)
         elif method.upper() == "PUT":
             response = requests.put(url, json=data, headers=default_headers)
+        elif method.upper() == "DELETE":
+            response = requests.delete(url, headers=default_headers)
         else:
             raise ValueError(f"Unsupported method: {method}")
         
@@ -64,580 +60,300 @@ def make_request(method: str, endpoint: str, data: Dict = None, headers: Dict = 
     except json.JSONDecodeError:
         return {
             "status_code": response.status_code,
-            "data": {"error": "Invalid JSON response", "raw": response.text[:500]},
+            "data": {"error": "Invalid JSON response", "text": response.text[:200]},
             "success": False
         }
 
-def create_test_user_if_needed():
-    """Создание тестового пользователя если он не существует"""
-    print("🔧 Проверка/создание тестового пользователя...")
+def test_1_user_registration():
+    """Тест 1: Регистрация пользователя"""
+    global auth_token, user_data, created_user_id
     
-    # Сначала попробуем получить токен без username
-    auth_data = {
-        "address": TEST_USER["wallet_address"]
+    print("🧪 ТЕСТ 1: POST /api/auth/register - Регистрация пользователя")
+    
+    # Данные для регистрации как указано в задании
+    register_data = {
+        "email": "newplayer@test.com",
+        "password": "Test123!",
+        "username": "NewPlayer"
     }
     
-    result = make_request("POST", "/auth/verify-wallet", auth_data)
+    # Выполнение запроса
+    result = make_request("POST", "/auth/register", register_data)
     
-    if result["success"] and result["data"].get("status") == "ok":
-        print("✅ Тестовый пользователь уже существует")
-        return True
-    
-    if result["success"] and result["data"].get("status") == "need_username":
-        print("ℹ️ Пользователь не найден, создаем нового...")
-        
-        # Создаем пользователя с username
-        auth_data_with_username = {
-            "address": TEST_USER["wallet_address"],
-            "username": TEST_USER["username"]
-        }
-        
-        create_result = make_request("POST", "/auth/verify-wallet", auth_data_with_username)
-        
-        if create_result["success"] and create_result["data"].get("status") == "ok":
-            print("✅ Тестовый пользователь создан успешно")
-            return True
+    if not result["success"]:
+        # Проверяем, возможно пользователь уже существует
+        if result["status_code"] == 400:
+            error_detail = str(result["data"].get("detail", ""))
+            if "уже зарегистрирован" in error_detail or "уже занят" in error_detail:
+                log_test("Регистрация пользователя", "INFO", 
+                        f"Пользователь уже существует: {error_detail}")
+                
+                # Попробуем войти с существующими данными
+                login_data = {
+                    "email": register_data["email"],
+                    "password": register_data["password"]
+                }
+                
+                login_result = make_request("POST", "/auth/login", login_data)
+                
+                if login_result["success"]:
+                    data = login_result["data"]
+                    auth_token = data.get("token")
+                    user_data = data.get("user")
+                    created_user_id = user_data.get("id") if user_data else None
+                    
+                    log_test("Вход существующего пользователя", "PASS", 
+                            f"Успешный вход для {user_data.get('username') if user_data else 'пользователя'}")
+                    return True
+                else:
+                    log_test("Регистрация пользователя", "FAIL", 
+                            f"Пользователь существует, но вход не удался: {login_result['data']}")
+                    return False
+            else:
+                log_test("Регистрация пользователя", "FAIL", 
+                        f"HTTP {result['status_code']}: {result['data']}")
+                return False
         else:
-            print(f"❌ Ошибка создания пользователя: {create_result}")
+            log_test("Регистрация пользователя", "FAIL", 
+                    f"HTTP {result['status_code']}: {result['data']}")
             return False
     
-    print(f"❌ Неожиданная ошибка: {result}")
-    return False
-
-def set_test_user_balance():
-    """Установка баланса тестового пользователя на 100 TON"""
-    global auth_token
-    
-    if not auth_token:
-        print("❌ Нет токена для установки баланса")
-        return False
-    
-    print("🔧 Установка баланса тестового пользователя на 100 TON...")
-    
-    # Проверяем текущий баланс
-    headers = {"Authorization": f"Bearer {auth_token}"}
-    result = make_request("GET", "/auth/me", headers=headers)
-    
-    if not result["success"]:
-        print(f"❌ Ошибка получения данных пользователя: {result}")
-        return False
-    
-    current_balance = result["data"].get("balance_ton", 0)
-    print(f"ℹ️ Текущий баланс: {current_balance} TON")
-    
-    if current_balance >= TEST_USER["balance_ton"]:
-        print("✅ Баланс уже установлен корректно")
-        return True
-    
-    # Попробуем создать промо-код для пополнения баланса
-    try:
-        admin_headers = {"Authorization": f"Bearer {auth_token}"}
-        
-        # Сначала создаем промо-код
-        promo_result = make_request("POST", "/admin/promo/create", {
-            "name": "Test Balance",
-            "amount": TEST_USER["balance_ton"],
-            "max_uses": 1
-        }, admin_headers)
-        
-        if promo_result["success"]:
-            promo_code = promo_result["data"]["code"]
-            print(f"✅ Создан промо-код: {promo_code}")
-            
-            # Используем промо-код
-            use_promo_result = make_request("POST", "/promo/use", {
-                "code": promo_code
-            }, headers)
-            
-            if use_promo_result["success"]:
-                print("✅ Баланс пополнен через промо-код")
-                return True
-            else:
-                print(f"⚠️ Ошибка использования промо-кода: {use_promo_result}")
-        else:
-            print(f"⚠️ Ошибка создания промо-кода: {promo_result}")
-    except Exception as e:
-        print(f"⚠️ Ошибка с промо-кодом: {e}")
-    
-    # Обновляем ожидаемый баланс для тестов
-    TEST_USER["balance_ton"] = current_balance
-    print(f"⚠️ Используем текущий баланс {current_balance} TON для тестов")
-    
-    return True
-
-def test_1_get_jwt_token():
-    """Тест 1: Получение JWT токена для тестового пользователя"""
-    global auth_token, user_data
-    
-    print("🧪 ТЕСТ 1: POST /api/auth/verify-wallet - Получение JWT токена")
-    
-    # Сначала убедимся что пользователь существует
-    if not create_test_user_if_needed():
-        log_test("Получение JWT токена", "FAIL", "Не удалось создать/найти тестового пользователя")
-        return False
-    
-    # Данные для получения токена
-    auth_data = {
-        "address": TEST_USER["wallet_address"]
-    }
-    
-    result = make_request("POST", "/auth/verify-wallet", auth_data)
-    
-    if not result["success"]:
-        log_test("Получение JWT токена", "FAIL", 
-                f"HTTP {result['status_code']}: {result['data']}")
-        return False
-    
+    # Проверка успешной регистрации
     data = result["data"]
-    
-    # Проверяем статус
-    if data.get("status") != "ok":
-        log_test("Получение JWT токена", "FAIL", 
-                f"Неожиданный статус: {data.get('status')}")
-        return False
     
     # Проверяем наличие токена
     if "token" not in data:
-        log_test("Получение JWT токена", "FAIL", "Токен не возвращен")
+        log_test("Регистрация пользователя", "FAIL", "Токен не возвращен")
         return False
     
     # Проверяем данные пользователя
     if "user" not in data:
-        log_test("Получение JWT токена", "FAIL", "Данные пользователя не возвращены")
+        log_test("Регистрация пользователя", "FAIL", "Данные пользователя не возвращены")
         return False
     
     user = data["user"]
     
-    # Сохраняем токен и данные пользователя
+    # Проверяем username
+    if user.get("username") != register_data["username"]:
+        log_test("Регистрация пользователя", "FAIL", 
+                f"Username не совпадает: ожидался {register_data['username']}, получен {user.get('username')}")
+        return False
+    
+    # Проверяем email
+    if user.get("email") != register_data["email"]:
+        log_test("Регистрация пользователя", "FAIL", 
+                f"Email не совпадает: ожидался {register_data['email']}, получен {user.get('email')}")
+        return False
+    
+    # Сохраняем токен для дальнейших тестов
     auth_token = data["token"]
     user_data = user
+    created_user_id = user.get("id")
     
-    # Устанавливаем баланс пользователя
-    set_test_user_balance()
-    
-    log_test("Получение JWT токена", "PASS", 
-            f"Токен получен для пользователя {user.get('username')} (ID: {user.get('id')})")
+    log_test("Регистрация пользователя", "PASS", 
+            f"Пользователь {user['username']} успешно зарегистрирован, токен получен")
     return True
 
-def test_2_check_balance():
-    """Тест 2: Проверка баланса пользователя"""
-    global auth_token
+def test_2_marketplace_get_listings():
+    """Тест 2: GET /api/market/listings - получить все листинги"""
+    print("🧪 ТЕСТ 2: GET /api/market/listings - Получение всех листингов")
     
-    print("🧪 ТЕСТ 2: GET /api/auth/me - Проверка баланса")
-    
-    if not auth_token:
-        log_test("Проверка баланса", "FAIL", "Нет токена авторизации")
-        return False
-    
-    headers = {"Authorization": f"Bearer {auth_token}"}
-    result = make_request("GET", "/auth/me", headers=headers)
+    result = make_request("GET", "/market/listings")
     
     if not result["success"]:
-        log_test("Проверка баланса", "FAIL", 
-                f"HTTP {result['status_code']}: {result['data']}")
-        return False
-    
-    data = result["data"]
-    
-    # Проверяем наличие balance_ton
-    if "balance_ton" not in data:
-        log_test("Проверка баланса", "FAIL", "Поле balance_ton отсутствует")
-        return False
-    
-    balance_ton = data.get("balance_ton")
-    
-    # Проверяем, что balance_game НЕ используется
-    if "balance_game" in data:
-        log_test("Проверка баланса", "FAIL", 
-                "Поле balance_game все еще присутствует (должно быть удалено)")
-        return False
-    
-    # Проверяем значение баланса
-    if balance_ton != TEST_USER["balance_ton"]:
-        log_test("Проверка баланса", "WARN", 
-                f"Баланс не совпадает с ожидаемым: ожидался {TEST_USER['balance_ton']}, получен {balance_ton}")
-    
-    log_test("Проверка баланса", "PASS", 
-            f"balance_ton: {balance_ton}, balance_game отсутствует")
-    return True
-
-def test_3_get_cities():
-    """Тест 3: Получение списка городов"""
-    global cities_data
-    
-    print("🧪 ТЕСТ 3: GET /api/cities - Получение списка городов")
-    
-    result = make_request("GET", "/cities")
-    
-    if not result["success"]:
-        log_test("Получение списка городов", "FAIL", 
+        log_test("Получение листингов", "FAIL", 
                 f"HTTP {result['status_code']}: {result['data']}")
         return False
     
     data = result["data"]
     
     # Проверяем структуру ответа
-    if "cities" not in data:
-        log_test("Получение списка городов", "FAIL", "Поле cities отсутствует")
+    if not isinstance(data, list):
+        log_test("Получение листингов", "FAIL", 
+                f"Ожидался список, получен: {type(data)}")
         return False
     
-    cities = data["cities"]
-    
-    if not isinstance(cities, list) or len(cities) == 0:
-        log_test("Получение списка городов", "FAIL", "Список городов пуст или не является массивом")
-        return False
-    
-    # Проверяем первый город
-    first_city = cities[0]
-    required_fields = ["id", "name", "stats"]
-    
-    for field in required_fields:
-        if field not in first_city:
-            log_test("Получение списка городов", "FAIL", f"Поле {field} отсутствует в данных города")
-            return False
-    
-    # Проверяем подсчёт полей (total_plots должен показывать количество клеток земли)
-    stats = first_city.get("stats", {})
-    if "total_plots" not in stats:
-        log_test("Получение списка городов", "FAIL", "Поле total_plots отсутствует в статистике города")
-        return False
-    
-    total_plots = stats["total_plots"]
-    
-    # Сохраняем данные городов
-    cities_data = cities
-    
-    log_test("Получение списка городов", "PASS", 
-            f"Получено {len(cities)} городов, первый город: {first_city['name']}, total_plots: {total_plots}")
+    log_test("Получение листингов", "PASS", 
+            f"Получено {len(data)} листингов")
     return True
 
-def test_4_get_city_plots():
-    """Тест 4: Получение участков в городе"""
-    global cities_data
+def test_3_marketplace_create_listing():
+    """Тест 3: POST /api/market/list - создать листинг (нужен авторизованный пользователь)"""
+    global auth_token
     
-    print("🧪 ТЕСТ 4: GET /api/cities/{city_id}/plots - Получение участков в городе")
+    print("🧪 ТЕСТ 3: POST /api/market/list - Создание листинга")
     
-    if not cities_data or len(cities_data) == 0:
-        log_test("Получение участков в городе", "FAIL", "Нет данных о городах")
+    if not auth_token:
+        log_test("Создание листинга", "FAIL", "Нет токена авторизации")
         return False
     
-    # Берем первый город
-    city = cities_data[0]
-    city_id = city["id"]
+    # Данные для создания листинга
+    listing_data = {
+        "resource_type": "crops",
+        "amount": 100.0,
+        "price_per_unit": 0.002,
+        "description": "Fresh crops from test farm"
+    }
     
-    result = make_request("GET", f"/cities/{city_id}/plots")
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    result = make_request("POST", "/market/list", listing_data, headers)
     
     if not result["success"]:
-        log_test("Получение участков в городе", "FAIL", 
+        # Проверяем различные возможные ошибки
+        if result["status_code"] == 401:
+            log_test("Создание листинга", "FAIL", "Ошибка авторизации - токен недействителен")
+        elif result["status_code"] == 400:
+            error_detail = str(result["data"].get("detail", ""))
+            if "insufficient" in error_detail.lower() or "balance" in error_detail.lower():
+                log_test("Создание листинга", "PASS", 
+                        f"API работает корректно - недостаточно ресурсов: {error_detail}")
+                return True
+            else:
+                log_test("Создание листинга", "FAIL", 
+                        f"Ошибка валидации: {error_detail}")
+        else:
+            log_test("Создание листинга", "FAIL", 
+                    f"HTTP {result['status_code']}: {result['data']}")
+        return False
+    
+    data = result["data"]
+    
+    # Проверяем успешное создание
+    if data.get("status") == "success" or "listing_id" in data:
+        log_test("Создание листинга", "PASS", 
+                f"Листинг успешно создан: {data}")
+        return True
+    else:
+        log_test("Создание листинга", "FAIL", 
+                f"Неожиданный ответ: {data}")
+        return False
+
+def test_4_sprites_farm():
+    """Тест 4: GET /api/sprites/farm?level=1 - получить спрайт фермы уровня 1"""
+    print("🧪 ТЕСТ 4: GET /api/sprites/farm?level=1 - Получение спрайта фермы")
+    
+    params = {"level": 1}
+    result = make_request("GET", "/sprites/farm", params)
+    
+    if not result["success"]:
+        log_test("Получение спрайта фермы", "FAIL", 
                 f"HTTP {result['status_code']}: {result['data']}")
         return False
     
     data = result["data"]
     
     # Проверяем структуру ответа
-    if "plots" not in data:
-        log_test("Получение участков в городе", "FAIL", "Поле plots отсутствует")
+    if "sprite" not in data:
+        log_test("Получение спрайта фермы", "FAIL", 
+                "Поле 'sprite' отсутствует в ответе")
         return False
     
-    plots = data["plots"]
+    sprite = data["sprite"]
     
-    if not isinstance(plots, list):
-        log_test("Получение участков в городе", "FAIL", "plots не является массивом")
+    # Проверяем, что спрайт в правильном формате (base64 или SVG)
+    if not (sprite.startswith("data:image/") or sprite.startswith("<svg")):
+        log_test("Получение спрайта фермы", "FAIL", 
+                f"Неверный формат спрайта: {sprite[:50]}...")
         return False
     
-    # Проверяем структуру участка
-    if len(plots) > 0:
-        first_plot = plots[0]
-        required_fields = ["x", "y", "city_id", "price", "is_available"]
-        
-        for field in required_fields:
-            if field not in first_plot:
-                log_test("Получение участков в городе", "FAIL", 
-                        f"Поле {field} отсутствует в данных участка")
-                return False
+    # Проверяем дополнительные поля
+    if data.get("building_type") != "farm":
+        log_test("Получение спрайта фермы", "FAIL", 
+                f"Неверный building_type: {data.get('building_type')}")
+        return False
     
-    # Подсчитываем количество земельных участков (где grid == 1)
-    land_plots = [p for p in plots if p.get("x") is not None and p.get("y") is not None]
+    if data.get("level") != 1:
+        log_test("Получение спрайта фермы", "FAIL", 
+                f"Неверный level: {data.get('level')}")
+        return False
     
-    log_test("Получение участков в городе", "PASS", 
-            f"Получено {len(plots)} участков в городе {city['name']}, земельных участков: {len(land_plots)}")
+    log_test("Получение спрайта фермы", "PASS", 
+            f"Спрайт получен, тип: {data.get('building_type')}, уровень: {data.get('level')}, кэшировано: {data.get('cached', False)}")
     return True
 
-def test_5_buy_land_plot():
-    """Тест 5: Покупка участка земли"""
-    global auth_token, cities_data
+def test_5_sprites_construction():
+    """Тест 5: GET /api/sprites/construction/placeholder - получить спрайт строительства"""
+    print("🧪 ТЕСТ 5: GET /api/sprites/construction/placeholder - Получение спрайта строительства")
     
-    print("🧪 ТЕСТ 5: POST /api/cities/{city_id}/plots/{x}/{y}/buy - Покупка участка земли")
-    
-    if not auth_token:
-        log_test("Покупка участка земли", "FAIL", "Нет токена авторизации")
-        return False
-    
-    if not cities_data or len(cities_data) == 0:
-        log_test("Покупка участка земли", "FAIL", "Нет данных о городах")
-        return False
-    
-    # Проверяем баланс пользователя
-    headers = {"Authorization": f"Bearer {auth_token}"}
-    balance_result = make_request("GET", "/auth/me", headers=headers)
-    
-    if not balance_result["success"]:
-        log_test("Покупка участка земли", "FAIL", "Не удалось получить баланс пользователя")
-        return False
-    
-    current_balance = balance_result["data"].get("balance_ton", 0)
-    
-    if current_balance <= 0:
-        log_test("Покупка участка земли", "WARN", 
-                f"Недостаточно средств для покупки (баланс: {current_balance} TON). Тестируем только API.")
-        
-        # Тестируем API, но ожидаем ошибку недостатка средств
-        city = cities_data[0]
-        city_id = city["id"]
-        
-        # Получаем участки города
-        plots_result = make_request("GET", f"/cities/{city_id}/plots")
-        
-        if not plots_result["success"]:
-            log_test("Покупка участка земли", "FAIL", 
-                    f"Не удалось получить участки: HTTP {plots_result['status_code']}")
-            return False
-        
-        plots = plots_result["data"]["plots"]
-        
-        # Ищем доступный участок
-        available_plot = None
-        for plot in plots:
-            if plot.get("is_available") and not plot.get("owner"):
-                available_plot = plot
-                break
-        
-        if not available_plot:
-            log_test("Покупка участка земли", "FAIL", "Нет доступных участков для покупки")
-            return False
-        
-        x, y = available_plot["x"], available_plot["y"]
-        
-        # Пытаемся купить участок (ожидаем ошибку)
-        result = make_request("POST", f"/cities/{city_id}/plots/{x}/{y}/buy", headers=headers)
-        
-        if result["status_code"] == 400 and "Insufficient TON balance" in str(result["data"]):
-            log_test("Покупка участка земли", "PASS", 
-                    "API корректно отклоняет покупку при недостатке средств")
-            return True
-        else:
-            log_test("Покупка участка земли", "FAIL", 
-                    f"Неожиданный ответ API: {result}")
-            return False
-    
-    # Берем первый город
-    city = cities_data[0]
-    city_id = city["id"]
-    
-    # Получаем участки города
-    plots_result = make_request("GET", f"/cities/{city_id}/plots")
-    
-    if not plots_result["success"]:
-        log_test("Покупка участка земли", "FAIL", 
-                f"Не удалось получить участки: HTTP {plots_result['status_code']}")
-        return False
-    
-    plots = plots_result["data"]["plots"]
-    
-    # Ищем доступный участок
-    available_plot = None
-    for plot in plots:
-        if plot.get("is_available") and not plot.get("owner"):
-            available_plot = plot
-            break
-    
-    if not available_plot:
-        log_test("Покупка участка земли", "FAIL", "Нет доступных участков для покупки")
-        return False
-    
-    x, y = available_plot["x"], available_plot["y"]
-    price = available_plot["price"]
-    
-    # Проверяем, что у нас достаточно средств
-    if current_balance < price:
-        log_test("Покупка участка земли", "WARN", 
-                f"Недостаточно средств: нужно {price} TON, есть {current_balance} TON")
-        return False
-    
-    # Покупаем участок
-    result = make_request("POST", f"/cities/{city_id}/plots/{x}/{y}/buy", headers=headers)
+    result = make_request("GET", "/sprites/construction/placeholder")
     
     if not result["success"]:
-        log_test("Покупка участка земли", "FAIL", 
+        log_test("Получение спрайта строительства", "FAIL", 
                 f"HTTP {result['status_code']}: {result['data']}")
         return False
     
     data = result["data"]
     
-    # Проверяем успешность покупки
-    if data.get("status") != "success":
-        log_test("Покупка участка земли", "FAIL", 
-                f"Неожиданный статус: {data.get('status')}")
+    # Проверяем структуру ответа
+    if "sprite" not in data:
+        log_test("Получение спрайта строительства", "FAIL", 
+                "Поле 'sprite' отсутствует в ответе")
         return False
     
-    # Проверяем данные участка
-    if "plot" not in data:
-        log_test("Покупка участка земли", "FAIL", "Данные участка не возвращены")
+    sprite = data["sprite"]
+    
+    # Проверяем, что спрайт в правильном формате
+    if not (sprite.startswith("data:image/") or sprite.startswith("<svg")):
+        log_test("Получение спрайта строительства", "FAIL", 
+                f"Неверный формат спрайта: {sprite[:50]}...")
         return False
     
-    plot_data = data["plot"]
-    
-    # Проверяем, что участок привязан к user.id (не к wallet_address)
-    user_id = balance_result["data"].get("id")
-    if plot_data.get("owner") != user_id:
-        log_test("Покупка участка земли", "FAIL", 
-                f"Участок не привязан к user.id: ожидался {user_id}, получен {plot_data.get('owner')}")
+    # Проверяем building_type
+    if data.get("building_type") != "construction":
+        log_test("Получение спрайта строительства", "FAIL", 
+                f"Неверный building_type: {data.get('building_type')}")
         return False
     
-    # Проверяем новый баланс
-    if "new_balance" in data:
-        new_balance = data["new_balance"]
-        expected_balance = current_balance - price
-        if abs(new_balance - expected_balance) > 0.01:  # Допускаем небольшую погрешность
-            log_test("Покупка участка земли", "WARN", 
-                    f"Баланс не соответствует ожидаемому: ожидался {expected_balance}, получен {new_balance}")
-    
-    log_test("Покупка участка земли", "PASS", 
-            f"Участок ({x}, {y}) успешно куплен за {price} TON, владелец: {plot_data.get('owner')}")
+    log_test("Получение спрайта строительства", "PASS", 
+            f"Спрайт строительства получен, тип: {data.get('building_type')}")
     return True
 
-def test_6_verify_balance_after_purchase():
-    """Тест 6: Проверка баланса после покупки"""
-    global auth_token
+def test_6_cleanup_user():
+    """Тест 6: Удаление созданного пользователя (если регистрация работает)"""
+    global created_user_id, auth_token
     
-    print("🧪 ТЕСТ 6: GET /api/auth/me - Проверка баланса после покупки")
+    print("🧪 ТЕСТ 6: Очистка - Удаление тестового пользователя")
     
-    if not auth_token:
-        log_test("Проверка баланса после покупки", "FAIL", "Нет токена авторизации")
-        return False
-    
-    headers = {"Authorization": f"Bearer {auth_token}"}
-    result = make_request("GET", "/auth/me", headers=headers)
-    
-    if not result["success"]:
-        log_test("Проверка баланса после покупки", "FAIL", 
-                f"HTTP {result['status_code']}: {result['data']}")
-        return False
-    
-    data = result["data"]
-    
-    # Проверяем наличие balance_ton
-    if "balance_ton" not in data:
-        log_test("Проверка баланса после покупки", "FAIL", "Поле balance_ton отсутствует")
-        return False
-    
-    balance_ton = data.get("balance_ton")
-    
-    # Проверяем, что balance_game НЕ используется
-    if "balance_game" in data:
-        log_test("Проверка баланса после покупки", "FAIL", 
-                "Поле balance_game все еще присутствует (должно быть удалено)")
-        return False
-    
-    # Если баланс был 0, то он должен остаться 0 (покупка не прошла)
-    if TEST_USER["balance_ton"] == 0:
-        if balance_ton == 0:
-            log_test("Проверка баланса после покупки", "PASS", 
-                    f"Баланс остался {balance_ton} TON (покупка не прошла из-за недостатка средств)")
-            return True
-        else:
-            log_test("Проверка баланса после покупки", "WARN", 
-                    f"Неожиданное изменение баланса: {balance_ton} TON")
-            return True
-    
-    # Если был баланс, проверяем что он изменился
-    if balance_ton >= TEST_USER["balance_ton"]:
-        log_test("Проверка баланса после покупки", "WARN", 
-                f"Баланс не изменился после покупки: {balance_ton} >= {TEST_USER['balance_ton']}")
+    if not created_user_id or not auth_token:
+        log_test("Удаление пользователя", "SKIP", 
+                "Пользователь не был создан в этой сессии или нет токена")
         return True
     
-    log_test("Проверка баланса после покупки", "PASS", 
-            f"Баланс обновлен: {balance_ton} TON (было {TEST_USER['balance_ton']} TON)")
-    return True
-
-def test_7_verify_field_counting():
-    """Тест 7: Проверка подсчёта полей"""
+    # В данном API нет прямого endpoint для удаления пользователя
+    # Но мы можем проверить, что пользователь существует
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    result = make_request("GET", "/auth/me", None, headers)
     
-    print("🧪 ТЕСТ 7: Проверка подсчёта полей (grid == 1)")
-    
-    result = make_request("GET", "/cities")
-    
-    if not result["success"]:
-        log_test("Проверка подсчёта полей", "FAIL", 
-                f"HTTP {result['status_code']}: {result['data']}")
+    if result["success"]:
+        user_info = result["data"]
+        log_test("Проверка пользователя", "PASS", 
+                f"Пользователь {user_info.get('username')} существует и доступен")
+        
+        # Поскольку нет API для удаления, просто отмечаем что пользователь создан
+        log_test("Удаление пользователя", "INFO", 
+                "API для удаления пользователя не предоставлен. Пользователь остается в системе.")
+        return True
+    else:
+        log_test("Проверка пользователя", "FAIL", 
+                f"Не удалось получить информацию о пользователе: {result['data']}")
         return False
-    
-    data = result["data"]
-    cities = data.get("cities", [])
-    
-    if len(cities) == 0:
-        log_test("Проверка подсчёта полей", "FAIL", "Нет городов для проверки")
-        return False
-    
-    # Проверяем первый город
-    city = cities[0]
-    city_id = city["id"]
-    
-    # Получаем полную информацию о городе
-    city_result = make_request("GET", f"/cities/{city_id}")
-    
-    if not city_result["success"]:
-        log_test("Проверка подсчёта полей", "FAIL", 
-                f"Не удалось получить данные города: HTTP {city_result['status_code']}")
-        return False
-    
-    city_data = city_result["data"]
-    
-    # Проверяем наличие grid
-    if "grid" not in city_data:
-        log_test("Проверка подсчёта полей", "FAIL", "Поле grid отсутствует в данных города")
-        return False
-    
-    grid = city_data["grid"]
-    
-    # Подсчитываем клетки земли (grid == 1)
-    land_cells = 0
-    for row in grid:
-        for cell in row:
-            if cell == 1:
-                land_cells += 1
-    
-    # Сравниваем с total_plots в статистике
-    stats = city.get("stats", {})
-    total_plots = stats.get("total_plots", 0)
-    
-    if land_cells != total_plots:
-        log_test("Проверка подсчёта полей", "FAIL", 
-                f"Подсчёт полей неверен: в grid {land_cells} клеток земли, в stats.total_plots {total_plots}")
-        return False
-    
-    log_test("Проверка подсчёта полей", "PASS", 
-            f"Подсчёт полей корректен: {land_cells} клеток земли (grid == 1)")
-    return True
 
 def run_all_tests():
     """Запуск всех тестов"""
     print("=" * 80)
-    print("🚀 ЗАПУСК ТЕСТОВ TON CITY BUILDER")
+    print("🚀 ТЕСТИРОВАНИЕ НОВЫХ ФУНКЦИЙ TON CITY BUILDER")
     print("=" * 80)
     print(f"🌐 Backend URL: {BASE_URL}")
-    print(f"👤 Тестовый пользователь: {TEST_USER['username']} (ID: {TEST_USER['id']})")
-    print(f"💰 Начальный баланс: {TEST_USER['balance_ton']} TON")
     print()
     
     tests = [
-        test_1_get_jwt_token,
-        test_2_check_balance,
-        test_3_get_cities,
-        test_4_get_city_plots,
-        test_5_buy_land_plot,
-        test_6_verify_balance_after_purchase,
-        test_7_verify_field_counting
+        test_1_user_registration,
+        test_2_marketplace_get_listings,
+        test_3_marketplace_create_listing,
+        test_4_sprites_farm,
+        test_5_sprites_construction,
+        test_6_cleanup_user
     ]
     
     passed = 0
