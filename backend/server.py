@@ -2790,6 +2790,77 @@ async def get_pending_income(current_user: User = Depends(get_current_user)):
 
 # ==================== ADMIN ROUTES ====================
 
+# System settings (stored in DB)
+async def get_system_settings():
+    """Get current system settings from DB"""
+    settings = await db.system_settings.find_one({"type": "fees"}, {"_id": 0})
+    if not settings:
+        # Default settings
+        settings = {
+            "type": "fees",
+            "income_tax": 0.10,  # 10% подоходный налог
+            "withdrawal_fee": 0.03,  # 3% комиссия вывода
+            "resale_commission": 0.15,  # 15% при перепродаже
+            "trade_commission": 0.0,  # 0% торговая комиссия (отменена)
+            "min_withdrawal": 1.0
+        }
+        await db.system_settings.insert_one(settings)
+    return settings
+
+class FeeSettingsUpdate(BaseModel):
+    income_tax: float = None
+    withdrawal_fee: float = None
+    resale_commission: float = None
+    trade_commission: float = None
+    min_withdrawal: float = None
+
+@admin_router.get("/settings/fees")
+async def admin_get_fee_settings(admin: User = Depends(get_admin_user)):
+    """Получить настройки комиссий"""
+    settings = await get_system_settings()
+    return settings
+
+@admin_router.post("/settings/fees")
+async def admin_update_fee_settings(data: FeeSettingsUpdate, admin: User = Depends(get_admin_user)):
+    """Обновить настройки комиссий"""
+    update_data = {}
+    
+    if data.income_tax is not None:
+        if data.income_tax < 0 or data.income_tax > 0.5:
+            raise HTTPException(status_code=400, detail="Налог должен быть от 0% до 50%")
+        update_data["income_tax"] = data.income_tax
+        
+    if data.withdrawal_fee is not None:
+        if data.withdrawal_fee < 0 or data.withdrawal_fee > 0.2:
+            raise HTTPException(status_code=400, detail="Комиссия вывода должна быть от 0% до 20%")
+        update_data["withdrawal_fee"] = data.withdrawal_fee
+        
+    if data.resale_commission is not None:
+        if data.resale_commission < 0 or data.resale_commission > 0.5:
+            raise HTTPException(status_code=400, detail="Комиссия перепродажи должна быть от 0% до 50%")
+        update_data["resale_commission"] = data.resale_commission
+        
+    if data.trade_commission is not None:
+        if data.trade_commission < 0 or data.trade_commission > 0.2:
+            raise HTTPException(status_code=400, detail="Торговая комиссия должна быть от 0% до 20%")
+        update_data["trade_commission"] = data.trade_commission
+        
+    if data.min_withdrawal is not None:
+        if data.min_withdrawal < 0.1 or data.min_withdrawal > 100:
+            raise HTTPException(status_code=400, detail="Минимальный вывод от 0.1 до 100 TON")
+        update_data["min_withdrawal"] = data.min_withdrawal
+    
+    if update_data:
+        await db.system_settings.update_one(
+            {"type": "fees"},
+            {"$set": update_data},
+            upsert=True
+        )
+        logger.info(f"Admin {admin.username} updated fee settings: {update_data}")
+    
+    settings = await get_system_settings()
+    return {"status": "updated", "settings": settings}
+
 @admin_router.get("/stats")
 async def admin_get_stats(admin: User = Depends(get_admin_user)):
     """Get admin statistics"""
