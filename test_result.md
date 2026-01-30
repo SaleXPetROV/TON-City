@@ -147,6 +147,18 @@ backend:
         agent: "testing"
         comment: "✅ ПРОТЕСТИРОВАНО: POST /api/auth/register работает корректно. Возвращает токен, данные пользователя и сгенерированный SVG аватар. Проверяет уникальность email и username."
 
+  - task: "API восстановления пароля"
+    implemented: true
+    working: true
+    file: "auth_handler.py, email_service.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: Все endpoints восстановления пароля работают корректно. POST /api/auth/request-password-reset: ✅ (возвращает success для существующих пользователей, user_not_found для несуществующих). POST /api/auth/verify-reset-code: ✅ (корректно обрабатывает неверные коды). POST /api/auth/reset-password: ✅ (корректно обрабатывает неверные коды). SMTP не настроен, но endpoints функциональны."
+
 frontend:
   - task: "AuthPage с Username/Email входом и Google OAuth"
     implemented: true
