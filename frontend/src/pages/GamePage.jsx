@@ -384,7 +384,7 @@ export default function GamePage({ user }) {
     );
   }
 
-  const isMyPlot = selectedPlot?.owner === user?.id;
+  const isMyPlot = selectedPlot?.owner === user?.id || selectedPlot?.owner === user?.wallet_address;
 
   return (
     <div className="h-screen bg-void relative overflow-hidden font-rajdhani flex flex-col">
