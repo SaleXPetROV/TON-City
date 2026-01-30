@@ -11,9 +11,49 @@
 #====================================================================================================
 
 user_problem_statement: |
-  Расширение системы аутентификации TON City Builder с множественными методами входа и настройками пользователя.
+  Проверка и исправление системы TON City Builder:
+  1. Покупка земли
+  2. Единый баланс (balance_ton)
+  3. Подсчёт полей (только видимые)
+  4. Привязка данных к ID пользователя
 
 backend:
+  - task: "Унификация баланса на balance_ton"
+    implemented: true
+    working: "NA"
+    file: "server.py, auth_handler.py, payment_monitor.py, background_tasks.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ Заменены все использования balance_game на balance_ton во всех файлах backend"
+
+  - task: "Покупка земли в городе"
+    implemented: true
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Требуется тестирование POST /api/cities/{city_id}/plots/{x}/{y}/buy"
+
+  - task: "Привязка данных к user.id"
+    implemented: true
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "✅ Owner в plots привязывается к user.id вместо _id"
+
   - task: "Вход через Email/Username + password"
     implemented: true
     working: true
