@@ -139,6 +139,42 @@ backend:
         agent: "testing"
         comment: "✅ ПРОТЕСТИРОВАНО: Все endpoints восстановления пароля работают корректно. POST /api/auth/request-password-reset: ✅ (возвращает success для существующих пользователей, user_not_found для несуществующих). POST /api/auth/verify-reset-code: ✅ (корректно обрабатывает неверные коды). POST /api/auth/reset-password: ✅ (корректно обрабатывает неверные коды). SMTP не настроен, но endpoints функциональны."
 
+  - task: "Land Marketplace API"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: GET /api/market/land/listings работает корректно. Возвращает структурированный ответ {'listings': [], 'total': 0}. Формат ответа соответствует требованиям (содержит listings и total). API доступен и функционален."
+
+  - task: "User Resources API"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: GET /api/users/me/plots и GET /api/users/me/businesses работают корректно. Оба endpoint возвращают правильную структуру {'plots'/'businesses': [], 'total': 0}. Корректно требуют Bearer токен авторизации. Система авторизации работает как ожидается."
+
+  - task: "Marketplace Resources API (совместимость)"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ ПРОТЕСТИРОВАНО: GET /api/market/listings продолжает работать корректно. Возвращает листинги ресурсов в формате {'listings': [], 'total': 0}. Совместимость с существующими функциями сохранена."
+
 frontend:
   - task: "AuthPage с Username/Email входом и Google OAuth"
     implemented: true
