@@ -719,7 +719,6 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         "level": user_doc.get("level", 1),
         "xp": user_doc.get("xp", 0),
         "balance_ton": user_doc.get("balance_ton", 0.0),
-        "balance_ton": user_doc.get("balance_ton", 0.0),
         "total_turnover": user_doc.get("total_turnover", 0.0),
         "total_income": user_doc.get("total_income", 0.0),
         "plots_owned": user_doc.get("plots_owned", []),
