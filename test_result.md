@@ -271,6 +271,10 @@ test_plan:
   stuck_tasks: []
   test_all: false
   test_priority: "sequential"
+  completed_new_endpoints: 
+    - "Land Marketplace API"
+    - "User Resources API" 
+    - "Marketplace Resources API (совместимость)"
 
 agent_communication:
   - agent: "main"
