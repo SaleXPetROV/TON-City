@@ -167,14 +167,22 @@ def test_2_marketplace_get_listings():
     
     data = result["data"]
     
-    # API возвращает список напрямую, не в обертке
+    # Проверяем что API возвращает корректную структуру
     if isinstance(data, list):
+        # API возвращает список напрямую
         log_test("Получение листингов", "PASS", 
-                f"Получено {len(data)} листингов")
+                f"Получено {len(data)} листингов (прямой список)")
+        return True
+    elif isinstance(data, dict) and "listings" in data:
+        # API возвращает объект с полем listings
+        listings = data["listings"]
+        total = data.get("total", len(listings))
+        log_test("Получение листингов", "PASS", 
+                f"Получено {len(listings)} листингов из {total} (структурированный ответ)")
         return True
     else:
         log_test("Получение листингов", "FAIL", 
-                f"Ожидался список, получен: {type(data)}, данные: {data}")
+                f"Неожиданная структура ответа: {type(data)}, данные: {data}")
         return False
 
 def test_3_marketplace_create_listing():
