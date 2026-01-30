@@ -89,6 +89,7 @@ function App() {
           <Routes>
             <Route path="/" element={<LandingPage user={user} setUser={setUser} />} />
             <Route path="/auth" element={<AuthPage setUser={setUser} onAuthSuccess={checkAuth} />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/map" element={<MapPage user={user} />} />
             <Route path="/game" element={<MapPage user={user} />} />
             <Route path="/game/:cityId" element={<GamePage user={user} />} />
