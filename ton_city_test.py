@@ -68,16 +68,56 @@ def make_request(method: str, endpoint: str, data: Dict = None, headers: Dict = 
             "success": False
         }
 
+def create_test_user_if_needed():
+    """Создание тестового пользователя если он не существует"""
+    print("🔧 Проверка/создание тестового пользователя...")
+    
+    # Сначала попробуем получить токен без username
+    auth_data = {
+        "address": TEST_USER["wallet_address"]
+    }
+    
+    result = make_request("POST", "/auth/verify-wallet", auth_data)
+    
+    if result["success"] and result["data"].get("status") == "ok":
+        print("✅ Тестовый пользователь уже существует")
+        return True
+    
+    if result["success"] and result["data"].get("status") == "need_username":
+        print("ℹ️ Пользователь не найден, создаем нового...")
+        
+        # Создаем пользователя с username
+        auth_data_with_username = {
+            "address": TEST_USER["wallet_address"],
+            "username": TEST_USER["username"]
+        }
+        
+        create_result = make_request("POST", "/auth/verify-wallet", auth_data_with_username)
+        
+        if create_result["success"] and create_result["data"].get("status") == "ok":
+            print("✅ Тестовый пользователь создан успешно")
+            return True
+        else:
+            print(f"❌ Ошибка создания пользователя: {create_result}")
+            return False
+    
+    print(f"❌ Неожиданная ошибка: {result}")
+    return False
+
 def test_1_get_jwt_token():
     """Тест 1: Получение JWT токена для тестового пользователя"""
     global auth_token, user_data
     
     print("🧪 ТЕСТ 1: POST /api/auth/verify-wallet - Получение JWT токена")
     
-    # Данные для получения токена (включаем username для регистрации если нужно)
+    # Сначала убедимся что пользователь существует
+    if not create_test_user_if_needed():
+        log_test("Получение JWT токена", "FAIL", "Не удалось создать/найти тестового пользователя")
+        return False
+    
+    # Данные для получения токена
     auth_data = {
-        "address": TEST_USER["wallet_address"],
-        "username": TEST_USER["username"]
+        "address": TEST_USER["wallet_address"]
     }
     
     result = make_request("POST", "/auth/verify-wallet", auth_data)
@@ -90,11 +130,6 @@ def test_1_get_jwt_token():
     data = result["data"]
     
     # Проверяем статус
-    if data.get("status") == "need_username":
-        log_test("Получение JWT токена", "FAIL", 
-                "Пользователь не найден и требуется username для регистрации")
-        return False
-    
     if data.get("status") != "ok":
         log_test("Получение JWT токена", "FAIL", 
                 f"Неожиданный статус: {data.get('status')}")
