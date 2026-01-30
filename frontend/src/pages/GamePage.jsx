@@ -550,10 +550,10 @@ export default function GamePage({ user }) {
               
               {userBalance < selectedPlot.price && (
                 <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
-                  <p className="text-red-400 text-sm">{t('insufficientBalance') || 'Insufficient balance'}</p>
+                  <p className="text-red-400 text-sm">Недостаточно средств</p>
                   <Button size="sm" variant="outline" onClick={() => { setShowPurchaseModal(false); setShowDepositModal(true); }}
                     className="mt-2 border-red-500/30 text-red-400 hover:bg-red-500/10">
-                    {t('deposit') || 'Deposit TON'}
+                    Пополнить баланс
                   </Button>
                 </div>
               )}
