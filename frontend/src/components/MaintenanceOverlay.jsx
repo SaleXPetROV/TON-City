@@ -8,8 +8,11 @@ const API = `${BACKEND_URL}/api`;
 export default function MaintenanceOverlay() {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [message, setMessage] = useState('Технические работы');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    // Check if user is admin
+    checkAdminStatus();
     // Check maintenance status immediately
     checkMaintenanceStatus();
     
@@ -17,6 +20,23 @@ export default function MaintenanceOverlay() {
     const interval = setInterval(checkMaintenanceStatus, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const checkAdminStatus = async () => {
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('ton_city_token');
+      if (!token) return;
+      
+      const response = await fetch(`${API}/auth/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setIsAdmin(data.is_admin === true);
+      }
+    } catch (error) {
+      // Silent fail
+    }
+  };
 
   const checkMaintenanceStatus = async () => {
     try {
@@ -32,6 +52,10 @@ export default function MaintenanceOverlay() {
       console.error('Failed to check maintenance status:', error);
     }
   };
+
+  // Don't show overlay for admins or on admin page
+  const isOnAdminPage = typeof window !== 'undefined' && window.location.pathname === '/admin';
+  const shouldShow = isMaintenanceMode && !isAdmin && !isOnAdminPage;
 
   return (
     <AnimatePresence>
