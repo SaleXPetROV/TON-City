@@ -390,125 +390,52 @@ class TONCityAuthTester:
             
         return all(results)
 
-    def test_core_apis_for_frontend(self):
-        """Test core APIs that frontend needs to load"""
-        print("\n" + "="*50)
-        print("🏗️ TESTING CORE APIS FOR FRONTEND")
-        print("="*50)
-        
-        results = []
-        
-        # Test config endpoint
-        success1, config = self.run_test(
-            "App Configuration",
-            "GET",
-            "config", 
-            200
-        )
-        if success1:
-            businesses = config.get('businesses', {})
-            print(f"   Business Types: {len(businesses)}")
-            results.append(True)
-        else:
-            results.append(False)
-        
-        # Test island endpoint  
-        success2, island = self.run_test(
-            "Island Data",
-            "GET",
-            "island",
-            200
-        )
-        if success2:
-            cells = island.get('cells', [])
-            print(f"   Island Cells: {len(cells)}")
-            results.append(True)
-        else:
-            results.append(False)
-        
-        return all(results)
-
-    def test_businesses_types_endpoint(self):
-        """Test business types endpoint for buildings toggle functionality"""
-        print("\n" + "="*50)
-        print("🏢 TESTING BUSINESS TYPES API")
-        print("="*50)
-        
-        success, response = self.run_test(
-            "Business Types",
-            "GET",
-            "businesses/types",
-            200
-        )
-        
-        if success:
-            # Response might be in different formats
-            if isinstance(response, dict):
-                if 'business_types' in response:
-                    types = response['business_types']
-                elif 'businesses' in response:
-                    types = response['businesses'] 
-                else:
-                    types = response
-            else:
-                types = response
-                
-            print(f"   Available Business Types: {len(types) if isinstance(types, (dict, list)) else 'N/A'}")
-            if isinstance(types, dict):
-                for biz_type, config in list(types.items())[:3]:  # Show first 3
-                    name = config.get('name', {}) if isinstance(config, dict) else biz_type
-                    icon = config.get('icon', '🏢') if isinstance(config, dict) else '🏢'
-                    print(f"     - {biz_type}: {icon} {name}")
-            return True
-        
-        # Fallback: check if it's in config endpoint
-        success2, config = self.run_test(
-            "Business Types from Config",
-            "GET", 
-            "config",
-            200
-        )
-        
-        if success2:
-            businesses = config.get('businesses', {})
-            print(f"   Business Types (from config): {len(businesses)}")
-            return True
-            
-        return False
-
     def run_all_tests(self):
-        """Run all backend tests"""
-        print("🚀 TON City Builder Backend Test Suite")
+        """Run all authentication tests"""
+        print("🚀 TON City Builder Authentication Test Suite")
         print("="*60)
         
-        # Test maintenance API (critical for MaintenanceOverlay component)
-        self.test_maintenance_status_api()
+        test_results = []
         
-        # Test admin login
-        self.test_admin_login()
+        # Test registration initiate
+        result1, reg_status = self.test_register_initiate()
+        test_results.append(result1)
         
-        # Test admin maintenance control
-        self.test_admin_maintenance_endpoints()
+        # Test email verification (if needed)
+        if reg_status == 'verification_needed':
+            result2 = self.test_register_verify()
+            test_results.append(result2)
+        
+        # Test legacy registration
+        result3 = self.test_register_legacy()
+        test_results.append(result3)
+        
+        # Test login functionality
+        result4 = self.test_login()
+        test_results.append(result4)
+        
+        # Test wallet verification
+        result5 = self.test_verify_wallet()
+        test_results.append(result5)
         
         # Test auth/me endpoint
-        self.test_auth_me_endpoint()
+        result6 = self.test_auth_me_endpoint()
+        test_results.append(result6)
         
-        # Test core APIs 
-        self.test_core_apis_for_frontend()
-        
-        # Test business types for buildings toggle
-        self.test_businesses_types_endpoint()
+        # Test error handling
+        result7 = self.test_error_handling()
+        test_results.append(result7)
         
         # Print final results
         print("\n" + "="*60)
-        print("📊 BACKEND TEST RESULTS")
+        print("📊 AUTHENTICATION TEST RESULTS")
         print("="*60)
         print(f"Tests Run: {self.tests_run}")
         print(f"Tests Passed: {self.tests_passed}")
         print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%")
         
         if self.tests_passed == self.tests_run:
-            print("🎉 ALL BACKEND TESTS PASSED!")
+            print("🎉 ALL AUTHENTICATION TESTS PASSED!")
             return 0
         else:
             print(f"⚠️ {self.tests_run - self.tests_passed} TESTS FAILED")
