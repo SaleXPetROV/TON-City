@@ -4,13 +4,15 @@ import { useTonWallet } from '@tonconnect/ui-react';
 import { motion } from 'framer-motion';
 import { 
   Users, Building2, DollarSign, TrendingUp, Settings, 
-  CreditCard, Bell, Gift, RefreshCw, Check, X, ArrowLeft, Wallet, Copy
+  CreditCard, Bell, Gift, RefreshCw, Check, X, ArrowLeft, Wallet, Copy,
+  Wrench, Play, Clock, Home, Calendar
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/lib/translations';
 import { toast } from 'sonner';
 import axios from 'axios';
