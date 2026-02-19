@@ -310,11 +310,85 @@ class TONCityAuthTester:
             
             if success:
                 print(f"   Username: {response.get('username', 'N/A')}")
+                print(f"   Email: {response.get('email', 'N/A')}")
                 print(f"   Admin: {response.get('is_admin', False)}")
                 print(f"   Auth Type: {response.get('auth_type', 'unknown')}")
+                print(f"   Wallet: {response.get('wallet_address', 'N/A')}")
                 return True
         
         return False
+
+    def test_error_handling(self):
+        """Test error handling for invalid requests"""
+        print("\n" + "="*50)
+        print("⚠️ TESTING ERROR HANDLING")
+        print("="*50)
+        
+        results = []
+        
+        # Test registration with existing email
+        existing_email_data = {
+            "email": self.test_email,  # Same email as before
+            "username": "newuser123",
+            "password": self.test_password
+        }
+        
+        success1, response1 = self.run_test(
+            "Duplicate Email Registration",
+            "POST",
+            "auth/register/initiate",
+            400,  # Should fail
+            existing_email_data
+        )
+        
+        if success1:
+            print("✅ Duplicate email properly rejected")
+            results.append(True)
+        else:
+            results.append(False)
+        
+        # Test invalid email verification
+        invalid_verify_data = {
+            "email": "nonexistent@test.com",
+            "code": "123456"
+        }
+        
+        success2, response2 = self.run_test(
+            "Invalid Email Verification",
+            "POST",
+            "auth/register/verify",
+            400,  # Should fail
+            invalid_verify_data
+        )
+        
+        if success2:
+            print("✅ Invalid verification properly handled")
+            results.append(True)
+        else:
+            results.append(False)
+        
+        # Test short password
+        short_password_data = {
+            "email": "test@short.com",
+            "username": "testshort",
+            "password": "123"  # Too short
+        }
+        
+        success3, response3 = self.run_test(
+            "Short Password Registration",
+            "POST",
+            "auth/register/initiate",
+            400,  # Should fail
+            short_password_data
+        )
+        
+        if success3:
+            print("✅ Short password properly rejected")
+            results.append(True)
+        else:
+            results.append(False)
+            
+        return all(results)
 
     def test_core_apis_for_frontend(self):
         """Test core APIs that frontend needs to load"""
