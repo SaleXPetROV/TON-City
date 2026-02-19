@@ -1,395 +1,333 @@
 #!/usr/bin/env python3
 """
-Comprehensive Backend API Testing for TON City Builder
-Tests all backend functionality for the Russian TON City project
+TON City Builder Backend API Testing
+Testing specific features: Mobile adaptation, Buildings toggle, Maintenance mode, Admin navigation
 """
+
 import requests
 import sys
-import time
 import json
 from datetime import datetime
 
-class TonCityBackendTester:
-    def __init__(self, base_url="https://a6fe025d-8065-48a3-b1c3-46f7c53f601e.stage-preview.emergentagent.com"):
-        self.base_url = base_url
-        self.api_url = f"{base_url}/api"
+class TONCityBackendTester:
+    def __init__(self):
+        # Use the public backend URL from frontend .env
+        self.base_url = "https://readme-update-2.preview.emergentagent.com"
+        self.api = f"{self.base_url}/api"
         self.token = None
-        self.user_data = None
+        self.admin_token = None
         self.tests_run = 0
         self.tests_passed = 0
-        self.failed_tests = []
-        self.test_results = []
-
-    def log_test(self, name, success, details=None, error_msg=None):
-        """Log test results"""
-        self.tests_run += 1
-        if success:
-            self.tests_passed += 1
-            print(f"✅ {name}")
-        else:
-            print(f"❌ {name} - {error_msg}")
-            self.failed_tests.append({"name": name, "error": error_msg, "details": details})
         
-        self.test_results.append({
-            "name": name,
-            "success": success,
-            "details": details,
-            "error": error_msg,
-            "timestamp": datetime.now().isoformat()
-        })
+        print(f"🔧 Backend Testing Started")
+        print(f"📍 Backend URL: {self.base_url}")
+        print(f"📍 API Base: {self.api}")
+        print("-" * 60)
 
-    def test_api_endpoint(self, name, method, endpoint, expected_status=200, data=None, headers=None, auth_required=False):
-        """Generic API endpoint tester"""
+    def run_test(self, name, method, endpoint, expected_status, data=None, headers=None):
+        """Run a single API test"""
+        url = f"{self.api}/{endpoint}" if not endpoint.startswith('http') else endpoint
+        default_headers = {'Content-Type': 'application/json'}
+        if headers:
+            default_headers.update(headers)
+        if self.token:
+            default_headers['Authorization'] = f'Bearer {self.token}'
+
+        self.tests_run += 1
+        print(f"\n🔍 Testing {name}...")
+        print(f"   URL: {url}")
+        
         try:
-            url = f"{self.api_url}/{endpoint}"
-            request_headers = headers or {}
-            
-            if auth_required and self.token:
-                request_headers['Authorization'] = f'Bearer {self.token}'
-            elif auth_required and not self.token:
-                self.log_test(name, False, error_msg="No auth token available")
-                return False, {}
-            
             if method == 'GET':
-                response = requests.get(url, headers=request_headers, timeout=10)
+                response = requests.get(url, headers=default_headers)
             elif method == 'POST':
-                request_headers['Content-Type'] = 'application/json'
-                response = requests.post(url, json=data, headers=request_headers, timeout=10)
+                response = requests.post(url, json=data, headers=default_headers)
             elif method == 'PUT':
-                request_headers['Content-Type'] = 'application/json' 
-                response = requests.put(url, json=data, headers=request_headers, timeout=10)
-            elif method == 'DELETE':
-                response = requests.delete(url, headers=request_headers, timeout=10)
-            else:
-                self.log_test(name, False, error_msg=f"Unsupported method: {method}")
-                return False, {}
+                response = requests.put(url, json=data, headers=default_headers)
+
+            print(f"   Status: {response.status_code}")
             
             success = response.status_code == expected_status
-            response_data = {}
-            
-            try:
-                if response.content:
-                    response_data = response.json()
-            except:
-                response_data = {"raw_content": response.text[:200]}
-            
-            details = {
-                "status_code": response.status_code,
-                "expected": expected_status,
-                "response_size": len(response.content),
-                "url": url,
-                "method": method
-            }
-            
-            error_msg = None if success else f"Expected {expected_status}, got {response.status_code}"
-            
-            self.log_test(name, success, details, error_msg)
-            return success, response_data
-            
-        except requests.exceptions.RequestException as e:
-            self.log_test(name, False, error_msg=f"Request failed: {str(e)}")
-            return False, {}
+            if success:
+                self.tests_passed += 1
+                print(f"✅ PASSED")
+                try:
+                    json_response = response.json()
+                    print(f"   Response: {json.dumps(json_response, indent=2)[:200]}...")
+                    return True, json_response
+                except:
+                    print(f"   Response (text): {response.text[:100]}...")
+                    return True, response.text
+            else:
+                print(f"❌ FAILED - Expected {expected_status}, got {response.status_code}")
+                print(f"   Error: {response.text[:200]}")
+                return False, {}
+
         except Exception as e:
-            self.log_test(name, False, error_msg=f"Test error: {str(e)}")
+            print(f"❌ FAILED - Exception: {str(e)}")
             return False, {}
 
-    def test_maintenance_apis(self):
-        """Test maintenance-related APIs"""
-        print("\n🔧 Testing Maintenance APIs...")
+    def test_maintenance_status_api(self):
+        """Test GET /api/maintenance-status - Required for MaintenanceOverlay"""
+        print("\n" + "="*50)
+        print("🔧 TESTING MAINTENANCE API")
+        print("="*50)
         
-        # Test public maintenance status endpoint
-        success, data = self.test_api_endpoint(
-            "GET /api/maintenance-status",
-            "GET",
-            "maintenance-status"
+        success, response = self.run_test(
+            "Maintenance Status Check",
+            "GET", 
+            "maintenance-status",
+            200
         )
         
         if success:
-            print(f"   Maintenance status: {data.get('enabled', 'unknown')}")
-        
-        # Test admin maintenance endpoint (requires auth)
-        if self.token:
-            success, data = self.test_api_endpoint(
-                "POST /api/admin/maintenance (toggle)",
-                "POST", 
-                "admin/maintenance",
-                data={"enabled": False},  # Try to disable maintenance
-                auth_required=True
-            )
+            enabled = response.get('enabled', None)
+            print(f"   Maintenance Status: {'ENABLED' if enabled else 'DISABLED'}")
+            if enabled is False:
+                print("✅ Maintenance correctly disabled for normal operation")
+            return success
+        return False
 
-    def test_auth_system(self):
-        """Test authentication system"""
-        print("\n🔐 Testing Authentication System...")
+    def test_admin_login(self):
+        """Test admin login with provided credentials"""
+        print("\n" + "="*50)
+        print("👤 TESTING ADMIN LOGIN")
+        print("="*50)
         
-        # Test wallet verification with test data
-        test_wallet = "0:1234567890123456789012345678901234567890123456789012345678901234"
-        test_username = f"test_user_{int(time.time())}"
+        # Test admin login - trying different endpoints
+        admin_credentials = {
+            "email": "admin@toncity.com",
+            "password": "admin123"
+        }
         
-        success, response = self.test_api_endpoint(
-            "POST /api/auth/verify-wallet",
+        # Try email login first
+        success, response = self.run_test(
+            "Admin Email Login",
             "POST",
-            "auth/verify-wallet",
-            data={
-                "address": test_wallet,
-                "username": test_username,
-                "language": "ru"
-            }
+            "auth/login",
+            200,
+            admin_credentials
         )
         
-        if success and response.get("token"):
-            self.token = response["token"]
-            self.user_data = response.get("user", {})
-            print(f"   ✅ Authenticated as: {self.user_data.get('username')}")
+        if success and response.get('token'):
+            self.admin_token = response['token']
+            user_info = response.get('user', {})
+            is_admin = user_info.get('is_admin', False)
+            print(f"   Admin Status: {'YES' if is_admin else 'NO'}")
+            if is_admin:
+                print("✅ Admin login successful with correct privileges")
+                return True
+            else:
+                print("⚠️ Login successful but admin privileges not found")
         
-        # Test /auth/me endpoint
-        if self.token:
-            success, user_data = self.test_api_endpoint(
-                "GET /api/auth/me", 
+        # Also try wallet verification if email login didn't work
+        if not self.admin_token:
+            success2, response2 = self.run_test(
+                "Admin Wallet Verification Fallback", 
+                "POST",
+                "auth/verify-wallet",
+                200,
+                {
+                    "address": "admin@toncity.com",
+                    "username": "admin", 
+                    "email": "admin@toncity.com",
+                    "password": "admin123"
+                }
+            )
+            if success2 and response2.get('token'):
+                self.admin_token = response2['token']
+                return True
+        
+        return success
+
+    def test_admin_maintenance_endpoints(self):
+        """Test admin maintenance control endpoints"""
+        print("\n" + "="*50)
+        print("🔧 TESTING ADMIN MAINTENANCE CONTROL")
+        print("="*50)
+        
+        if not self.admin_token:
+            print("❌ No admin token available - skipping admin tests")
+            return False
+        
+        # Test GET admin maintenance status
+        success1, response1 = self.run_test(
+            "Admin Maintenance Status",
+            "GET",
+            "admin/maintenance",
+            200,
+            headers={'Authorization': f'Bearer {self.admin_token}'}
+        )
+        
+        if success1:
+            current_status = response1.get('enabled', False)
+            print(f"   Current Status: {'ON' if current_status else 'OFF'}")
+        
+        # Test POST admin maintenance toggle
+        success2, response2 = self.run_test(
+            "Admin Maintenance Toggle",
+            "POST",
+            "admin/maintenance",
+            200,
+            {"enabled": False},  # Ensure it's disabled for testing
+            headers={'Authorization': f'Bearer {self.admin_token}'}
+        )
+        
+        if success2:
+            print("✅ Admin can control maintenance mode")
+        
+        return success1 and success2
+
+    def test_auth_me_endpoint(self):
+        """Test /auth/me endpoint for user info"""
+        print("\n" + "="*50)
+        print("👤 TESTING AUTH/ME ENDPOINT")
+        print("="*50)
+        
+        if self.admin_token:
+            success, response = self.run_test(
+                "Auth Me (Admin Token)",
                 "GET",
                 "auth/me",
-                auth_required=True
+                200,
+                headers={'Authorization': f'Bearer {self.admin_token}'}
             )
+            
             if success:
-                print(f"   User level: {user_data.get('level')}")
-                print(f"   Balance: {user_data.get('balance_ton', 0)} TON")
-                print(f"   Is Admin: {user_data.get('is_admin', False)}")
+                print(f"   Username: {response.get('username', 'N/A')}")
+                print(f"   Admin: {response.get('is_admin', False)}")
+                print(f"   Auth Type: {response.get('auth_type', 'unknown')}")
+                return True
+        
+        return False
 
-    def test_island_system(self):
-        """Test TON Island functionality"""
-        print("\n🏝️ Testing TON Island System...")
+    def test_core_apis_for_frontend(self):
+        """Test core APIs that frontend needs to load"""
+        print("\n" + "="*50)
+        print("🏗️ TESTING CORE APIS FOR FRONTEND")
+        print("="*50)
         
-        # Test island data retrieval
-        success, island_data = self.test_api_endpoint(
-            "GET /api/island",
-            "GET", 
-            "island"
-        )
+        results = []
         
-        if success and island_data:
-            cells = island_data.get("cells", [])
-            stats = island_data.get("stats", {})
-            print(f"   Island cells: {len(cells)}")
-            print(f"   Owned cells: {stats.get('owned_cells', 0)}")
-            print(f"   Available cells: {stats.get('available_cells', 0)}")
-            print(f"   Businesses: {stats.get('businesses', 0)}")
-            
-            # Find an available cell for testing
-            available_cell = None
-            for cell in cells[:5]:  # Check first 5 cells
-                if not cell.get("owner"):
-                    available_cell = cell
-                    break
-            
-            if available_cell and self.token:
-                x, y = available_cell["x"], available_cell["y"]
-                print(f"   Testing plot purchase at ({x}, {y})")
-                
-                # Try to buy plot (will likely fail due to insufficient funds, but tests the endpoint)
-                success, purchase_result = self.test_api_endpoint(
-                    f"POST /api/island/buy/{x}/{y}",
-                    "POST",
-                    f"island/buy/{x}/{y}",
-                    expected_status=400,  # Expect 400 due to insufficient funds
-                    auth_required=True
-                )
-        
-        # Test business types/config
-        success, config_data = self.test_api_endpoint(
-            "GET /api/config",
+        # Test config endpoint
+        success1, config = self.run_test(
+            "App Configuration",
             "GET",
-            "config"
+            "config", 
+            200
         )
-        
-        if success:
-            businesses = config_data.get("businesses", {})
-            print(f"   Available business types: {len(businesses)}")
-
-    def test_business_management(self):
-        """Test business management APIs"""
-        print("\n🏢 Testing Business Management...")
-        
-        if not self.token:
-            print("   ⚠️ Skipping business tests - no auth token")
-            return
-            
-        # Test getting user's businesses
-        success, businesses_data = self.test_api_endpoint(
-            "GET /api/my/businesses",
-            "GET",
-            "my/businesses", 
-            auth_required=True
-        )
-        
-        if success:
-            businesses = businesses_data.get("businesses", [])
-            summary = businesses_data.get("summary", {})
-            print(f"   User businesses: {len(businesses)}")
-            print(f"   Total pending income: {summary.get('total_pending_income', 0)}")
-            print(f"   Daily income: {summary.get('total_daily_income', 0)}")
-            
-            # If user has businesses, test business details
-            if businesses:
-                business = businesses[0]
-                business_id = business.get("id")
-                
-                if business_id:
-                    success, business_details = self.test_api_endpoint(
-                        f"GET /api/business/{business_id}",
-                        "GET",
-                        f"business/{business_id}",
-                        auth_required=True
-                    )
-
-    def test_patronage_system(self):
-        """Test patronage system"""
-        print("\n👑 Testing Patronage System...")
-        
-        # Test getting available patrons
-        success, patrons_data = self.test_api_endpoint(
-            "GET /api/patrons",
-            "GET",
-            "patrons"
-        )
-        
-        if success:
-            patrons = patrons_data.get("patrons", [])
-            print(f"   Available patrons: {len(patrons)}")
-            for patron in patrons[:3]:  # Show first 3
-                print(f"     - {patron.get('type')} (Level {patron.get('level')})")
-
-    def test_warehouse_system(self):
-        """Test warehouse rental system"""
-        print("\n📦 Testing Warehouse System...")
-        
-        # Test warehouse rentals
-        success, rentals_data = self.test_api_endpoint(
-            "GET /api/warehouses/rentals",
-            "GET",
-            "warehouses/rentals"
-        )
-        
-        if success:
-            rentals = rentals_data.get("rentals", [])
-            print(f"   Available warehouse rentals: {len(rentals)}")
-
-    def test_banking_system(self):
-        """Test banking and withdrawal system"""
-        print("\n🏦 Testing Banking System...")
-        
-        # Test available banks
-        success, banks_data = self.test_api_endpoint(
-            "GET /api/banks",
-            "GET",
-            "banks"
-        )
-        
-        if success:
-            banks = banks_data.get("banks", [])
-            print(f"   Available banks: {len(banks)}")
-        
-        # Test withdrawal queue (requires auth)
-        if self.token:
-            success, withdrawals = self.test_api_endpoint(
-                "GET /api/withdrawals/queue",
-                "GET",
-                "withdrawals/queue",
-                auth_required=True
-            )
-
-    def test_leaderboard(self):
-        """Test leaderboard functionality"""
-        print("\n🏆 Testing Leaderboard...")
-        
-        success, leaderboard = self.test_api_endpoint(
-            "GET /api/leaderboard",
-            "GET",
-            "leaderboard"
-        )
-        
-        if success:
-            players = leaderboard.get("players", [])
-            print(f"   Players in leaderboard: {len(players)}")
-            if players:
-                top_player = players[0]
-                print(f"   Top player: {top_player.get('username', 'Unknown')} - {top_player.get('balance_ton', 0)} TON")
-
-    def test_admin_endpoints(self):
-        """Test admin-only endpoints"""
-        print("\n⚡ Testing Admin Endpoints...")
-        
-        if not self.token:
-            print("   ⚠️ Skipping admin tests - no auth token")
-            return
-            
-        # Test admin stats (may fail if user is not admin)
-        success, stats = self.test_api_endpoint(
-            "GET /api/admin/stats",
-            "GET",
-            "admin/stats",
-            expected_status=403,  # Expect 403 if not admin
-            auth_required=True
-        )
-        
-        if success:
-            print("   ✅ User has admin access!")
+        if success1:
+            businesses = config.get('businesses', {})
+            print(f"   Business Types: {len(businesses)}")
+            results.append(True)
         else:
-            print("   ℹ️ User does not have admin access (expected)")
+            results.append(False)
+        
+        # Test island endpoint  
+        success2, island = self.run_test(
+            "Island Data",
+            "GET",
+            "island",
+            200
+        )
+        if success2:
+            cells = island.get('cells', [])
+            print(f"   Island Cells: {len(cells)}")
+            results.append(True)
+        else:
+            results.append(False)
+        
+        return all(results)
 
-    def run_comprehensive_test(self):
-        """Run all tests"""
-        print("🚀 Starting Comprehensive TON City Backend Testing")
-        print(f"📡 Testing API: {self.api_url}")
-        print("=" * 60)
+    def test_businesses_types_endpoint(self):
+        """Test business types endpoint for buildings toggle functionality"""
+        print("\n" + "="*50)
+        print("🏢 TESTING BUSINESS TYPES API")
+        print("="*50)
         
-        start_time = time.time()
+        success, response = self.run_test(
+            "Business Types",
+            "GET",
+            "businesses/types",
+            200
+        )
         
-        # Core functionality tests
-        self.test_maintenance_apis()
-        self.test_auth_system()
-        self.test_island_system()
-        self.test_business_management()
-        self.test_patronage_system()
-        self.test_warehouse_system()
-        self.test_banking_system()
-        self.test_leaderboard()
-        self.test_admin_endpoints()
+        if success:
+            # Response might be in different formats
+            if isinstance(response, dict):
+                if 'business_types' in response:
+                    types = response['business_types']
+                elif 'businesses' in response:
+                    types = response['businesses'] 
+                else:
+                    types = response
+            else:
+                types = response
+                
+            print(f"   Available Business Types: {len(types) if isinstance(types, (dict, list)) else 'N/A'}")
+            if isinstance(types, dict):
+                for biz_type, config in list(types.items())[:3]:  # Show first 3
+                    name = config.get('name', {}) if isinstance(config, dict) else biz_type
+                    icon = config.get('icon', '🏢') if isinstance(config, dict) else '🏢'
+                    print(f"     - {biz_type}: {icon} {name}")
+            return True
         
-        # Summary
-        end_time = time.time()
-        duration = end_time - start_time
+        # Fallback: check if it's in config endpoint
+        success2, config = self.run_test(
+            "Business Types from Config",
+            "GET", 
+            "config",
+            200
+        )
         
-        print("\n" + "=" * 60)
-        print("📊 TEST SUMMARY")
-        print(f"⏱️  Duration: {duration:.2f}s")
-        print(f"✅ Passed: {self.tests_passed}/{self.tests_run}")
-        print(f"❌ Failed: {len(self.failed_tests)}")
-        print(f"📈 Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%")
+        if success2:
+            businesses = config.get('businesses', {})
+            print(f"   Business Types (from config): {len(businesses)}")
+            return True
+            
+        return False
+
+    def run_all_tests(self):
+        """Run all backend tests"""
+        print("🚀 TON City Builder Backend Test Suite")
+        print("="*60)
         
-        if self.failed_tests:
-            print(f"\n❌ FAILED TESTS:")
-            for failed in self.failed_tests:
-                print(f"   • {failed['name']}: {failed['error']}")
+        # Test maintenance API (critical for MaintenanceOverlay component)
+        self.test_maintenance_status_api()
         
-        return {
-            "total_tests": self.tests_run,
-            "passed_tests": self.tests_passed,
-            "failed_tests": len(self.failed_tests),
-            "success_rate": self.tests_passed/self.tests_run if self.tests_run > 0 else 0,
-            "duration": duration,
-            "failed_test_details": self.failed_tests,
-            "all_results": self.test_results
-        }
+        # Test admin login
+        self.test_admin_login()
+        
+        # Test admin maintenance control
+        self.test_admin_maintenance_endpoints()
+        
+        # Test auth/me endpoint
+        self.test_auth_me_endpoint()
+        
+        # Test core APIs 
+        self.test_core_apis_for_frontend()
+        
+        # Test business types for buildings toggle
+        self.test_businesses_types_endpoint()
+        
+        # Print final results
+        print("\n" + "="*60)
+        print("📊 BACKEND TEST RESULTS")
+        print("="*60)
+        print(f"Tests Run: {self.tests_run}")
+        print(f"Tests Passed: {self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run*100):.1f}%")
+        
+        if self.tests_passed == self.tests_run:
+            print("🎉 ALL BACKEND TESTS PASSED!")
+            return 0
+        else:
+            print(f"⚠️ {self.tests_run - self.tests_passed} TESTS FAILED")
+            return 1
 
 def main():
-    """Main test execution"""
-    tester = TonCityBackendTester()
-    results = tester.run_comprehensive_test()
-    
-    # Return appropriate exit code
-    if results["success_rate"] > 0.8:  # 80% success rate threshold
-        return 0
-    else:
-        return 1
+    tester = TONCityBackendTester()
+    return tester.run_all_tests()
 
 if __name__ == "__main__":
     sys.exit(main())
