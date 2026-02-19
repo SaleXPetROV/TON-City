@@ -16,10 +16,62 @@ logger = logging.getLogger(__name__)
 # In-memory storage for reset codes (in production, use Redis or DB)
 reset_codes = {}
 
+# In-memory storage for email verification codes
+email_verification_codes = {}
+
 def generate_reset_code() -> str:
     """Generate 8-character code with uppercase, lowercase letters and digits"""
     characters = string.ascii_uppercase + string.ascii_lowercase + string.digits
     return ''.join(random.choice(characters) for _ in range(8))
+
+def generate_verification_code() -> str:
+    """Generate 6-digit verification code"""
+    return ''.join(random.choice(string.digits) for _ in range(6))
+
+def store_verification_code(email: str, code: str, username: str, password_hash: str):
+    """Store email verification code with user data"""
+    email_verification_codes[email.lower()] = {
+        "code": code,
+        "username": username,
+        "password_hash": password_hash,
+        "expires_at": datetime.now(timezone.utc) + timedelta(minutes=15),
+        "attempts": 0
+    }
+
+def verify_email_code(email: str, code: str) -> tuple[bool, str, dict]:
+    """
+    Verify email verification code
+    Returns (success, message, user_data)
+    """
+    email_lower = email.lower()
+    
+    if email_lower not in email_verification_codes:
+        return False, "no_code_requested", {}
+    
+    stored = email_verification_codes[email_lower]
+    
+    # Check expiration
+    if datetime.now(timezone.utc) > stored["expires_at"]:
+        del email_verification_codes[email_lower]
+        return False, "code_expired", {}
+    
+    # Check attempts (max 5)
+    if stored["attempts"] >= 5:
+        del email_verification_codes[email_lower]
+        return False, "too_many_attempts", {}
+    
+    # Verify code
+    if stored["code"] != code:
+        stored["attempts"] += 1
+        return False, "invalid_code", {}
+    
+    # Success - get user data and remove code
+    user_data = {
+        "username": stored["username"],
+        "password_hash": stored["password_hash"]
+    }
+    del email_verification_codes[email_lower]
+    return True, "success", user_data
 
 def store_reset_code(email: str, code: str):
     """Store reset code with 15 minute expiration"""
