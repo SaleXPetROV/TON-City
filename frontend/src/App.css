@@ -137,10 +137,10 @@
   animation: spin 1s linear infinite;
 }
 
-<<<<<<< HEAD
 .group-hover\/sidebar\:opacity-0 {
   transition: opacity 0.2s;
 }
+
 .group-hover\/sidebar\:opacity-0:hover {
   opacity: 0;
 }
@@ -155,8 +155,6 @@
   -webkit-backdrop-filter: blur(24px);
 }
 
-=======
->>>>>>> 3a4ae0fd262a673aa42120e78d19e74a680aa74e
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -166,10 +164,4 @@
 /* Mobile safe area */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-/* Fix merge conflicts */
-.backdrop-blur-xl {
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
 }
