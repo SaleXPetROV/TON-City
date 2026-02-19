@@ -53,48 +53,50 @@ export default function LeaderboardPage({ user }) {
       
       <div className="flex-1 overflow-hidden lg:ml-16">
         <ScrollArea className="h-full">
-          <div className="p-6 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
+          <div className="p-4 lg:p-6 pt-16 lg:pt-6 space-y-4 lg:space-y-6">
+            {/* Header - Mobile Optimized */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <h1 className="font-unbounded text-2xl font-bold text-white flex items-center gap-3">
-                  <Trophy className="w-8 h-8 text-yellow-400" />
-                  РЕЙТИНГ ИГРОКОВ
+                <h1 className="font-unbounded text-xl lg:text-2xl font-bold text-white flex items-center gap-2">
+                  <Trophy className="w-6 h-6 lg:w-8 lg:h-8 text-yellow-400" />
+                  РЕЙТИНГ
                 </h1>
-                <p className="text-text-muted mt-1">Лучшие магнаты TON City Builder</p>
+                <p className="text-text-muted mt-1 text-sm">Лучшие магнаты TON City</p>
               </div>
               
-              <Button onClick={fetchLeaderboard} variant="outline" className="border-white/10" disabled={isLoading}>
-                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                Обновить
+              <Button onClick={fetchLeaderboard} variant="outline" size="sm" className="border-white/10 self-start sm:self-auto" disabled={isLoading}>
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline ml-2">Обновить</span>
               </Button>
             </div>
 
-            {/* Tabs for different rankings */}
+            {/* Tabs for different rankings - Mobile Scrollable */}
             <Tabs value={sortBy} onValueChange={setSortBy}>
-              <TabsList className="bg-white/5 border border-white/10">
-                <TabsTrigger value="balance" className="data-[state=active]:bg-cyber-cyan data-[state=active]:text-black">
-                  <Coins className="w-4 h-4 mr-2" />
-                  По балансу
-                </TabsTrigger>
-                <TabsTrigger value="income" className="data-[state=active]:bg-green-500 data-[state=active]:text-black">
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  По доходу
-                </TabsTrigger>
-                <TabsTrigger value="businesses" className="data-[state=active]:bg-purple-500 data-[state=active]:text-black">
-                  <Building2 className="w-4 h-4 mr-2" />
-                  По бизнесам
-                </TabsTrigger>
-                <TabsTrigger value="plots" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  По участкам
-                </TabsTrigger>
-              </TabsList>
+              <div className="overflow-x-auto -mx-4 px-4">
+                <TabsList className="bg-white/5 border border-white/10 inline-flex min-w-max">
+                  <TabsTrigger value="balance" className="data-[state=active]:bg-cyber-cyan data-[state=active]:text-black text-xs sm:text-sm px-2 sm:px-4">
+                    <Coins className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">По балансу</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="income" className="data-[state=active]:bg-green-500 data-[state=active]:text-black text-xs sm:text-sm px-2 sm:px-4">
+                    <TrendingUp className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">По доходу</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="businesses" className="data-[state=active]:bg-purple-500 data-[state=active]:text-black text-xs sm:text-sm px-2 sm:px-4">
+                    <Building2 className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">По бизнесам</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="plots" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-xs sm:text-sm px-2 sm:px-4">
+                    <MapPin className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">По участкам</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
             </Tabs>
 
-            {/* Top 3 */}
+            {/* Top 3 - Mobile Optimized */}
             {players.length >= 3 && (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-2 lg:gap-4">
                 {[players[1], players[0], players[2]].map((player, idx) => {
                   const actualRank = idx === 0 ? 2 : idx === 1 ? 1 : 3;
                   const isFirst = actualRank === 1;
