@@ -459,6 +459,35 @@ export default function TonIslandPage({ user }) {
           
           {/* Zoom Controls */}
           <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-20">
+            {/* Buildings Toggle Button */}
+            <Button
+              data-testid="buildings-toggle"
+              onClick={() => {
+                if (!showBuildings) {
+                  setShowBuildingsToast(true);
+                  toast.warning('В процессе разработки', {
+                    description: 'Отображение зданий скоро будет доступно',
+                    duration: 3000,
+                  });
+                  setTimeout(() => setShowBuildingsToast(false), 3000);
+                } else {
+                  setShowBuildings(false);
+                }
+              }}
+              variant="outline"
+              size="icon"
+              className={`w-12 h-12 transition-all ${
+                showBuildings 
+                  ? 'bg-green-500/20 border-green-500 text-green-400 hover:bg-green-500/30' 
+                  : 'bg-red-500/20 border-red-500 text-red-400 hover:bg-red-500/30'
+              }`}
+              title={showBuildings ? 'Скрыть здания' : 'Показать здания'}
+            >
+              <Building className="w-5 h-5" />
+            </Button>
+            
+            <div className="h-2" />
+            
             <Button
               onClick={handleZoomIn}
               variant="outline"
@@ -484,6 +513,22 @@ export default function TonIslandPage({ user }) {
               <Home className="w-4 h-4" />
             </Button>
           </div>
+
+          {/* "В разработке" Toast Indicator */}
+          <AnimatePresence>
+            {showBuildingsToast && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="absolute bottom-24 right-4 z-30"
+              >
+                <div className="bg-yellow-500/90 text-black px-4 py-2 rounded-lg font-bold text-sm shadow-lg">
+                  В процессе разработки
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Legend - City Island 3 Style (без цен) */}
           <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-md rounded-xl p-4 text-xs space-y-2 z-20 max-w-[160px] border border-slate-700/50 shadow-xl">
