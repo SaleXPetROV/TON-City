@@ -397,13 +397,94 @@ export class IsometricMapEngine {
   
   setupInput() {
     const canvas = this.canvas;
+    
+    // Touch pinch-to-zoom support
+    let touches = [];
+    let lastPinchDistance = 0;
+    
+    const getTouchDistance = (t1, t2) => {
+      const dx = t1.clientX - t2.clientX;
+      const dy = t1.clientY - t2.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+    
+    const getTouchCenter = (t1, t2) => ({
+      x: (t1.clientX + t2.clientX) / 2,
+      y: (t1.clientY + t2.clientY) / 2
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+      touches = [...e.touches];
+      if (touches.length === 2) {
+        lastPinchDistance = getTouchDistance(touches[0], touches[1]);
+      } else if (touches.length === 1) {
+        this.isDragging = true;
+        this.dragStart = { x: touches[0].clientX, y: touches[0].clientY };
+        this.lastMouse = { x: touches[0].clientX, y: touches[0].clientY };
+      }
+    }, { passive: true });
+    
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      touches = [...e.touches];
+      
+      if (touches.length === 2 && this.world) {
+        // Pinch-to-zoom
+        const newDistance = getTouchDistance(touches[0], touches[1]);
+        const center = getTouchCenter(touches[0], touches[1]);
+        const rect = canvas.getBoundingClientRect();
+        const centerX = center.x - rect.left;
+        const centerY = center.y - rect.top;
+        
+        if (lastPinchDistance > 0) {
+          const scaleFactor = newDistance / lastPinchDistance;
+          const oldZoom = this.world.scale.x;
+          const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, oldZoom * scaleFactor));
+          
+          const worldX = (centerX - this.world.x) / oldZoom;
+          const worldY = (centerY - this.world.y) / oldZoom;
+          this.world.scale.set(newZoom);
+          this.world.x = centerX - worldX * newZoom;
+          this.world.y = centerY - worldY * newZoom;
+          this.updateViewportBounds();
+        }
+        lastPinchDistance = newDistance;
+      } else if (touches.length === 1 && this.isDragging && this.world) {
+        // Single finger drag
+        const dx = touches[0].clientX - this.lastMouse.x;
+        const dy = touches[0].clientY - this.lastMouse.y;
+        this.world.x += dx;
+        this.world.y += dy;
+        this.lastMouse = { x: touches[0].clientX, y: touches[0].clientY };
+        this.updateViewportBounds();
+      }
+    }, { passive: false });
+    
+    canvas.addEventListener('touchend', (e) => {
+      if (e.touches.length === 0 && touches.length === 1) {
+        // Was single touch - check for tap
+        const dx = Math.abs(touches[0].clientX - this.dragStart.x);
+        const dy = Math.abs(touches[0].clientY - this.dragStart.y);
+        if (dx < 10 && dy < 10) {
+          const rect = canvas.getBoundingClientRect();
+          this.handleClick(touches[0].clientX - rect.left, touches[0].clientY - rect.top);
+        }
+      }
+      touches = [...e.touches];
+      lastPinchDistance = 0;
+      this.isDragging = false;
+    }, { passive: true });
+    
+    // Mouse/pointer events
     canvas.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'touch') return; // Handled by touch events
       this.isDragging = true;
       this.dragStart = { x: e.clientX, y: e.clientY };
       this.lastMouse = { x: e.clientX, y: e.clientY };
     });
     
     canvas.addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'touch') return; // Handled by touch events
       if (this.isDragging && this.world) {
         const dx = e.clientX - this.lastMouse.x;
         const dy = e.clientY - this.lastMouse.y;
@@ -418,6 +499,7 @@ export class IsometricMapEngine {
     });
     
     canvas.addEventListener('pointerup', (e) => {
+      if (e.pointerType === 'touch') return; // Handled by touch events
       const dx = Math.abs(e.clientX - this.dragStart.x);
       const dy = Math.abs(e.clientY - this.dragStart.y);
       if (dx < 5 && dy < 5) {
