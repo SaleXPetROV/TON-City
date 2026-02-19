@@ -1,70 +1,55 @@
 # TON City Builder - Product Requirements Document
 
 ## Original Problem Statement
-Блокчейн-игра экономическая стратегия на TON. Игроки покупают землю на острове TON Island, строят бизнесы, зарабатывают криптовалюту через систему патронажа и экономику производства.
+Пользователь запросил:
+1. Адаптировать полностью под мобильное устройство (hamburger меню в стиле The Sandbox)
+2. Кнопка отображения зданий на карте (красная/зелёная, "В разработке")
+3. Технические работы в админке с dropdown меню
+4. Навигация админ ↔ пользовательский интерфейс
+5. Переписать README.md
+6. **ДОБАВЛЕНО**: Email верификация при регистрации
+7. **ИСПРАВЛЕНО**: JSON ошибки при wallet авторизации
 
-## Core Architecture
+## What's Been Implemented
 
-### TON Island System
-- **Единая карта**: 528 участков с зонированием (core/inner/middle/outer)
-- **21 тип бизнесов** в 3 тирах с 10 уровнями каждый
-- **Спрайты**: 256x256 PNG, прозрачный фон, единый масштаб SPRITE_SCALE=0.25
+### 2026-02-19 - Auth System Fixes
+- ✅ Email Verification при регистрации
+  - Новые endpoints: `/api/auth/register/initiate` и `/api/auth/register/verify`
+  - 6-цифровой код на email (15 минут валидность)
+  - Fallback: если SMTP не настроен - регистрация сразу
+  
+- ✅ JSON Error Handling
+  - Безопасный парсинг JSON ответов
+  - Понятные сообщения об ошибках на русском
+  - Обработка network ошибок
 
-### Sprite System (per TD v2)
-- Единый canvas 256x256, anchor (0.5, 1.0), snapToGrid()
-- Z-Index = (cell.q + cell.r)
-- Ночной режим: tint 0x556688 + additive glow overlay
+### 2026-02-19 - Mobile & Admin Features
+- ✅ Hamburger меню в стиле The Sandbox (MobileNav.jsx)
+- ✅ Кнопка зданий на карте (красная с "В процессе разработки")
+- ✅ Maintenance mode в админке с dropdown
+- ✅ Кнопка "На сайт" в админке
+- ✅ README.md переписан
 
-### Business Tiers & Tax
-- Tier 1 (15% налог): Helios, Nano DC, Quartz Mine, Signal, Hydro, BioFood, Scrap
-- Tier 2 (23% налог): Chips, NFT Studio, AI Lab, Logistics, Cyber Cafe, Repair, VR Club
-- Tier 3 (30% налог): Validator, Gram Bank, DEX, Casino, Arena, Incubator, Bridge
+## Testing Results
+- Backend Auth: 100% (9/9 tests)
+- Frontend Auth: 100%
+- Mobile UI: 100%
+- Overall: 100%
 
-## What's Implemented
+## Configuration
 
-### Phase 1 (2026-02-07) ✅
-- [x] 210 спрайтов одного размера (Tier 2 стандарт), прозрачный фон, вписаны в ячейки
-- [x] Все суммы с 2 знаками после точки (.toFixed(2))
-- [x] "Доход" вместо "Доход/час" + кнопка "Собрать"
-- [x] Маркетплейс: убрана "Торговля ресурсами", добавлены "Бизнесов на продаже"/"Стоимость земель"
-- [x] Логотип TON CITY в сайдбаре → ведёт на главную
-- [x] 8 языков: EN, RU, ES, CN, FR, DE, JP, KR
-- [x] Удалён уровень пользователя из YOUR STATS
-- [x] Ночной режим с additive glow overlay
-- [x] Кнопка обновления рядом с ночным режимом
+### Для включения Email верификации:
+Добавьте в /app/backend/.env:
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM_EMAIL=noreply@toncity.com
+SMTP_FROM_NAME=TON City Builder
+```
 
-### Ранее реализовано
-- [x] TON Island карта (PixiJS Canvas, 528 участков, 4 зоны)
-- [x] Система патронажа
-- [x] 10-уровневые апгрейды
-- [x] P2P аренда складов
-- [x] Двойная очередь вывода
-- [x] Налоговая система
-- [x] Аутентификация (Email/TonConnect)
-- [x] Глобальный чат (без приватных/городских)
-- [x] 100 тестовых пользователей
-
-## Pending Tasks
-
-### Phase 2 (Средние фичи)
-- [ ] Система городов: список с 2D превью, 5 новых карт-заглушек
-- [ ] Калькулятор под новую систему бизнесов/налогов
-- [ ] Умные рекомендации на основе спроса/предложения
-
-### Phase 3 (Крупные фичи)
-- [ ] P2P торговля землёй: просмотр владельца, предложение купить, ЛС
-- [ ] Полный перевод всех страниц на 8 языков (UI labels done, content pending)
-
-### Backlog
-- [ ] AI-генерация качественных спрайтов (бюджет исчерпан)
-- [ ] Google OAuth
-- [ ] Админ-панель
-
-## Test Credentials
-- Username: user_1, Password: password123
-- Balance: 4033.00 TON, 1 бизнес (dex)
-
-## Tech Stack
-- Backend: FastAPI + MongoDB
-- Frontend: React + PixiJS (WebGL) + TailwindCSS + Shadcn/UI
-- AI: Emergent LLM Key (бюджет исчерпан)
+## Backlog
+- [ ] Настроить SMTP для production
+- [ ] Реализовать 3D здания на карте
+- [ ] Telegram уведомления
