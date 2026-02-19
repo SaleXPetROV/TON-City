@@ -442,7 +442,7 @@ class TONCityAuthTester:
             return 1
 
 def main():
-    tester = TONCityBackendTester()
+    tester = TONCityAuthTester()
     return tester.run_all_tests()
 
 if __name__ == "__main__":
