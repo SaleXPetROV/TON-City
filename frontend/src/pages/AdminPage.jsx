@@ -24,7 +24,7 @@ import { toUserFriendlyAddress } from '@/lib/tonAddress';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-export default function AdminPage() {
+export default function AdminPage({ user }) {
   const navigate = useNavigate();
   const wallet = useTonWallet();
   const [lang, setLang] = useState(localStorage.getItem('ton_city_lang') || 'en');
@@ -39,6 +39,11 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   
+  // Maintenance states
+  const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
+  const [showMaintenanceDialog, setShowMaintenanceDialog] = useState(false);
+  const [scheduledTime, setScheduledTime] = useState('');
+  
   // Form states
   const [promoName, setPromoName] = useState('');
   const [promoAmount, setPromoAmount] = useState('');
@@ -46,7 +51,7 @@ export default function AdminPage() {
   const [announcementTitle, setAnnouncementTitle] = useState('');
   const [announcementMessage, setAnnouncementMessage] = useState('');
 
-  const token = localStorage.getItem('ton_city_token');
+  const token = localStorage.getItem('ton_city_token') || localStorage.getItem('token');
 
   useEffect(() => {
     if (!wallet?.account || !token) {
