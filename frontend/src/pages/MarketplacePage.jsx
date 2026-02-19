@@ -282,69 +282,69 @@ export default function MarketplacePage({ user }) {
                   <Store className="w-8 h-8 text-cyber-cyan" />
                   МАРКЕТПЛЕЙС
                 </h1>
-                <p className="text-text-muted mt-1">Торгуйте ресурсами и землёй с другими игроками</p>
+                <p className="text-text-muted mt-1 text-sm">Торгуйте ресурсами и землёй с другими игроками</p>
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button 
                   onClick={fetchData} 
                   variant="outline" 
+                  size="sm"
                   className="border-white/10"
                   disabled={isLoading}
                 >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                  Обновить
+                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline ml-2">Обновить</span>
                 </Button>
                 
                 {user && (
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={() => setShowSellLandModal(true)}
-                      className="bg-amber-600 hover:bg-amber-700"
-                    >
-                      <MapPin className="w-4 h-4 mr-2" />
-                      Продать землю
-                    </Button>
-                  </div>
+                  <Button 
+                    onClick={() => setShowSellLandModal(true)}
+                    size="sm"
+                    className="bg-amber-600 hover:bg-amber-700"
+                  >
+                    <MapPin className="w-4 h-4" />
+                    <span className="hidden sm:inline ml-2">Продать землю</span>
+                  </Button>
                 )}
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-4 gap-4">
+            {/* Stats - Mobile Optimized */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4">
               <Card className="glass-panel border-white/10">
-                <CardContent className="p-4 flex items-center gap-3">
-                  <Building2 className="w-8 h-8 text-cyber-cyan" />
-                  <div>
-                    <div className="text-2xl font-bold text-white">{resourceListings.length}</div>
-                    <div className="text-xs text-text-muted">Бизнесов на продаже</div>
+                <CardContent className="p-3 lg:p-4 flex items-center gap-2 lg:gap-3">
+                  <Building2 className="w-6 h-6 lg:w-8 lg:h-8 text-cyber-cyan flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-lg lg:text-2xl font-bold text-white">{resourceListings.length}</div>
+                    <div className="text-[10px] lg:text-xs text-text-muted truncate">Бизнесов</div>
                   </div>
                 </CardContent>
               </Card>
               <Card className="glass-panel border-white/10">
-                <CardContent className="p-4 flex items-center gap-3">
-                  <MapPin className="w-8 h-8 text-amber-400" />
-                  <div>
-                    <div className="text-2xl font-bold text-white">{landListings.length}</div>
-                    <div className="text-xs text-text-muted">Участков на продаже</div>
+                <CardContent className="p-3 lg:p-4 flex items-center gap-2 lg:gap-3">
+                  <MapPin className="w-6 h-6 lg:w-8 lg:h-8 text-amber-400 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-lg lg:text-2xl font-bold text-white">{landListings.length}</div>
+                    <div className="text-[10px] lg:text-xs text-text-muted truncate">Участков</div>
                   </div>
                 </CardContent>
               </Card>
               <Card className="glass-panel border-white/10">
-                <CardContent className="p-4 flex items-center gap-3">
-                  <ArrowUpRight className="w-8 h-8 text-green-400" />
-                  <div>
-                    <div className="text-2xl font-bold text-white">{landListings.reduce((sum, l) => sum + (l.price || 0), 0).toFixed(2)}</div>
-                    <div className="text-xs text-text-muted">Стоимость земель (TON)</div>
+                <CardContent className="p-3 lg:p-4 flex items-center gap-2 lg:gap-3">
+                  <ArrowUpRight className="w-6 h-6 lg:w-8 lg:h-8 text-green-400 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-lg lg:text-2xl font-bold text-white">{landListings.reduce((sum, l) => sum + (l.price || 0), 0).toFixed(1)}</div>
+                    <div className="text-[10px] lg:text-xs text-text-muted truncate">TON земель</div>
                   </div>
                 </CardContent>
               </Card>
               <Card className="glass-panel border-white/10">
-                <CardContent className="p-4 flex items-center gap-3">
-                  <Coins className="w-8 h-8 text-yellow-400" />
-                  <div>
-                    <div className="text-2xl font-bold text-white">{(user?.balance_ton || 0).toFixed(2)}</div>
-                    <div className="text-xs text-text-muted">TON баланс</div>
+                <CardContent className="p-3 lg:p-4 flex items-center gap-2 lg:gap-3">
+                  <Coins className="w-6 h-6 lg:w-8 lg:h-8 text-yellow-400 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-lg lg:text-2xl font-bold text-white">{(user?.balance_ton || 0).toFixed(2)}</div>
+                    <div className="text-[10px] lg:text-xs text-text-muted truncate">TON баланс</div>
                   </div>
                 </CardContent>
               </Card>
