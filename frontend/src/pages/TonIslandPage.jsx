@@ -530,8 +530,8 @@ export default function TonIslandPage({ user }) {
             )}
           </AnimatePresence>
 
-          {/* Legend - City Island 3 Style (без цен) */}
-          <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-md rounded-xl p-4 text-xs space-y-2 z-20 max-w-[160px] border border-slate-700/50 shadow-xl">
+          {/* Legend - City Island 3 Style (без цен) - Hidden on Mobile */}
+          <div className="absolute top-4 left-4 hidden lg:block bg-slate-900/90 backdrop-blur-md rounded-xl p-4 text-xs space-y-2 z-20 max-w-[160px] border border-slate-700/50 shadow-xl">
             <div className="font-bold text-white mb-2 flex items-center gap-2">
               <MapPin className="w-4 h-4 text-sky-400" />
               Легенда
