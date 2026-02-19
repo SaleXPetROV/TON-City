@@ -47,39 +47,24 @@ export default function MobileNav({ user }) {
   return (
     <>
       {/* Hamburger Button - Fixed Top Left (only on mobile) */}
-      <div className="lg:hidden fixed top-4 left-4 z-[60]">
+      <div className="lg:hidden fixed top-4 left-3 z-[60]">
         <Button
           data-testid="mobile-menu-toggle"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           variant="ghost"
           size="icon"
-          className={`w-12 h-12 rounded-xl transition-all duration-300 ${
+          className={`w-10 h-10 rounded-xl transition-all duration-300 ${
             isMenuOpen 
               ? 'bg-cyber-cyan text-black' 
               : 'bg-black/80 backdrop-blur-xl border border-white/10 text-white hover:bg-white/10'
           }`}
         >
           {isMenuOpen ? (
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           ) : (
-            <Menu className="w-6 h-6" />
+            <Menu className="w-5 h-5" />
           )}
         </Button>
-      </div>
-
-      {/* Logo - Fixed Top Left next to hamburger */}
-      <div className="lg:hidden fixed top-4 left-20 z-[60]">
-        <motion.div 
-          className="flex items-center gap-2 cursor-pointer"
-          onClick={() => handleNavigation('/')}
-        >
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyber-cyan to-neon-purple flex items-center justify-center shadow-lg shadow-cyber-cyan/20">
-            <Building2 className="w-6 h-6 text-black" />
-          </div>
-          <span className="font-unbounded text-lg font-bold text-text-main tracking-tighter">
-            TON <span className="text-cyber-cyan">CITY</span>
-          </span>
-        </motion.div>
       </div>
 
       {/* Fullscreen Menu Overlay */}
