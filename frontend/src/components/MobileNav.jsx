@@ -136,7 +136,15 @@ export default function MobileNav({ user }) {
                   <Button
                     size="sm"
                     className="bg-green-600 hover:bg-green-700 text-xs h-10"
-                    onClick={() => handleNavigation('/settings')}
+                    onClick={() => {
+                      if (user.wallet_address) {
+                        // Кошелёк привязан - показать deposit modal
+                        handleNavigation('/settings?action=deposit');
+                      } else {
+                        // Кошелёк не привязан - перейти в настройки
+                        handleNavigation('/settings?tab=wallet');
+                      }
+                    }}
                   >
                     <ArrowDownToLine className="w-4 h-4 mr-2" />
                     Пополнить
@@ -144,7 +152,13 @@ export default function MobileNav({ user }) {
                   <Button
                     size="sm"
                     className="bg-orange-600 hover:bg-orange-700 text-xs h-10"
-                    onClick={() => handleNavigation('/settings')}
+                    onClick={() => {
+                      if (user.wallet_address) {
+                        handleNavigation('/settings?action=withdraw');
+                      } else {
+                        handleNavigation('/settings?tab=wallet');
+                      }
+                    }}
                   >
                     <ArrowUpFromLine className="w-4 h-4 mr-2" />
                     Вывести
