@@ -305,39 +305,41 @@ export default function TradingPage({ user }) {
     <div className="flex min-h-screen bg-void">
       <Sidebar user={user} />
       
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-4 lg:p-6 pt-16 lg:pt-6 lg:ml-16">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          {/* Header - Mobile Optimized */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 lg:mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                <ShoppingCart className="w-6 h-6 text-cyber-cyan" />
-                Торговая площадка
+              <h1 className="text-xl lg:text-2xl font-bold text-white flex items-center gap-2">
+                <ShoppingCart className="w-5 h-5 lg:w-6 lg:h-6 text-cyber-cyan" />
+                ТОРГОВЛЯ
               </h1>
-              <p className="text-text-muted mt-1">Покупайте и продавайте ресурсы</p>
+              <p className="text-text-muted mt-1 text-sm">Покупайте и продавайте ресурсы</p>
             </div>
             
             <div className="flex items-center gap-2">
               <Button
                 onClick={() => setShowFilters(true)}
                 variant="outline"
+                size="sm"
                 className="border-white/10"
               >
-                <Filter className="w-4 h-4 mr-2" />
-                Фильтры
+                <Filter className="w-4 h-4" />
+                <span className="hidden sm:inline ml-2">Фильтры</span>
               </Button>
               <Button
                 onClick={() => setShowSellModal(true)}
+                size="sm"
                 className="bg-green-500 hover:bg-green-600"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Продать
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline ml-2">Продать</span>
               </Button>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-4 lg:mb-6 overflow-x-auto"
             <Button
               onClick={() => setActiveTab('buy')}
               variant={activeTab === 'buy' ? 'default' : 'outline'}
