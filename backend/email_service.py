@@ -133,20 +133,60 @@ def send_email_with_code(to_email: str, code: str, language: str = "en", email_t
         logger.error("SMTP credentials not configured")
         return False
     
-    # Email content based on language
-    subjects = {
-        "en": "Password Reset Code - TON City Builder",
-        "ru": "Код восстановления пароля - TON City Builder",
-        "zh": "密码重置代码 - TON City Builder",
-        "es": "Código de restablecimiento de contraseña - TON City Builder",
-        "de": "Passwort-Reset-Code - TON City Builder",
-        "fr": "Code de réinitialisation du mot de passe - TON City Builder",
-        "ja": "パスワードリセットコード - TON City Builder",
-        "ko": "비밀번호 재설정 코드 - TON City Builder"
-    }
-    
-    bodies = {
-        "en": f"""
+    # Email content based on type and language
+    if email_type == "verification":
+        subjects = {
+            "en": "Email Verification Code - TON City Builder",
+            "ru": "Код подтверждения email - TON City Builder",
+            "zh": "邮箱验证码 - TON City Builder"
+        }
+        bodies = {
+            "en": f"""
+<html>
+<body style="font-family: Arial, sans-serif; background-color: #0a0a0f; color: #ffffff; padding: 20px;">
+    <div style="max-width: 500px; margin: 0 auto; background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%); border-radius: 16px; padding: 30px; border: 1px solid rgba(0,255,255,0.2);">
+        <h1 style="color: #00ffff; margin-bottom: 20px;">🏙️ TON City Builder</h1>
+        <p>Welcome! Please verify your email with the code below:</p>
+        <div style="background: rgba(0,255,255,0.1); border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
+            <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #00ffff;">{code}</span>
+        </div>
+        <p style="color: #888;">This code will expire in 15 minutes.</p>
+        <p style="color: #888;">If you didn't register, please ignore this email.</p>
+    </div>
+</body>
+</html>
+""",
+            "ru": f"""
+<html>
+<body style="font-family: Arial, sans-serif; background-color: #0a0a0f; color: #ffffff; padding: 20px;">
+    <div style="max-width: 500px; margin: 0 auto; background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%); border-radius: 16px; padding: 30px; border: 1px solid rgba(0,255,255,0.2);">
+        <h1 style="color: #00ffff; margin-bottom: 20px;">🏙️ TON City Builder</h1>
+        <p>Добро пожаловать! Подтвердите ваш email с помощью кода ниже:</p>
+        <div style="background: rgba(0,255,255,0.1); border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
+            <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #00ffff;">{code}</span>
+        </div>
+        <p style="color: #888;">Код действителен 15 минут.</p>
+        <p style="color: #888;">Если вы не регистрировались, проигнорируйте это письмо.</p>
+    </div>
+</body>
+</html>
+"""
+        }
+    else:
+        # Password reset
+        subjects = {
+            "en": "Password Reset Code - TON City Builder",
+            "ru": "Код восстановления пароля - TON City Builder",
+            "zh": "密码重置代码 - TON City Builder",
+            "es": "Código de restablecimiento de contraseña - TON City Builder",
+            "de": "Passwort-Reset-Code - TON City Builder",
+            "fr": "Code de réinitialisation du mot de passe - TON City Builder",
+            "ja": "パスワードリセットコード - TON City Builder",
+            "ko": "비밀번호 재설정 코드 - TON City Builder"
+        }
+        
+        bodies = {
+            "en": f"""
 <html>
 <body style="font-family: Arial, sans-serif; background-color: #0a0a0f; color: #ffffff; padding: 20px;">
     <div style="max-width: 500px; margin: 0 auto; background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%); border-radius: 16px; padding: 30px; border: 1px solid rgba(0,255,255,0.2);">
@@ -161,7 +201,7 @@ def send_email_with_code(to_email: str, code: str, language: str = "en", email_t
 </body>
 </html>
 """,
-        "ru": f"""
+            "ru": f"""
 <html>
 <body style="font-family: Arial, sans-serif; background-color: #0a0a0f; color: #ffffff; padding: 20px;">
     <div style="max-width: 500px; margin: 0 auto; background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%); border-radius: 16px; padding: 30px; border: 1px solid rgba(0,255,255,0.2);">
@@ -176,7 +216,7 @@ def send_email_with_code(to_email: str, code: str, language: str = "en", email_t
 </body>
 </html>
 """
-    }
+        }
     
     subject = subjects.get(language, subjects["en"])
     body = bodies.get(language, bodies["en"])
