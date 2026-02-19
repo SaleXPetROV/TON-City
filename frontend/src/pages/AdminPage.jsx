@@ -278,35 +278,123 @@ export default function AdminPage({ user }) {
   return (
     <div className="min-h-screen bg-void">
       {/* Header */}
-      <header className="glass-panel border-b border-grid-border px-6 py-4">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <header className="glass-panel border-b border-grid-border px-4 lg:px-6 py-4">
+        <div className="container mx-auto flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2 lg:gap-4">
             <Button
+              data-testid="admin-go-to-user-ui"
               variant="ghost"
               size="sm"
-              onClick={() => navigate('/game')}
+              onClick={() => navigate('/')}
               className="text-text-muted hover:text-text-main"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {t('back')}
+              <Home className="w-4 h-4 lg:mr-2" />
+              <span className="hidden lg:inline">На сайт</span>
             </Button>
-            <h1 className="font-unbounded text-xl font-bold text-text-main flex items-center gap-2">
+            <h1 className="font-unbounded text-lg lg:text-xl font-bold text-text-main flex items-center gap-2">
               <Settings className="w-5 h-5 text-cyber-cyan" />
-              {t('adminPanel')}
+              <span className="hidden sm:inline">{t('adminPanel')}</span>
+              <span className="sm:hidden">Админ</span>
             </h1>
           </div>
           
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadData}
-            className="border-grid-border"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            {t('refresh')}
-          </Button>
+          <div className="flex items-center gap-2 lg:gap-3">
+            {/* Maintenance Button */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  data-testid="maintenance-toggle-btn"
+                  variant="outline"
+                  size="sm"
+                  className={`transition-all ${
+                    maintenanceEnabled 
+                      ? 'bg-orange-500/20 border-orange-500 text-orange-400 hover:bg-orange-500/30' 
+                      : 'border-grid-border hover:border-white/30'
+                  }`}
+                >
+                  <Wrench className="w-4 h-4 lg:mr-2" />
+                  <span className="hidden lg:inline">
+                    {maintenanceEnabled ? 'Тех. работы (ВКЛ)' : 'Тех. работы'}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-panel border-grid-border w-56">
+                {!maintenanceEnabled ? (
+                  <>
+                    <DropdownMenuItem 
+                      onClick={() => toggleMaintenance(true)}
+                      className="cursor-pointer"
+                    >
+                      <Play className="w-4 h-4 mr-2 text-orange-400" />
+                      Начать прямо сейчас
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => setShowMaintenanceDialog(true)}
+                      className="cursor-pointer"
+                    >
+                      <Clock className="w-4 h-4 mr-2 text-blue-400" />
+                      Установить время начала
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <DropdownMenuItem 
+                    onClick={() => toggleMaintenance(false)}
+                    className="cursor-pointer"
+                  >
+                    <Check className="w-4 h-4 mr-2 text-green-400" />
+                    Закончить тех. работы
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadData}
+              className="border-grid-border"
+            >
+              <RefreshCw className="w-4 h-4 lg:mr-2" />
+              <span className="hidden lg:inline">{t('refresh')}</span>
+            </Button>
+          </div>
         </div>
       </header>
+
+      {/* Schedule Maintenance Dialog */}
+      <Dialog open={showMaintenanceDialog} onOpenChange={setShowMaintenanceDialog}>
+        <DialogContent className="glass-panel border-grid-border">
+          <DialogHeader>
+            <DialogTitle className="text-text-main flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-400" />
+              Запланировать технические работы
+            </DialogTitle>
+            <DialogDescription className="text-text-muted">
+              Укажите дату и время начала технических работ
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              type="datetime-local"
+              value={scheduledTime}
+              onChange={(e) => setScheduledTime(e.target.value)}
+              className="bg-panel border-grid-border text-text-main"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMaintenanceDialog(false)}>
+              Отмена
+            </Button>
+            <Button 
+              onClick={() => toggleMaintenance(false, scheduledTime ? new Date(scheduledTime).toISOString() : null)}
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={!scheduledTime}
+            >
+              Запланировать
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Content */}
       <main className="container mx-auto px-6 py-8">
