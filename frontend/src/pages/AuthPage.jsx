@@ -382,7 +382,15 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
         className="glass-panel p-8 rounded-3xl w-full max-w-md border border-white/10 text-center relative shadow-2xl"
       >
         <button 
-          onClick={() => showUsernameStep ? setShowUsernameStep(false) : navigate('/')} 
+          onClick={() => {
+            if (showVerificationStep) {
+              setShowVerificationStep(false);
+            } else if (showUsernameStep) {
+              setShowUsernameStep(false);
+            } else {
+              navigate('/');
+            }
+          }} 
           className="absolute top-6 left-6 text-text-muted hover:text-white transition-colors"
         >
           <ArrowLeft className="w-6 h-6" />
@@ -393,12 +401,64 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
         </div>
 
         <h1 className="font-unbounded text-xl font-bold text-white mb-8 tracking-tighter uppercase">
-          {title}
+          {showVerificationStep 
+            ? (lang === 'ru' ? 'Подтверждение Email' : 'Verify Email')
+            : title
+          }
         </h1>
 
         <div className="space-y-4">
           <AnimatePresence mode="wait">
-            {showUsernameStep ? (
+            {/* Email Verification Step */}
+            {showVerificationStep ? (
+              <motion.div 
+                key="verification-step"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-4"
+              >
+                <div className="p-4 bg-cyber-cyan/10 border border-cyber-cyan/20 rounded-xl mb-4">
+                  <p className="text-cyber-cyan text-sm">
+                    {lang === 'ru' 
+                      ? `Код отправлен на ${pendingEmail}` 
+                      : `Code sent to ${pendingEmail}`
+                    }
+                  </p>
+                </div>
+
+                <div className="relative text-left">
+                  <Mail className="absolute left-3 top-3.5 w-5 h-5 text-cyber-cyan" />
+                  <Input
+                    type="text"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder={lang === 'ru' ? "Код из email (6 цифр)" : "Code from email (6 digits)"}
+                    className="w-full pl-10 pr-4 py-3.5 bg-panel border border-white/10 rounded-xl text-white placeholder-white/30 focus:border-cyber-cyan focus:ring-1 focus:ring-cyber-cyan/50 text-center text-2xl tracking-[0.5em] font-mono"
+                    maxLength={6}
+                  />
+                </div>
+
+                <Button 
+                  data-testid="verify-email-btn"
+                  onClick={handleVerifyEmail}
+                  disabled={isVerifying || verificationCode.length !== 6}
+                  className="w-full bg-cyber-cyan text-black font-bold py-4 rounded-xl uppercase tracking-widest hover:bg-cyber-cyan/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isVerifying 
+                    ? (lang === 'ru' ? 'Проверка...' : 'Verifying...') 
+                    : (lang === 'ru' ? 'Подтвердить' : 'Verify')
+                  }
+                </Button>
+
+                <p className="text-text-muted text-xs mt-4">
+                  {lang === 'ru' 
+                    ? 'Не получили код? Проверьте папку "Спам"' 
+                    : "Didn't receive code? Check your spam folder"
+                  }
+                </p>
+              </motion.div>
+            ) : showUsernameStep ? (
               <motion.div 
                 key="username-step"
                 initial={{ opacity: 0, x: 20 }}
