@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { TonConnectUIProvider } from "@tonconnect/ui-react";
 import { Toaster } from "@/components/ui/sonner";
 import LandingPage from "@/pages/LandingPage";
@@ -19,6 +19,7 @@ import AuthPage from '@/pages/AuthPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import MobileNav from '@/components/MobileNav';
+import MaintenanceOverlay from '@/components/MaintenanceOverlay';
 import "@/App.css";
 
 const manifestUrl = `${window.location.origin}/tonconnect-manifest.json`;
