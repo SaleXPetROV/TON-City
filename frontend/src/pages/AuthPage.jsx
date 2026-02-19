@@ -136,9 +136,10 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
         return;
       }
 
-      const res = await fetch(
-        mode === 'register' ? `${API}/auth/register` : `${API}/auth/login`,
-        {
+      // Для регистрации используем новый endpoint с верификацией email
+      const endpoint = mode === 'register' ? `${API}/auth/register/initiate` : `${API}/auth/login`;
+      
+      const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password, username })
@@ -168,6 +169,22 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
         return;
       }
 
+      // Проверяем статус ответа для регистрации
+      if (mode === 'register') {
+        if (data.status === 'verification_sent') {
+          // Нужно ввести код верификации
+          setPendingEmail(email);
+          setShowVerificationStep(true);
+          toast.success(lang === 'ru' ? 'Код отправлен на email' : 'Code sent to email');
+          setIsVerifying(false);
+          return;
+        } else if (data.status === 'registered' && data.token) {
+          // SMTP не настроен - регистрация прошла сразу
+          await finishAuth(data);
+          return;
+        }
+      }
+
       await finishAuth(data);
     } catch (e) {
       console.error("Email auth error:", e);
@@ -180,6 +197,48 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
       } else {
         toast.error(lang === 'ru' ? 'Ошибка авторизации' : 'Auth failed');
       }
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Подтверждение email кода
+  const handleVerifyEmail = async () => {
+    if (!verificationCode.trim()) {
+      toast.error(lang === 'ru' ? 'Введите код' : 'Enter code');
+      return;
+    }
+    
+    setIsVerifying(true);
+    try {
+      const res = await fetch(`${API}/auth/register/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: pendingEmail, code: verificationCode.trim() })
+      });
+      
+      const responseText = await res.text();
+      let data = null;
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonErr) {
+        console.error("JSON parse error:", jsonErr);
+        toast.error(lang === 'ru' ? 'Ошибка сервера' : 'Server error');
+        return;
+      }
+      
+      if (!res.ok) {
+        toast.error(data?.detail || (lang === 'ru' ? 'Неверный код' : 'Invalid code'));
+        return;
+      }
+      
+      if (data.token) {
+        toast.success(lang === 'ru' ? 'Email подтверждён!' : 'Email verified!');
+        await finishAuth(data);
+      }
+    } catch (e) {
+      console.error("Verify error:", e);
+      toast.error(lang === 'ru' ? 'Ошибка подтверждения' : 'Verification failed');
     } finally {
       setIsVerifying(false);
     }
