@@ -51,6 +51,8 @@ export default function TonIslandPage({ user }) {
   // Loading states
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isBuilding, setIsBuilding] = useState(false);
+  const [showBuildings, setShowBuildings] = useState(false);
+  const [showBuildingsToast, setShowBuildingsToast] = useState(false);
   
   const token = localStorage.getItem('token');
 
