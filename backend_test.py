@@ -77,26 +77,45 @@ class TONCityAuthTester:
             print(f"❌ FAILED - Exception: {str(e)}")
             return False, {}
 
-    def test_maintenance_status_api(self):
-        """Test GET /api/maintenance-status - Required for MaintenanceOverlay"""
+    def test_register_initiate(self):
+        """Test POST /api/auth/register/initiate - registration with email verification"""
         print("\n" + "="*50)
-        print("🔧 TESTING MAINTENANCE API")
+        print("📝 TESTING REGISTRATION INITIATE")
         print("="*50)
         
+        data = {
+            "email": self.test_email,
+            "username": self.test_username,
+            "password": self.test_password
+        }
+        
         success, response = self.run_test(
-            "Maintenance Status Check",
-            "GET", 
-            "maintenance-status",
-            200
+            "Registration Initiate",
+            "POST",
+            "auth/register/initiate",
+            200,
+            data
         )
         
         if success:
-            enabled = response.get('enabled', None)
-            print(f"   Maintenance Status: {'ENABLED' if enabled else 'DISABLED'}")
-            if enabled is False:
-                print("✅ Maintenance correctly disabled for normal operation")
-            return success
-        return False
+            status = response.get('status')
+            message = response.get('message', '')
+            print(f"   Status: {status}")
+            print(f"   Message: {message}")
+            
+            # Check if SMTP is configured or not
+            if status == 'verification_sent':
+                print("✅ Email verification required (SMTP configured)")
+                return True, 'verification_needed'
+            elif status == 'registered' and response.get('token'):
+                print("✅ Registration completed immediately (SMTP not configured)")
+                self.token = response['token']
+                return True, 'registered_immediately'
+            else:
+                print(f"⚠️ Unexpected response: {response}")
+                return False, None
+        
+        return False, None
 
     def test_admin_login(self):
         """Test admin login with provided credentials"""
