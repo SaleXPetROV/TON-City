@@ -107,20 +107,20 @@ export default function LeaderboardPage({ user }) {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.1 }}
-                      className={`${isFirst ? 'transform -translate-y-4' : ''}`}
+                      className={`${isFirst ? 'transform lg:-translate-y-4' : ''}`}
                     >
                       <Card className={`glass-panel ${getRankBg(actualRank)} ${isFirst ? 'ring-2 ring-yellow-500/50' : ''}`}>
-                        <CardContent className="p-6 text-center">
-                          <div className="mb-3">{getRankIcon(actualRank)}</div>
-                          <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-cyber-cyan to-neon-purple rounded-full flex items-center justify-center text-2xl font-bold text-black">
+                        <CardContent className="p-3 lg:p-6 text-center">
+                          <div className="mb-2 lg:mb-3 text-lg lg:text-2xl">{getRankIcon(actualRank)}</div>
+                          <div className="w-10 h-10 lg:w-16 lg:h-16 mx-auto mb-2 lg:mb-3 bg-gradient-to-br from-cyber-cyan to-neon-purple rounded-full flex items-center justify-center text-lg lg:text-2xl font-bold text-black">
                             {(player?.username || 'U')[0].toUpperCase()}
                           </div>
-                          <div className="font-bold text-white text-lg mb-1">{player?.username || 'Аноним'}</div>
-                          <div className="text-cyber-cyan font-mono text-lg">
-                            {sortBy === 'balance' && `${(player?.balance_ton || 0).toFixed(2)} TON`}
-                            {sortBy === 'income' && `${(player?.total_income || 0).toFixed(2)} TON`}
-                            {sortBy === 'businesses' && `${player?.businesses_count || 0} бизнесов`}
-                            {sortBy === 'plots' && `${player?.plots_count || 0} участков`}
+                          <div className="font-bold text-white text-sm lg:text-lg mb-1 truncate">{player?.username || 'Аноним'}</div>
+                          <div className="text-cyber-cyan font-mono text-xs lg:text-lg">
+                            {sortBy === 'balance' && `${(player?.balance_ton || 0).toFixed(1)} TON`}
+                            {sortBy === 'income' && `${(player?.total_income || 0).toFixed(1)} TON`}
+                            {sortBy === 'businesses' && `${player?.businesses_count || 0}`}
+                            {sortBy === 'plots' && `${player?.plots_count || 0}`}
                           </div>
                         </CardContent>
                       </Card>
