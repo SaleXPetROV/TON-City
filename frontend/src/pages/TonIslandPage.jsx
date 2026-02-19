@@ -400,41 +400,43 @@ export default function TonIslandPage({ user }) {
       <Sidebar user={user} />
       
       <div className="flex-1 flex flex-col lg:ml-16 overflow-hidden">
-        {/* Header */}
-        <div className="flex-shrink-0 p-4 border-b border-white/10 bg-void/95 backdrop-blur-sm z-20">
+        {/* Header - Mobile Adapted */}
+        <div className="flex-shrink-0 p-4 pt-20 lg:pt-4 border-b border-white/10 bg-void/95 backdrop-blur-sm z-20">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="font-unbounded text-xl font-bold text-white flex items-center gap-2">
-                <MapPin className="w-6 h-6 text-cyber-cyan" />
-                ОСТРОВ TON
+            <div className="flex-1 min-w-0">
+              <h1 className="font-unbounded text-lg lg:text-xl font-bold text-white flex items-center gap-2 truncate">
+                <MapPin className="w-5 h-5 lg:w-6 lg:h-6 text-cyber-cyan flex-shrink-0" />
+                <span className="truncate">ОСТРОВ TON</span>
               </h1>
-              <p className="text-text-muted text-sm">
-                Изометрическая карта • Баланс: {userBalance.toFixed(2)} TON
+              <p className="text-text-muted text-xs lg:text-sm truncate">
+                Баланс: {userBalance.toFixed(2)} TON
               </p>
             </div>
             
-            <Button 
-              onClick={handleRefresh} 
-              variant="outline" 
-              size="sm" 
-              className="border-white/10"
-              disabled={isLoading}
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </Button>
-            
-            <Button
-              data-testid="night-mode-toggle"
-              onClick={() => {
-                const isNight = !mapStore.getState().isNight;
-                if (engineRef.current) engineRef.current.setNightMode(isNight);
-              }}
-              variant="outline"
-              size="sm"
-              className="ml-2 border-white/10 bg-indigo-900/20 text-indigo-300 hover:bg-indigo-900/40"
-            >
-              🌙
-            </Button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Button 
+                onClick={handleRefresh} 
+                variant="outline" 
+                size="sm" 
+                className="border-white/10 w-9 h-9 p-0"
+                disabled={isLoading}
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              </Button>
+              
+              <Button
+                data-testid="night-mode-toggle"
+                onClick={() => {
+                  const isNight = !mapStore.getState().isNight;
+                  if (engineRef.current) engineRef.current.setNightMode(isNight);
+                }}
+                variant="outline"
+                size="sm"
+                className="border-white/10 bg-indigo-900/20 text-indigo-300 hover:bg-indigo-900/40 w-9 h-9 p-0"
+              >
+                🌙
+              </Button>
+            </div>
           </div>
         </div>
 
