@@ -6,6 +6,7 @@ import { Building2, ArrowLeft, Globe, UserCircle, Mail, Lock, Chrome, CheckCircl
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation, languages } from '@/lib/translations';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
@@ -40,6 +41,11 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
+  // Email verification states
+  const [showVerificationStep, setShowVerificationStep] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [pendingEmail, setPendingEmail] = useState('');
   
   const [showUsernameStep, setShowUsernameStep] = useState(false);
   const [googleLoaded, setGoogleLoaded] = useState(false);
