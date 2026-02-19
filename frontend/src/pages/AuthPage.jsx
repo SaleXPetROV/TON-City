@@ -206,10 +206,19 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
               })
           });
 
-          const data = await response.json();
+          const responseText = await response.text();
+          let data = null;
+          
+          try {
+            data = JSON.parse(responseText);
+          } catch (jsonErr) {
+            console.error("JSON parse error in verifyWallet:", jsonErr, "Response:", responseText);
+            toast.error(lang === 'ru' ? 'Ошибка соединения с сервером' : 'Server connection error');
+            return;
+          }
 
           if (!response.ok) {
-            throw new Error(data.detail || 'Auth failed');
+            throw new Error(data?.detail || 'Auth failed');
           }
 
           if (data.status === 'need_username') {
@@ -221,7 +230,11 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
           }
         } catch (error) {
           console.error("Auth error:", error);
-          toast.error(error.message === 'Failed to fetch' ? "Server Error" : error.message);
+          if (error.message === 'Failed to fetch') {
+            toast.error(lang === 'ru' ? "Ошибка соединения с сервером" : "Server connection error");
+          } else {
+            toast.error(error.message);
+          }
         } finally {
           setIsVerifying(false);
         }
