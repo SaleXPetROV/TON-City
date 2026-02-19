@@ -114,7 +114,153 @@ async def get_current_user_local(credentials: HTTPAuthorizationCredentials = Dep
 
 # --- ЭНДПОИНТЫ ---
 
-# 1. Регистрация через Email (с Username)
+# 1. Инициация регистрации - отправка кода на email
+@auth_router.post("/register/initiate")
+async def register_initiate(data: EmailRegisterInitiate):
+    """Start registration - send verification code to email"""
+    from server import db
+    from email_service import generate_verification_code, store_verification_code, send_verification_email
+    
+    # Проверка уникальности
+    if await db.users.find_one({"email": data.email}):
+        raise HTTPException(status_code=400, detail="Email уже зарегистрирован")
+    if await db.users.find_one({"username": data.username}):
+        raise HTTPException(status_code=400, detail="Этот Username уже занят")
+    
+    if len(data.password) < 6:
+        raise HTTPException(status_code=400, detail="Пароль должен быть минимум 6 символов")
+    
+    # Хешируем пароль
+    password_hash = pwd_context.hash(data.password)
+    
+    # Генерируем код
+    code = generate_verification_code()
+    
+    # Сохраняем данные
+    store_verification_code(data.email, code, data.username, password_hash)
+    
+    # Отправляем email
+    email_sent = send_verification_email(data.email, code, "ru")
+    
+    if not email_sent:
+        # Если SMTP не настроен, создаем пользователя сразу (для разработки)
+        import uuid
+        avatar = generate_avatar_from_initials(data.username)
+        user = {
+            "id": str(uuid.uuid4()),
+            "username": data.username,
+            "display_name": data.username,
+            "email": data.email,
+            "hashed_password": password_hash,
+            "wallet_address": None,
+            "raw_address": None,
+            "avatar": avatar,
+            "balance_ton": 10.0,
+            "language": "ru",
+            "level": "novice",
+            "xp": 0,
+            "total_turnover": 0,
+            "total_income": 0,
+            "plots_owned": [],
+            "businesses_owned": [],
+            "is_admin": False,
+            "email_verified": True,  # Auto-verified if SMTP not configured
+            "created_at": datetime.now(timezone.utc),
+            "last_login": datetime.now(timezone.utc)
+        }
+        
+        await db.users.insert_one(user)
+        token = create_token({"sub": data.email})
+        
+        return {
+            "status": "registered",
+            "token": token,
+            "type": "bearer",
+            "user": {
+                "id": user["id"],
+                "username": user["username"],
+                "email": user["email"],
+                "avatar": user["avatar"],
+                "display_name": user["display_name"],
+                "balance_ton": user["balance_ton"]
+            },
+            "message": "SMTP не настроен - регистрация без верификации"
+        }
+    
+    return {
+        "status": "verification_sent",
+        "message": "Код подтверждения отправлен на email"
+    }
+
+# 1.1 Подтверждение email и завершение регистрации
+@auth_router.post("/register/verify")
+async def register_verify(data: EmailVerifyCode):
+    """Verify email code and complete registration"""
+    from server import db
+    from email_service import verify_email_code
+    import uuid
+    
+    # Проверяем код
+    success, message, user_data = verify_email_code(data.email, data.code)
+    
+    if not success:
+        error_messages = {
+            "no_code_requested": "Код не был запрошен. Пройдите регистрацию заново.",
+            "code_expired": "Код истёк. Пройдите регистрацию заново.",
+            "too_many_attempts": "Слишком много попыток. Пройдите регистрацию заново.",
+            "invalid_code": "Неверный код"
+        }
+        raise HTTPException(status_code=400, detail=error_messages.get(message, message))
+    
+    # Проверяем еще раз уникальность (на случай если кто-то зарегистрировался пока ждали)
+    if await db.users.find_one({"email": data.email}):
+        raise HTTPException(status_code=400, detail="Email уже зарегистрирован")
+    if await db.users.find_one({"username": user_data["username"]}):
+        raise HTTPException(status_code=400, detail="Этот Username уже занят")
+    
+    # Создаем пользователя
+    avatar = generate_avatar_from_initials(user_data["username"])
+    
+    user = {
+        "id": str(uuid.uuid4()),
+        "username": user_data["username"],
+        "display_name": user_data["username"],
+        "email": data.email,
+        "hashed_password": user_data["password_hash"],
+        "wallet_address": None,
+        "raw_address": None,
+        "avatar": avatar,
+        "balance_ton": 10.0,
+        "language": "ru",
+        "level": "novice",
+        "xp": 0,
+        "total_turnover": 0,
+        "total_income": 0,
+        "plots_owned": [],
+        "businesses_owned": [],
+        "is_admin": False,
+        "email_verified": True,
+        "created_at": datetime.now(timezone.utc),
+        "last_login": datetime.now(timezone.utc)
+    }
+    
+    await db.users.insert_one(user)
+    token = create_token({"sub": data.email})
+    
+    return {
+        "token": token,
+        "type": "bearer",
+        "user": {
+            "id": user["id"],
+            "username": user["username"],
+            "email": user["email"],
+            "avatar": user["avatar"],
+            "display_name": user["display_name"],
+            "balance_ton": user["balance_ton"]
+        }
+    }
+
+# 1.2 Старая регистрация (для совместимости) - теперь редиректит на initiate
 @auth_router.post("/register")
 async def register(data: EmailRegister):
     from server import db
@@ -147,6 +293,7 @@ async def register(data: EmailRegister):
         "plots_owned": [],
         "businesses_owned": [],
         "is_admin": False,
+        "email_verified": False,  # Not verified through old endpoint
         "created_at": datetime.now(timezone.utc),
         "last_login": datetime.now(timezone.utc)
     }
@@ -163,7 +310,7 @@ async def register(data: EmailRegister):
             "email": user["email"],
             "avatar": user["avatar"],
             "display_name": user["display_name"],
-            "balance_ton": user["balance_ton"]  # Return starting balance
+            "balance_ton": user["balance_ton"]
         }
     }
 
