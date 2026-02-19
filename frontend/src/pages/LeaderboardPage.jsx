@@ -162,13 +162,14 @@ export default function LeaderboardPage({ user }) {
                         </div>
                         
                         <div className="text-right">
-                          <div className="font-mono text-lg text-white">
-                            {sortBy === 'balance' && `${(player.balance_ton || 0).toFixed(2)} TON`}
-                            {sortBy === 'income' && `${(player.total_income || 0).toFixed(2)} TON`}
+                        <div className="text-right flex-shrink-0">
+                          <div className="font-mono text-sm lg:text-lg text-white">
+                            {sortBy === 'balance' && `${(player.balance_ton || 0).toFixed(1)} TON`}
+                            {sortBy === 'income' && `${(player.total_income || 0).toFixed(1)} TON`}
                             {sortBy === 'businesses' && `${player.businesses_count || 0}`}
                             {sortBy === 'plots' && `${player.plots_count || 0}`}
                           </div>
-                          <div className="text-xs text-text-muted">
+                          <div className="text-[10px] lg:text-xs text-text-muted hidden sm:block">
                             {sortBy === 'balance' && 'баланс'}
                             {sortBy === 'income' && 'общий доход'}
                             {sortBy === 'businesses' && 'бизнесов'}
