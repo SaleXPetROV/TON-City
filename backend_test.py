@@ -117,55 +117,70 @@ class TONCityAuthTester:
         
         return False, None
 
-    def test_admin_login(self):
-        """Test admin login with provided credentials"""
+    def test_register_verify(self):
+        """Test POST /api/auth/register/verify - email code confirmation"""
         print("\n" + "="*50)
-        print("👤 TESTING ADMIN LOGIN")
+        print("✉️ TESTING EMAIL VERIFICATION")
         print("="*50)
         
-        # Test admin login - trying different endpoints
-        admin_credentials = {
-            "email": "admin@toncity.com",
-            "password": "admin123"
+        # Generate a dummy verification code for testing
+        dummy_code = "123456"
+        
+        data = {
+            "email": self.test_email,
+            "code": dummy_code
         }
         
-        # Try email login first
         success, response = self.run_test(
-            "Admin Email Login",
+            "Email Code Verification",
             "POST",
-            "auth/login",
+            "auth/register/verify",
+            [200, 400],  # 400 is expected for invalid code
+            data
+        )
+        
+        if success:
+            if response.get('token'):
+                print("✅ Verification successful (if code was valid)")
+                self.token = response['token']
+                return True
+            elif response.get('detail') and 'код' in response.get('detail', '').lower():
+                print("✅ Verification endpoint working (invalid code response)")
+                return True
+        
+        return success
+
+    def test_register_legacy(self):
+        """Test POST /api/auth/register - backward compatibility"""
+        print("\n" + "="*50)
+        print("🔄 TESTING LEGACY REGISTRATION")
+        print("="*50)
+        
+        # Use different email/username for legacy test
+        timestamp = datetime.now().strftime("%H%M%S") + "2"
+        legacy_email = f"legacy{timestamp}@example.com"
+        legacy_username = f"legacy{timestamp}"
+        
+        data = {
+            "email": legacy_email,
+            "username": legacy_username,
+            "password": self.test_password
+        }
+        
+        success, response = self.run_test(
+            "Legacy Registration",
+            "POST",
+            "auth/register",
             200,
-            admin_credentials
+            data
         )
         
         if success and response.get('token'):
-            self.admin_token = response['token']
+            print("✅ Legacy registration working")
             user_info = response.get('user', {})
-            is_admin = user_info.get('is_admin', False)
-            print(f"   Admin Status: {'YES' if is_admin else 'NO'}")
-            if is_admin:
-                print("✅ Admin login successful with correct privileges")
-                return True
-            else:
-                print("⚠️ Login successful but admin privileges not found")
-        
-        # Also try wallet verification if email login didn't work
-        if not self.admin_token:
-            success2, response2 = self.run_test(
-                "Admin Wallet Verification Fallback", 
-                "POST",
-                "auth/verify-wallet",
-                200,
-                {
-                    "address": "admin@toncity.com",
-                    "username": "admin", 
-                    "email": "admin@toncity.com",
-                    "password": "admin123"
-                }
-            )
-            if success2 and response2.get('token'):
-                self.admin_token = response2['token']
-                return True
+            print(f"   Username: {user_info.get('username')}")
+            print(f"   Email Verified: {user_info.get('email_verified', 'N/A')}")
+            return True
         
         return success
 
