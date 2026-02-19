@@ -274,12 +274,12 @@ export default function MarketplacePage({ user }) {
       
       <div className="flex-1 overflow-hidden lg:ml-16">
         <ScrollArea className="h-full">
-          <div className="p-6 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
+          <div className="p-4 lg:p-6 pt-16 lg:pt-6 space-y-4 lg:space-y-6">
+            {/* Header - Mobile Optimized */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <h1 className="font-unbounded text-2xl font-bold text-white flex items-center gap-3">
-                  <Store className="w-8 h-8 text-cyber-cyan" />
+                <h1 className="font-unbounded text-xl lg:text-2xl font-bold text-white flex items-center gap-2">
+                  <Store className="w-6 h-6 lg:w-8 lg:h-8 text-cyber-cyan" />
                   МАРКЕТПЛЕЙС
                 </h1>
                 <p className="text-text-muted mt-1 text-sm">Торгуйте ресурсами и землёй с другими игроками</p>
