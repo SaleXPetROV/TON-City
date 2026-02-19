@@ -4931,6 +4931,95 @@ async def get_treasury_health(admin: User = Depends(get_admin_user)):
         "days_active": days_active
     }
 
+# ==================== MAINTENANCE MODE ====================
+
+class MaintenanceRequest(BaseModel):
+    enabled: bool
+    scheduled_at: Optional[str] = None  # ISO datetime string for scheduled maintenance
+
+@admin_router.get("/maintenance")
+async def get_maintenance_status():
+    """Get current maintenance status - public endpoint"""
+    maintenance = await db.admin_stats.find_one({"type": "maintenance"}, {"_id": 0})
+    if not maintenance:
+        return {"enabled": False, "scheduled_at": None, "started_at": None}
+    return {
+        "enabled": maintenance.get("enabled", False),
+        "scheduled_at": maintenance.get("scheduled_at"),
+        "started_at": maintenance.get("started_at"),
+        "message": maintenance.get("message", "Технические работы")
+    }
+
+@admin_router.post("/maintenance")
+async def set_maintenance_mode(request: MaintenanceRequest, admin: User = Depends(get_admin_user)):
+    """Enable/disable maintenance mode"""
+    now = datetime.now(timezone.utc).isoformat()
+    
+    update_data = {
+        "type": "maintenance",
+        "enabled": request.enabled,
+        "updated_at": now,
+        "updated_by": admin.wallet_address or admin.email
+    }
+    
+    if request.enabled:
+        if request.scheduled_at:
+            update_data["scheduled_at"] = request.scheduled_at
+            update_data["started_at"] = None
+            logger.info(f"Maintenance scheduled for {request.scheduled_at} by {admin.username}")
+        else:
+            update_data["scheduled_at"] = None
+            update_data["started_at"] = now
+            logger.info(f"Maintenance started NOW by {admin.username}")
+    else:
+        update_data["scheduled_at"] = None
+        update_data["started_at"] = None
+        update_data["ended_at"] = now
+        logger.info(f"Maintenance ended by {admin.username}")
+    
+    await db.admin_stats.update_one(
+        {"type": "maintenance"},
+        {"$set": update_data},
+        upsert=True
+    )
+    
+    return {"status": "ok", "maintenance": update_data}
+
+# Public endpoint for users to check maintenance
+@api_router.get("/maintenance-status")
+async def get_public_maintenance_status():
+    """Get maintenance status for users"""
+    maintenance = await db.admin_stats.find_one({"type": "maintenance"}, {"_id": 0})
+    if not maintenance:
+        return {"enabled": False}
+    
+    enabled = maintenance.get("enabled", False)
+    scheduled_at = maintenance.get("scheduled_at")
+    started_at = maintenance.get("started_at")
+    
+    # Check if scheduled maintenance should start
+    if enabled and scheduled_at and not started_at:
+        try:
+            scheduled_time = datetime.fromisoformat(scheduled_at.replace('Z', '+00:00'))
+            if datetime.now(timezone.utc) >= scheduled_time:
+                # Auto-start scheduled maintenance
+                await db.admin_stats.update_one(
+                    {"type": "maintenance"},
+                    {"$set": {"started_at": datetime.now(timezone.utc).isoformat()}}
+                )
+                return {"enabled": True, "scheduled_at": scheduled_at, "started_at": datetime.now(timezone.utc).isoformat()}
+            else:
+                return {"enabled": False, "scheduled_at": scheduled_at}
+        except:
+            pass
+    
+    return {
+        "enabled": enabled and started_at is not None,
+        "scheduled_at": scheduled_at,
+        "started_at": started_at,
+        "message": maintenance.get("message", "Технические работы")
+    }
+
 # ==================== HEALTH ====================
 
 @api_router.get("/")
