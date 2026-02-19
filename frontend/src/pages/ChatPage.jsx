@@ -360,21 +360,21 @@ export default function ChatPage({ user }) {
       <Sidebar user={user} />
       
       <div className="flex-1 flex flex-col lg:ml-16 h-screen overflow-hidden">
-        {/* Fixed Header - NEVER SCROLLS */}
-        <div className="flex-shrink-0 p-4 border-b border-white/10 bg-void z-10">
+        {/* Fixed Header - Mobile Optimized */}
+        <div className="flex-shrink-0 p-4 pt-16 lg:pt-4 border-b border-white/10 bg-void z-10">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="font-unbounded text-2xl font-bold text-white flex items-center gap-3">
-                <MessageCircle className="w-8 h-8 text-cyber-cyan" />
+              <h1 className="font-unbounded text-xl lg:text-2xl font-bold text-white flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 lg:w-8 lg:h-8 text-cyber-cyan" />
                 ЧАТ
                 {unreadCount > 0 && (
-                  <Badge className="bg-red-500">{unreadCount}</Badge>
+                  <Badge className="bg-red-500 text-xs">{unreadCount}</Badge>
                 )}
                 {isConnected && (
                   <span className="w-2 h-2 bg-green-500 rounded-full" title="Подключено" />
                 )}
               </h1>
-              <p className="text-text-muted mt-1">Общайтесь с другими игроками</p>
+              <p className="text-text-muted mt-1 text-sm hidden sm:block">Общайтесь с другими игроками</p>
             </div>
             
             <Button 
