@@ -54,12 +54,12 @@ export default function AdminPage({ user }) {
   const token = localStorage.getItem('ton_city_token') || localStorage.getItem('token');
 
   useEffect(() => {
-    if (!wallet?.account || !token) {
+    if (!token) {
       navigate('/');
       return;
     }
     checkAdmin();
-  }, [wallet, token]);
+  }, [token]);
 
   const checkAdmin = async () => {
     try {
@@ -75,9 +75,45 @@ export default function AdminPage({ user }) {
       
       setIsAdmin(true);
       loadData();
+      loadMaintenanceStatus();
     } catch (error) {
       console.error('Admin check failed:', error);
       navigate('/');
+    }
+  };
+
+  const loadMaintenanceStatus = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/maintenance`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMaintenanceEnabled(response.data.enabled || false);
+    } catch (error) {
+      console.error('Failed to load maintenance status:', error);
+    }
+  };
+
+  const toggleMaintenance = async (startNow = false, scheduledAt = null) => {
+    try {
+      const newState = !maintenanceEnabled;
+      await axios.post(`${API}/admin/maintenance`, {
+        enabled: newState,
+        scheduled_at: startNow ? null : scheduledAt
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setMaintenanceEnabled(newState);
+      setShowMaintenanceDialog(false);
+      
+      if (newState) {
+        toast.success(startNow ? 'Технические работы начаты' : 'Технические работы запланированы');
+      } else {
+        toast.success('Технические работы завершены');
+      }
+    } catch (error) {
+      console.error('Failed to toggle maintenance:', error);
+      toast.error('Ошибка при изменении статуса');
     }
   };
 
