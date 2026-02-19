@@ -358,36 +358,37 @@ export default function MyBusinessesPage({ user }) {
       
       <div className="flex-1 overflow-hidden lg:ml-16">
         <ScrollArea className="h-full">
-          <div className="p-6 space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
+          <div className="p-4 lg:p-6 pt-16 lg:pt-6 space-y-4 lg:space-y-6">
+            {/* Header - Mobile Optimized */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <h1 className="font-unbounded text-2xl font-bold text-white flex items-center gap-3">
-                  <Building2 className="w-8 h-8 text-cyber-cyan" />
+                <h1 className="font-unbounded text-xl lg:text-2xl font-bold text-white flex items-center gap-2">
+                  <Building2 className="w-6 h-6 lg:w-8 lg:h-8 text-cyber-cyan" />
                   МОИ БИЗНЕСЫ
                 </h1>
-                <p className="text-text-muted mt-1">
-                  Управление, апгрейды, патронаж и ремонт
+                <p className="text-text-muted mt-1 text-sm">
+                  Управление и апгрейды
                 </p>
               </div>
               
-              <div className="flex gap-2">
-                <Button onClick={fetchData} variant="outline" className="border-white/10" disabled={isLoading}>
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                  Обновить
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={fetchData} variant="outline" size="sm" className="border-white/10" disabled={isLoading}>
+                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline ml-2">Обновить</span>
                 </Button>
                 {businesses.length > 0 && summary.total_pending_income > 0 && (
                   <Button 
                     onClick={handleCollectAll} 
+                    size="sm"
                     className="bg-green-600 hover:bg-green-700"
                     disabled={isCollecting}
                   >
                     {isCollecting ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <Coins className="w-4 h-4 mr-2" />
+                      <Coins className="w-4 h-4" />
                     )}
-                    Собрать всё ({summary.total_pending_income?.toFixed(2)} TON)
+                    <span className="ml-2">{summary.total_pending_income?.toFixed(1)} TON</span>
                   </Button>
                 )}
               </div>
