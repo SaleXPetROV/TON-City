@@ -114,6 +114,14 @@ def verify_reset_code(email: str, code: str) -> tuple[bool, str]:
 
 def send_reset_email(to_email: str, code: str, language: str = "en") -> bool:
     """Send password reset email with code"""
+    return send_email_with_code(to_email, code, language, "reset")
+
+def send_verification_email(to_email: str, code: str, language: str = "en") -> bool:
+    """Send email verification code"""
+    return send_email_with_code(to_email, code, language, "verification")
+
+def send_email_with_code(to_email: str, code: str, language: str = "en", email_type: str = "reset") -> bool:
+    """Send email with code (reset or verification)"""
     smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))
     smtp_user = os.environ.get("SMTP_USER")
