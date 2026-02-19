@@ -23,6 +23,7 @@ import MaintenanceOverlay from '@/components/MaintenanceOverlay';
 import "@/App.css";
 
 const manifestUrl = `${window.location.origin}/tonconnect-manifest.json`;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -33,7 +34,7 @@ function App() {
     
     if (token) {
       try {
-        const res = await fetch('/api/auth/me', {
+        const res = await fetch(`${BACKEND_URL}/api/auth/me`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
