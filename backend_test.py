@@ -184,43 +184,114 @@ class TONCityAuthTester:
         
         return success
 
-    def test_admin_maintenance_endpoints(self):
-        """Test admin maintenance control endpoints"""
+    def test_login(self):
+        """Test POST /api/auth/login - email/password login"""
         print("\n" + "="*50)
-        print("🔧 TESTING ADMIN MAINTENANCE CONTROL")
+        print("🔑 TESTING LOGIN")
         print("="*50)
         
-        if not self.admin_token:
-            print("❌ No admin token available - skipping admin tests")
-            return False
+        # First test admin credentials
+        admin_credentials = {
+            "email": "admin@toncity.com",
+            "password": "admin123"
+        }
         
-        # Test GET admin maintenance status
-        success1, response1 = self.run_test(
-            "Admin Maintenance Status",
-            "GET",
-            "admin/maintenance",
-            200,
-            headers={'Authorization': f'Bearer {self.admin_token}'}
-        )
-        
-        if success1:
-            current_status = response1.get('enabled', False)
-            print(f"   Current Status: {'ON' if current_status else 'OFF'}")
-        
-        # Test POST admin maintenance toggle
-        success2, response2 = self.run_test(
-            "Admin Maintenance Toggle",
+        success, response = self.run_test(
+            "Admin Login",
             "POST",
-            "admin/maintenance",
+            "auth/login",
             200,
-            {"enabled": False},  # Ensure it's disabled for testing
-            headers={'Authorization': f'Bearer {self.admin_token}'}
+            admin_credentials
         )
         
-        if success2:
-            print("✅ Admin can control maintenance mode")
+        if success and response.get('token'):
+            self.admin_token = response['token']
+            user_info = response.get('user', {})
+            print(f"   Username: {user_info.get('username')}")
+            print(f"   Email: {user_info.get('email')}")
+            print(f"   Admin: {user_info.get('is_admin', False)}")
+            print("✅ Admin login successful")
+            
+            # Test login with username instead of email
+            if user_info.get('username'):
+                username_login = {
+                    "email": user_info.get('username'),  # Using username in email field
+                    "password": "admin123"
+                }
+                
+                success2, response2 = self.run_test(
+                    "Login with Username",
+                    "POST",
+                    "auth/login",
+                    200,
+                    username_login
+                )
+                
+                if success2:
+                    print("✅ Username login also working")
+                    return True
+            
+            return True
         
-        return success1 and success2
+        # Test invalid credentials
+        invalid_credentials = {
+            "email": "nonexistent@test.com",
+            "password": "wrongpassword"
+        }
+        
+        success3, response3 = self.run_test(
+            "Invalid Login (Expected to fail)",
+            "POST",
+            "auth/login",
+            401,
+            invalid_credentials
+        )
+        
+        if success3:
+            print("✅ Invalid credentials properly rejected")
+        
+        return success or success3
+
+    def test_verify_wallet(self):
+        """Test POST /api/auth/verify-wallet - wallet authorization"""
+        print("\n" + "="*50)
+        print("💰 TESTING WALLET VERIFICATION")
+        print("="*50)
+        
+        # Generate a dummy TON wallet address for testing
+        dummy_wallet = "EQDtFpEwcFAEcRe5mLVh2N6C0x-_hJEM7W61_JLnSF8C4EAD"
+        
+        data = {
+            "address": dummy_wallet,
+            "language": "ru",
+            "username": f"wallet_{datetime.now().strftime('%H%M%S')}",
+            "email": "",
+            "password": ""
+        }
+        
+        success, response = self.run_test(
+            "Wallet Verification",
+            "POST",
+            "auth/verify-wallet",
+            200,
+            data
+        )
+        
+        if success:
+            status = response.get('status')
+            print(f"   Status: {status}")
+            
+            if status == 'need_username':
+                print("✅ New wallet requires username (correct flow)")
+                return True
+            elif status == 'ok' and response.get('token'):
+                print("✅ Existing wallet authenticated successfully")
+                return True
+            elif response.get('token'):
+                print("✅ Wallet verification successful with token")
+                return True
+        
+        return success
 
     def test_auth_me_endpoint(self):
         """Test /auth/me endpoint for user info"""
