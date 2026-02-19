@@ -85,6 +85,9 @@ function App() {
       <div className="App min-h-screen bg-void">
         <div className="noise-overlay" />
         
+        {/* Maintenance Overlay - shows for all users except admins (checked inside component) */}
+        <MaintenanceOverlay />
+        
         <BrowserRouter>
           {/* Mobile Bottom Navigation */}
           <MobileNav user={user} />
