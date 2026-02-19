@@ -130,7 +130,7 @@ export default function LeaderboardPage({ user }) {
               </div>
             )}
 
-            {/* Full Leaderboard */}
+            {/* Full Leaderboard - Mobile Optimized */}
             <Card className="glass-panel border-white/10">
               <CardContent className="p-0">
                 <div className="divide-y divide-white/5">
@@ -143,19 +143,19 @@ export default function LeaderboardPage({ user }) {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.03 }}
-                        className={`flex items-center justify-between p-4 hover:bg-white/5 transition-colors ${isCurrentUser ? 'bg-cyber-cyan/10' : ''}`}
+                        className={`flex items-center justify-between p-3 lg:p-4 hover:bg-white/5 transition-colors ${isCurrentUser ? 'bg-cyber-cyan/10' : ''}`}
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 flex justify-center">{getRankIcon(idx + 1)}</div>
-                          <div className="w-10 h-10 bg-gradient-to-br from-cyber-cyan/50 to-neon-purple/50 rounded-full flex items-center justify-center font-bold text-white">
+                        <div className="flex items-center gap-2 lg:gap-4 min-w-0 flex-1">
+                          <div className="w-8 lg:w-10 flex justify-center flex-shrink-0 text-sm lg:text-base">{getRankIcon(idx + 1)}</div>
+                          <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-cyber-cyan/50 to-neon-purple/50 rounded-full flex items-center justify-center font-bold text-white text-sm lg:text-base flex-shrink-0">
                             {(player.username || 'U')[0].toUpperCase()}
                           </div>
-                          <div>
-                            <div className="font-bold text-white flex items-center gap-2">
-                              {player.username || 'Аноним'}
-                              {isCurrentUser && <Badge className="bg-cyber-cyan/20 text-cyber-cyan text-xs">Вы</Badge>}
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-white text-sm lg:text-base flex items-center gap-1 lg:gap-2 truncate">
+                              <span className="truncate">{player.username || 'Аноним'}</span>
+                              {isCurrentUser && <Badge className="bg-cyber-cyan/20 text-cyber-cyan text-[10px] lg:text-xs flex-shrink-0">Вы</Badge>}
                             </div>
-                            <div className="text-xs text-text-muted">
+                            <div className="text-[10px] lg:text-xs text-text-muted">
                               {player.businesses_count || 0} бизнесов
                             </div>
                           </div>
