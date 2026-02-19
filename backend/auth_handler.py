@@ -23,6 +23,15 @@ class EmailRegister(BaseModel):
     password: str
     username: str
 
+class EmailRegisterInitiate(BaseModel):
+    email: EmailStr
+    password: str
+    username: str
+
+class EmailVerifyCode(BaseModel):
+    email: EmailStr
+    code: str
+
 class EmailLogin(BaseModel):
     email: str  # Changed from EmailStr to str to allow username
     password: str
