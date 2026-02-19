@@ -59,7 +59,7 @@ export default function MaintenanceOverlay() {
 
   return (
     <AnimatePresence>
-      {isMaintenanceMode && (
+      {shouldShow && (
         <motion.div
           data-testid="maintenance-overlay"
           initial={{ opacity: 0 }}
