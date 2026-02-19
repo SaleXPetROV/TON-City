@@ -239,7 +239,7 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
 
     setIsVerifying(true);
     try {
-      const response = await fetch('/api/auth/verify-wallet', {
+      const response = await fetch(`${API}/auth/verify-wallet`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -251,17 +251,25 @@ export default function AuthPage({ setUser, onAuthSuccess }) {
         })
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data = null;
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonErr) {
+        console.error("JSON parse error:", jsonErr, "Response:", responseText);
+        toast.error(lang === 'ru' ? 'Ошибка сервера' : 'Server error');
+        return;
+      }
 
       if (response.ok && data.token) {
         // Используем finishAuth для корректной обработки
         finishAuth(data);
       } else {
-        toast.error(data.detail || "Error");
+        toast.error(data?.detail || "Error");
       }
     } catch (e) {
       console.error("Registration error:", e);
-      toast.error("Registration failed");
+      toast.error(lang === 'ru' ? "Ошибка соединения с сервером" : "Server connection error");
     } finally {
       setIsVerifying(false);
     }
