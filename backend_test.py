@@ -1,27 +1,37 @@
 #!/usr/bin/env python3
 """
-TON City Builder Backend API Testing
-Testing specific features: Mobile adaptation, Buildings toggle, Maintenance mode, Admin navigation
+TON City Builder Backend Authentication Testing
+Testing specific features: Registration, Login, Email verification, Wallet auth
 """
 
 import requests
 import sys
 import json
 from datetime import datetime
+import random
+import string
 
-class TONCityBackendTester:
+class TONCityAuthTester:
     def __init__(self):
         # Use the public backend URL from frontend .env
-        self.base_url = "https://readme-update-2.preview.emergentagent.com"
+        self.base_url = "http://localhost:8001"
         self.api = f"{self.base_url}/api"
         self.token = None
         self.admin_token = None
         self.tests_run = 0
         self.tests_passed = 0
         
-        print(f"🔧 Backend Testing Started")
+        # Generate unique test data for each run
+        timestamp = datetime.now().strftime("%H%M%S")
+        self.test_email = f"test{timestamp}@example.com"
+        self.test_username = f"testuser{timestamp}"
+        self.test_password = "TestPass123!"
+        
+        print(f"🔐 Authentication Testing Started")
         print(f"📍 Backend URL: {self.base_url}")
         print(f"📍 API Base: {self.api}")
+        print(f"📧 Test Email: {self.test_email}")
+        print(f"👤 Test Username: {self.test_username}")
         print("-" * 60)
 
     def run_test(self, name, method, endpoint, expected_status, data=None, headers=None):
