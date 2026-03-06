@@ -731,7 +731,7 @@ export default function MyBusinessesPage({ user, refreshBalance, updateBalance }
               
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-text-muted">Доход после улучшения:</span>
+                  <span className="text-text-muted">Производство после улучшения:</span>
                   <span className="text-green-400">+20%</span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -771,7 +771,7 @@ export default function MyBusinessesPage({ user, refreshBalance, updateBalance }
                 )}
               </div>
             </div>
-          )}}
+          )}
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowUpgradeModal(false)} className="border-white/10">

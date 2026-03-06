@@ -214,10 +214,8 @@ async def economic_tick():
                 # --- Update user ---
                 user_update = {"$inc": {}}
                 
-                # Add net income
-                if net_income != 0:
-                    user_update["$inc"]["balance_ton"] = round(net_income, 6)
-                    user_update["$inc"]["total_income"] = round(max(0, net_income), 6)
+                # НЕ добавляем деньги автоматически - только ресурсы!
+                # Деньги получаются только при продаже ресурсов на маркетплейсе
                 
                 # Add produced resources to inventory
                 if can_operate and actual_production > 0 and produces and produces not in ("ton", "profit_ton"):

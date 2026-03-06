@@ -4224,7 +4224,6 @@ async def get_my_land_listings(current_user: User = Depends(get_current_user)):
 # ==================== BUSINESS SALE API ====================
 
 class SellBusinessRequest(BaseModel):
-    business_id: str
     price: float  # Цена устанавливается продавцом
 
 class CalculateSaleTaxRequest(BaseModel):
@@ -4256,20 +4255,33 @@ async def sell_business(business_id: str, data: SellBusinessRequest, current_use
     if not business:
         raise HTTPException(status_code=404, detail="Business not found")
     
-    # Проверяем владельца
-    user = await db.users.find_one({"$or": [
-        {"id": current_user.id},
-        {"wallet_address": current_user.wallet_address}
-    ]}, {"_id": 0})
-    user_id = user.get("id")
+    # Получаем пользователя и все его идентификаторы
+    ui = await get_user_identifiers(current_user)
+    if not ui["user"]:
+        raise HTTPException(status_code=401, detail="User not found")
     
-    if business.get("owner") != user_id and business.get("owner") != current_user.wallet_address:
-        raise HTTPException(status_code=403, detail="You don't own this business")
+    user = ui["user"]
+    user_ids = ui["ids"]
+    
+    # Проверяем владельца - по всем возможным идентификаторам
+    biz_owner = business.get("owner")
+    biz_owner_wallet = business.get("owner_wallet")
+    
+    is_owner = (
+        biz_owner in user_ids or
+        biz_owner_wallet in user_ids or
+        (biz_owner_wallet and biz_owner_wallet == current_user.wallet_address)
+    )
+    
+    if not is_owner:
+        raise HTTPException(status_code=403, detail="Это не ваш бизнес")
     
     # Получаем участок
     plot = await db.plots.find_one({"id": business.get("plot_id")}, {"_id": 0})
     if not plot:
         raise HTTPException(status_code=404, detail="Участок не найден")
+    
+    user_id = user.get("id")
     
     # Проверяем что не на продаже
     existing = await db.land_listings.find_one({
@@ -4323,6 +4335,18 @@ async def sell_business(business_id: str, data: SellBusinessRequest, current_use
     }
     
     await db.land_listings.insert_one(listing.copy())
+    
+    # Mark business as on_sale
+    await db.businesses.update_one(
+        {"id": business_id},
+        {"$set": {"on_sale": True, "listing_id": listing["id"], "status": "on_sale"}}
+    )
+    
+    # Mark plot as on_sale
+    await db.plots.update_one(
+        {"id": plot["id"]},
+        {"$set": {"on_sale": True, "listing_id": listing["id"]}}
+    )
     
     logger.info(f"Business sale listing created: {business_id} @ {data.price} TON")
     
