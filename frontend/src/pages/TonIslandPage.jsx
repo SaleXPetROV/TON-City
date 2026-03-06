@@ -283,6 +283,8 @@ export default function TonIslandPage({ user, refreshBalance, updateBalance }) {
   const handleCellClick = useCallback((cell) => {
     if (!cell) return;
     
+    // При клике на ячейку скрываем рекомендации
+    setShowRecommendations(false);
     setSelectedCell(cell);
     
     if (cell.building) {
@@ -528,7 +530,14 @@ export default function TonIslandPage({ user, refreshBalance, updateBalance }) {
                 </div>
                 <div className="p-2 space-y-1.5">
                   {recommendations.map((r, i) => (
-                    <div key={r.business_type} className="flex items-center gap-2 p-2 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors">
+                    <div 
+                      key={r.business_type} 
+                      className="flex items-center gap-2 p-2 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 transition-colors cursor-pointer"
+                      onClick={() => {
+                        // При клике на рекомендацию скрываем panel данных ячейки
+                        setSelectedCell(null);
+                      }}
+                    >
                       <span className="text-lg">{r.icon}</span>
                       <div className="flex-1 min-w-0">
                         <div className="text-xs font-medium text-white truncate">{r.name}</div>

@@ -49,6 +49,9 @@ export default function MarketplacePage({ user, refreshBalance, updateBalance })
   const [activeTab, setActiveTab] = useState('land');
   const [isLoading, setIsLoading] = useState(true);
   
+  // Tax settings from admin
+  const [taxSettings, setTaxSettings] = useState({ land_business_sale_tax: 10 });
+  
   // Data
   const [resourceListings, setResourceListings] = useState([]);
   const [landListings, setLandListings] = useState([]);
@@ -93,13 +96,14 @@ export default function MarketplacePage({ user, refreshBalance, updateBalance })
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // Fetch all listings
-      const [resListings, landList, myRes, myLand, citiesData] = await Promise.all([
+      // Fetch all listings and tax settings
+      const [resListings, landList, myRes, myLand, citiesData, taxData] = await Promise.all([
         fetch(`${API}/market/listings`).then(r => r.json()),
         fetch(`${API}/market/land/listings`).then(r => r.json()),
         token ? fetch(`${API}/market/my-listings`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()) : { listings: [] },
         token ? fetch(`${API}/market/land/my-listings`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()) : { listings: [] },
-        fetch(`${API}/cities`).then(r => r.json())
+        fetch(`${API}/cities`).then(r => r.json()),
+        fetch(`${API}/public/tax-settings`).then(r => r.json()).catch(() => ({ land_business_sale_tax: 10 }))
       ]);
       
       setResourceListings(resListings.listings || []);
@@ -107,6 +111,7 @@ export default function MarketplacePage({ user, refreshBalance, updateBalance })
       setMyResourceListings(myRes.listings || []);
       setMyLandListings(myLand.listings || []);
       setCities(citiesData.cities || []);
+      setTaxSettings(taxData);
       
       // Fetch user's plots and businesses for selling
       if (token && user) {
@@ -747,9 +752,9 @@ export default function MarketplacePage({ user, refreshBalance, updateBalance })
             {sellResourceForm.amount > 0 && sellResourceForm.price_per_unit > 0 && (
               <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
                 <div className="flex justify-between text-sm">
-                  <span className="text-text-muted">Всего получите (минус 10% налог):</span>
+                  <span className="text-text-muted">Всего получите (минус {taxSettings.land_business_sale_tax}% налог):</span>
                   <span className="text-green-400 font-bold font-mono">
-                    {(sellResourceForm.amount * sellResourceForm.price_per_unit * 0.9).toFixed(2)} TON
+                    {(sellResourceForm.amount * sellResourceForm.price_per_unit * (1 - taxSettings.land_business_sale_tax / 100)).toFixed(2)} TON
                   </span>
                 </div>
               </div>
@@ -823,9 +828,9 @@ export default function MarketplacePage({ user, refreshBalance, updateBalance })
             {sellLandForm.price > 0 && (
               <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                 <div className="flex justify-between text-sm">
-                  <span className="text-text-muted">Получите (минус 10% налог):</span>
+                  <span className="text-text-muted">Получите (минус {taxSettings.land_business_sale_tax}% налог):</span>
                   <span className="text-amber-400 font-bold font-mono">
-                    {(sellLandForm.price * 0.9).toFixed(2)} TON
+                    {(sellLandForm.price * (1 - taxSettings.land_business_sale_tax / 100)).toFixed(2)} TON
                   </span>
                 </div>
               </div>

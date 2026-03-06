@@ -205,30 +205,6 @@ export default function TransactionHistoryPage({ user }) {
                 </Select>
               </div>
 
-              {/* Summary Cards */}
-              {summary && summary.totals && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="glass-panel rounded-xl p-4 border border-green-500/20 bg-green-500/5">
-                    <p className="text-text-muted text-xs uppercase">Доход</p>
-                    <p className="text-2xl font-bold text-green-400">
-                      +{(summary.totals.income || 0).toFixed(2)} TON
-                    </p>
-                  </div>
-                  <div className="glass-panel rounded-xl p-4 border border-red-500/20 bg-red-500/5">
-                    <p className="text-text-muted text-xs uppercase">Расход</p>
-                    <p className="text-2xl font-bold text-red-400">
-                      -{Math.abs(summary.totals.expenses || 0).toFixed(2)} TON
-                    </p>
-                  </div>
-                  <div className="glass-panel rounded-xl p-4 border border-cyber-cyan/20 bg-cyber-cyan/5">
-                    <p className="text-text-muted text-xs uppercase">Баланс</p>
-                    <p className={`text-2xl font-bold ${(summary.totals.net || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {(summary.totals.net || 0) >= 0 ? '+' : ''}{(summary.totals.net || 0).toFixed(2)} TON
-                    </p>
-                  </div>
-                </div>
-              )}
-
               {/* Transaction List */}
               <div className="glass-panel rounded-2xl border border-white/10 overflow-hidden">
                 {loading ? (
@@ -324,7 +300,7 @@ export default function TransactionHistoryPage({ user }) {
                   {selectedTx.type_icon} {selectedTx.type_name}
                 </p>
                 <p className={`text-3xl font-bold ${(selectedTx.amount || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {(selectedTx.amount || 0) >= 0 ? '+' : ''}{(selectedTx.amount || selectedTx.amount_ton || 0).toFixed(4)} TON
+                  {(selectedTx.amount || 0) >= 0 ? '+' : ''}{(selectedTx.amount || selectedTx.amount_ton || 0).toFixed(2)} TON
                 </p>
               </div>
               

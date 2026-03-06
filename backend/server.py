@@ -835,21 +835,47 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
 @api_router.get("/users/me/plots")
 async def get_my_plots(current_user: User = Depends(get_current_user)):
     """Получить все участки пользователя"""
-    user = await db.users.find_one({"wallet_address": current_user.wallet_address}, {"_id": 0})
-    user_id = user.get("id", str(user.get("_id")))
+    ui = await get_user_identifiers(current_user)
+    if not ui["user"]:
+        return {"plots": [], "total": 0}
     
-    # Ищем участки по user_id или wallet_address
-    plots = await db.plots.find({
-        "$or": [
-            {"owner": user_id},
-            {"owner": current_user.wallet_address}
-        ]
+    user_ids = ui["ids"]
+    plots = []
+    
+    # Ищем участки в старой коллекции plots
+    old_plots = await db.plots.find({
+        "$or": [{"owner": uid} for uid in user_ids]
     }, {"_id": 0}).to_list(100)
     
-    # Добавляем информацию о городах
-    for plot in plots:
+    for plot in old_plots:
         city = await db.cities.find_one({"id": plot.get("city_id")}, {"_id": 0, "name": 1})
-        plot["city_name"] = city.get("name") if city else "Unknown"
+        plot["city_name"] = city.get("name", "Город") if city else "Город"
+        plots.append(plot)
+    
+    # Ищем участки на TON Island
+    island = await db.islands.find_one({"id": "ton_island"})
+    if island and 'cells' in island:
+        for cell in island['cells']:
+            cell_owner = cell.get('owner')
+            if cell_owner and cell_owner in user_ids:
+                zone_name = cell.get('zone', 'outskirts')
+                zone_names = {
+                    'center': 'Центр',
+                    'business': 'Бизнес-район',
+                    'residential': 'Жилой район',
+                    'industrial': 'Промзона',
+                    'outskirts': 'Окраина'
+                }
+                plots.append({
+                    "id": f"island_{cell.get('x')}_{cell.get('y')}",
+                    "x": cell.get('x'),
+                    "y": cell.get('y'),
+                    "price": cell.get('price', 0),
+                    "city_name": zone_names.get(zone_name, 'TON Island'),
+                    "zone": zone_name,
+                    "business": cell.get('business'),
+                    "is_island": True
+                })
     
     return {"plots": plots, "total": len(plots)}
 
@@ -1188,14 +1214,23 @@ async def build_on_island(x: int, y: int, request: dict, current_user: User = De
     if user.get("balance_ton", 0) < build_cost:
         raise HTTPException(status_code=400, detail="Недостаточно средств для строительства")
     
-    # Create business
+    # Create business with full structure
+    tier = biz_config.get("tier", 1)
+    produces = biz_config.get("produces")
+    production_rate = biz_config.get("production_rate", 0)
+    tier_names = {1: "small", 2: "medium", 3: "large"}
+    
     business = {
         "id": str(uuid.uuid4()),
         "island_id": "ton_island",
         "plot_id": plot["id"],
         "x": x,
         "y": y,
+        "zone": cell["zone"],  # Zone where business is located
         "business_type": business_type,
+        "name": biz_config.get("name", {}).get("ru", business_type),
+        "tier": tier,
+        "tier_name": tier_names.get(tier, "small"),  # small/medium/large
         "level": 1,
         "durability": 100.0,  # 100% health
         "xp": 0,
@@ -1205,6 +1240,10 @@ async def build_on_island(x: int, y: int, request: dict, current_user: User = De
         "patron": None,  # No patron initially
         "patron_id": None,
         "last_patron_change": None,
+        "produces": produces,  # What this business produces
+        "production_rate": production_rate,  # Base production per tick
+        "consumes": biz_config.get("consumes", []),  # What it consumes
+        "status": "working",  # working, stopped, on_sale
         "storage": {
             "capacity": get_storage_capacity(business_type, 1),
             "items": {}
@@ -1212,6 +1251,7 @@ async def build_on_island(x: int, y: int, request: dict, current_user: User = De
         "pending_income": 0,
         "last_collection": datetime.now(timezone.utc).isoformat(),
         "last_wear_update": datetime.now(timezone.utc).isoformat(),
+        "last_tick": datetime.now(timezone.utc).isoformat(),
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
@@ -1390,6 +1430,29 @@ async def upgrade_business(business_id: str, current_user: User = Depends(get_cu
         "new_capacity": upgrade_data["storage.capacity"],
         "cost_paid": cost,
         "new_balance": user.get("balance_ton", 0) - cost["ton"]
+    }
+
+@api_router.get("/business/{business_id}/upgrade-cost")
+async def get_upgrade_cost(business_id: str, current_user: User = Depends(get_current_user)):
+    """Get upgrade cost for business"""
+    business = await db.businesses.find_one({"id": business_id}, {"_id": 0})
+    if not business:
+        raise HTTPException(status_code=404, detail="Бизнес не найден")
+    
+    can_upgrade, cost = BusinessEconomics.can_upgrade(business)
+    current_level = business.get("level", 1)
+    config = BUSINESSES.get(business.get("business_type"), {})
+    
+    return {
+        "can_upgrade": can_upgrade,
+        "current_level": current_level,
+        "next_level": current_level + 1 if can_upgrade else None,
+        "cost": cost,
+        "requirements": {
+            "ton": cost.get("ton", 0),
+            "resource_type": cost.get("resource_type"),
+            "resource_amount": cost.get("resource_amount", 0)
+        } if cost else None
     }
 
 @api_router.post("/business/{business_id}/repair")
@@ -3887,7 +3950,7 @@ async def create_land_listing(data: LandListingRequest, current_user: User = Dep
     if business:
         await db.businesses.update_one(
             {"id": business.get("id")},
-            {"$set": {"on_sale": True, "listing_id": listing["id"]}}
+            {"$set": {"on_sale": True, "listing_id": listing["id"], "status": "on_sale"}}
         )
     
     logger.info(f"Land listing created: plot {data.plot_id} @ {data.price} TON by {current_user.username}")
@@ -4017,15 +4080,16 @@ async def buy_land_from_market(data: BuyLandRequest, current_user: User = Depend
     else:
         city_name_str = city_name_raw or "TON Island"
     
-    # Записываем транзакцию
+    # Записываем транзакцию покупателя (отрицательная сумма - расход)
     tx = {
         "id": str(uuid.uuid4()),
-        "tx_type": "land_purchase",
+        "type": "land_purchase",
         "user_id": buyer_id,
         "from_user_id": buyer_id,
         "to_user_id": listing["seller_id"],
         "from_address": current_user.wallet_address,
         "to_address": listing.get("seller_wallet"),
+        "amount": -listing["price"],  # Negative - buyer spent money
         "amount_ton": listing["price"],
         "tax": seller_tax,
         "plot_id": listing["plot_id"],
@@ -4037,13 +4101,14 @@ async def buy_land_from_market(data: BuyLandRequest, current_user: User = Depend
     }
     await db.transactions.insert_one(tx)
     
-    # Also create transaction for seller
+    # Also create transaction for seller (положительная сумма - доход)
     seller_tx = {
         "id": str(uuid.uuid4()),
-        "tx_type": "land_sale",
+        "type": "land_sale",
         "user_id": listing["seller_id"],
         "from_user_id": buyer_id,
         "to_user_id": listing["seller_id"],
+        "amount": seller_receives,  # Positive - seller received money
         "amount_ton": seller_receives,
         "tax": seller_tax,
         "plot_id": listing["plot_id"],
@@ -4121,7 +4186,7 @@ async def cancel_land_listing(listing_id: str, current_user: User = Depends(get_
                 {"city_id": plot_city_id, "plot_x": listing.get("x"), "plot_y": listing.get("y")},
                 {"island_id": plot_city_id, "plot_x": listing.get("x"), "plot_y": listing.get("y")}
             ]},
-            {"$unset": {"on_sale": "", "listing_id": ""}}
+            {"$unset": {"on_sale": "", "listing_id": ""}, "$set": {"status": "working"}}
         )
     
     return {"status": "cancelled", "listing_id": listing_id}
@@ -4168,7 +4233,10 @@ class CalculateSaleTaxRequest(BaseModel):
 @api_router.post("/business/calculate-sale-tax")
 async def calculate_sale_tax(data: CalculateSaleTaxRequest):
     """Рассчитать налог с продажи (показать пользователю перед продажей)"""
-    tax_rate = RESALE_COMMISSION  # 15%
+    # Получаем налог из настроек админа
+    tax_settings = await db.admin_settings.find_one({"type": "tax_settings"}, {"_id": 0})
+    tax_rate = (tax_settings.get("land_business_sale_tax", 10) if tax_settings else 10) / 100
+    
     tax_amount = data.price * tax_rate
     seller_receives = data.price - tax_amount
     
@@ -4453,12 +4521,13 @@ async def get_game_stats():
     
     total_users = await db.users.count_documents({})
     
+    # Calculate TON in circulation - sum of all positive user balances
     pipeline = [
-        {"$match": {"status": "completed"}},
-        {"$group": {"_id": None, "total": {"$sum": "$amount_ton"}}}
+        {"$match": {"balance_ton": {"$gt": 0}}},
+        {"$group": {"_id": None, "total": {"$sum": "$balance_ton"}}}
     ]
-    volume_result = await db.transactions.aggregate(pipeline).to_list(1)
-    total_volume = volume_result[0]["total"] if volume_result else 0
+    balance_result = await db.users.aggregate(pipeline).to_list(1)
+    total_balance = balance_result[0]["total"] if balance_result else 0
     
     admin_stats = await db.admin_stats.find_one({"type": "treasury"}, {"_id": 0})
     
@@ -4470,7 +4539,7 @@ async def get_game_stats():
         "available_plots": total_plots - owned_plots,
         "total_businesses": total_businesses,
         "total_players": total_users,
-        "total_volume_ton": total_volume,
+        "total_volume_ton": max(0, round(total_balance, 2)),  # TON in circulation - only positive
         "treasury": admin_stats or {}
     }
 
@@ -6673,10 +6742,28 @@ async def activate_promo_code(
         {"$inc": {"current_uses": 1}}
     )
     
+    # Log transaction
+    await db.transactions.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "type": "promo_activation",
+        "amount": amount,  # Positive - user received money
+        "details": {
+            "promo_code": promo_code.upper(),
+            "promo_name": promo.get("name", "")
+        },
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # Get new balance
+    updated_user = await db.users.find_one(get_user_filter(ui["user"]), {"_id": 0, "balance_ton": 1})
+    new_balance = updated_user.get("balance_ton", 0) if updated_user else 0
+    
     return {
         "status": "activated",
         "amount": amount,
         "promo_name": promo.get("name", ""),
+        "new_balance": new_balance
     }
 
 
@@ -6967,6 +7054,26 @@ async def root():
 @api_router.get("/health")
 async def health():
     return {"status": "healthy", "websocket": True}
+
+# ==================== PUBLIC TAX SETTINGS ====================
+
+@public_router.get("/tax-settings")
+async def get_public_tax_settings():
+    """Получить публичные настройки налогов"""
+    settings = await db.admin_settings.find_one({"type": "tax_settings"}, {"_id": 0})
+    if not settings:
+        return {
+            "small_business_tax": 5,
+            "medium_business_tax": 8,
+            "large_business_tax": 10,
+            "land_business_sale_tax": 10
+        }
+    return {
+        "small_business_tax": settings.get("small_business_tax", 5),
+        "medium_business_tax": settings.get("medium_business_tax", 8),
+        "large_business_tax": settings.get("large_business_tax", 10),
+        "land_business_sale_tax": settings.get("land_business_sale_tax", 10)
+    }
 
 # ==================== BUSINESS FINANCIAL MODEL (PUBLIC) ====================
 

@@ -66,8 +66,8 @@ async def economic_tick():
         
         now = datetime.now(timezone.utc)
         
-        # Get all active businesses
-        businesses = await db.businesses.find({"is_active": True}).to_list(length=None)
+        # Get all active businesses (include businesses without is_active field for backward compat)
+        businesses = await db.businesses.find({"$or": [{"is_active": True}, {"is_active": {"$exists": False}}]}).to_list(length=None)
         
         if not businesses:
             logger.info("📊 No active businesses - tick skipped")

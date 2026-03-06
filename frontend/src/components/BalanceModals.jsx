@@ -19,7 +19,7 @@ const WITHDRAWAL_FEE_PERCENT = 3;
 const INSTANT_FEE_PERCENT = 1; // Bank fee
 const NETWORK_FEE_TON = 0.05;
 
-export function DepositModal({ isOpen, onClose, onSuccess, receiverAddress }) {
+export function DepositModal({ isOpen, onClose, onSuccess, receiverAddress, updateBalance }) {
   const [tonConnectUI] = useTonConnectUI();
   const [amount, setAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -87,6 +87,11 @@ export function DepositModal({ isOpen, onClose, onSuccess, receiverAddress }) {
       if (!res.ok) throw new Error(data.detail || 'Ошибка');
       toast.success(`Промокод активирован! +${data.amount} TON`);
       setPromoCode('');
+      
+      // Мгновенно обновляем баланс
+      if (data.new_balance !== undefined && updateBalance) {
+        updateBalance(data.new_balance);
+      }
       if (onSuccess) onSuccess();
     } catch (e) { toast.error(e.message); }
     finally { setIsActivatingPromo(false); }

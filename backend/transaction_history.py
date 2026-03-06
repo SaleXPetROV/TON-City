@@ -27,6 +27,7 @@ TRANSACTION_TYPES = {
     "plot_purchase": {"name": "Покупка участка", "icon": "🗺️", "color": "blue"},
     "business_build": {"name": "Строительство бизнеса", "icon": "🏗️", "color": "purple"},
     "business_upgrade": {"name": "Улучшение бизнеса", "icon": "⬆️", "color": "cyan"},
+    "business_purchase": {"name": "Покупка бизнеса", "icon": "🏢", "color": "blue"},
     "resource_sale": {"name": "Продажа ресурсов", "icon": "📦", "color": "green"},
     "resource_purchase": {"name": "Покупка ресурсов", "icon": "🛒", "color": "orange"},
     "patron_fee": {"name": "Плата покровителю", "icon": "🤝", "color": "yellow"},
@@ -41,6 +42,7 @@ TRANSACTION_TYPES = {
     "referral_bonus": {"name": "Реферальный бонус", "icon": "👥", "color": "green"},
     "income_collection": {"name": "Сбор дохода", "icon": "💵", "color": "green"},
     "business_sale": {"name": "Продажа бизнеса", "icon": "🏢", "color": "green"},
+    "promo_activation": {"name": "Активация промокода", "icon": "🎫", "color": "green"},
 }
 
 

@@ -393,44 +393,15 @@ export default function MyBusinessesPage({ user, refreshBalance, updateBalance }
                 </div>
               }
             />
-            <p className="text-text-muted text-sm -mt-2">Управление и апгрейды • Автообновление каждые 30 сек</p>
               
-            {businesses.length > 0 && summary.total_pending_income > 0 && (
-              <Button 
-                onClick={handleCollectAll} 
-                size="sm"
-                className="bg-green-600 hover:bg-green-700"
-                disabled={isCollecting}
-              >
-                {isCollecting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Coins className="w-4 h-4" />
-                )}
-                <span className="ml-2">{summary.total_pending_income?.toFixed(1)} TON</span>
-              </Button>
-            )}
-
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="glass-panel border-white/10">
                 <CardContent className="p-4 flex items-center gap-3">
                   <Building2 className="w-8 h-8 text-cyber-cyan" />
                   <div>
                     <div className="text-2xl font-bold text-white">{summary.total_businesses || 0}</div>
                     <div className="text-xs text-text-muted">Всего бизнесов</div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="glass-panel border-green-500/20">
-                <CardContent className="p-4 flex items-center gap-3">
-                  <Coins className="w-8 h-8 text-green-400" />
-                  <div>
-                    <div className="text-2xl font-bold text-green-400">
-                      {summary.total_pending_income?.toFixed(2) || '0.00'}
-                    </div>
-                    <div className="text-xs text-text-muted">Доход (TON)</div>
                   </div>
                 </CardContent>
               </Card>
@@ -769,14 +740,38 @@ export default function MyBusinessesPage({ user, refreshBalance, updateBalance }
                 </div>
               </div>
               
-              <div className="p-3 bg-blue-500/10 rounded-lg">
+              <div className="p-3 bg-blue-500/10 rounded-lg space-y-2">
                 <div className="text-xs text-text-muted mb-1">Стоимость улучшения:</div>
-                <div className="text-xl font-bold text-blue-400">
-                  {((selectedBusiness.config?.base_cost_ton || selectedBusiness.config?.cost || 5) * Math.pow(1.8, selectedBusiness.level || 1)).toFixed(2)} TON
+                <div className="flex justify-between items-center">
+                  <span className="text-text-muted text-sm">TON:</span>
+                  <span className="text-xl font-bold text-blue-400">
+                    {((selectedBusiness.config?.base_cost_ton || selectedBusiness.config?.cost || 5) * Math.pow(1.8, selectedBusiness.level || 1)).toFixed(2)} TON
+                  </span>
                 </div>
+                {/* Resource requirements if any */}
+                {selectedBusiness.upgrade_requirements?.resource_type && (
+                  <div className="flex justify-between items-center border-t border-white/10 pt-2">
+                    <span className="text-text-muted text-sm">
+                      {selectedBusiness.upgrade_requirements.resource_type}:
+                    </span>
+                    <span className={`font-bold ${
+                      (selectedBusiness.storage?.items?.[selectedBusiness.upgrade_requirements.resource_type] || 0) >= selectedBusiness.upgrade_requirements.resource_amount 
+                        ? 'text-green-400' 
+                        : 'text-red-400'
+                    }`}>
+                      {selectedBusiness.storage?.items?.[selectedBusiness.upgrade_requirements.resource_type] || 0} / {selectedBusiness.upgrade_requirements.resource_amount}
+                    </span>
+                  </div>
+                )}
+                {/* Show message if resources needed */}
+                {selectedBusiness.config?.consumes?.length > 0 && selectedBusiness.level >= 2 && (
+                  <div className="text-xs text-amber-400 pt-2 border-t border-white/10">
+                    Для уровня {selectedBusiness.level + 1} могут понадобиться дополнительные ресурсы
+                  </div>
+                )}
               </div>
             </div>
-          )}
+          )}}
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowUpgradeModal(false)} className="border-white/10">

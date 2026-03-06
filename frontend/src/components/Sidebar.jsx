@@ -241,6 +241,10 @@ export default function Sidebar({ user, onBalanceUpdate }) {
         onClose={() => setShowDepositModal(false)}
         onSuccess={handleDepositSuccess}
         receiverAddress={depositAddress}
+        updateBalance={(newBal) => {
+          setBalance(newBal);
+          if (onBalanceUpdate) onBalanceUpdate(newBal);
+        }}
       />
       
       <WithdrawModal

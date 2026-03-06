@@ -258,9 +258,10 @@ export default function MobileNav({ user }) {
       <DepositModal
         isOpen={showDeposit}
         onClose={() => setShowDeposit(false)}
-        onSuccess={() => { setShowDeposit(false); window.location.reload(); }}
+        onSuccess={() => { setShowDeposit(false); }}
         receiverAddress={user?.wallet_address || ''}
         user={user}
+        updateBalance={() => { window.location.reload(); }}
       />
 
       {/* Withdraw Modal */}
