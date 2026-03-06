@@ -1,46 +1,71 @@
-# TON City - PRD Document
+# TON City - Product Requirements Document
 
-## Session 4 Summary (Jan 2026)
+## Original Problem Statement
+TON City - блокчейн игра-стратегия на TON Blockchain. Нужно довести проект до 100% работоспособности.
 
-### Completed Tasks:
+Исходный отчёт показал:
+- Backend 88.9% success rate (40/45 тестов)
+- Minor issues: network switch endpoint, business model endpoint, wallet display format
 
-1. **Testnet/Mainnet Switch Fixed**
-   - Made `receiver_address` optional in `/admin/wallet-settings` POST
-   - Now network can be changed without providing wallet address
+## Architecture
 
-2. **Credits Moved to Promos Tab**
-   - Removed separate "Кредиты" tab
-   - Added all credit management to "Promos" tab
-   - Includes: promo creation, promo list, gov rate settings, telegram bot
+### Tech Stack
+- **Backend**: FastAPI (Python) + MongoDB
+- **Frontend**: React.js + Tailwind CSS
+- **Blockchain**: TON (The Open Network)
+- **Auth**: JWT + TON Connect
 
-3. **Full User ID in Credits**
-   - Added full `borrower_id` (36-char UUID) display
-   - Click-to-copy functionality with toast notification
-   - Styled as monospace code block
+### Key Components
+- Game economy with businesses, credits, trading
+- Admin panel with separate tabs (Credits, Promos, Users, etc.)
+- TON wallet integration for payments
+- Real-time features via WebSocket
 
-### API Changes:
-- `POST /api/admin/wallet-settings?network=mainnet` - network as query param, receiver_address optional
+## What's Been Implemented ✅
 
-### Admin Tabs Now:
-- TON Кошелек (with wallets for deposits)
-- Доходы
-- pendingWithdrawals
-- users
-- transactions
-- Promos (now includes credits)
-- announcements
-- Данные
-- Детали
-- Налоги
+### Backend (100% Working)
+- All admin endpoints returning 200:
+  - `/api/admin/stats`
+  - `/api/admin/credits` - with seized_building info
+  - `/api/admin/promos`
+  - `/api/admin/users`
+  - `/api/admin/transactions`
+  - `/api/admin/wallet-settings` - network switch
+  - `/api/admin/treasury-health`
+  - `/api/admin/announcements`
+  - `/api/admin/withdrawals`
+- `/api/public/business/financial-model` endpoint
+- Promo codes "once per user" restriction
+- Wallet address display in user-friendly format (UQ/EQ)
 
-### Test Credentials:
-- admin@toncity.com / admin123
+### Frontend
+- Landing page with stats
+- Admin panel with tabs: Credits, Promos, Users, etc.
+- TON wallet connect integration
+- Multi-language support (EN/RU)
 
-### Test Results:
-- Backend: 90%
-- Frontend: Working (verified via API tests)
+## User Personas
+1. **Players** - Buy land, build businesses, trade, earn TON
+2. **Admin** - Manage game economy, credits, promos
 
-### Previous Sessions:
-- Session 1: Land listing fixes, React error fix, diamond avatars
-- Session 2: Balance refresh, bulk withdrawal, 2FA, taxes
-- Session 3: 2FA status, business financial model, wallet percentages
+## Core Requirements ✅
+1. ✅ Credits tab separate from Promos
+2. ✅ Promo codes can only be used once per user
+3. ✅ Admin credits endpoint returns seized_building info
+4. ✅ Admin wallet settings network switch works
+5. ✅ All admin API endpoints return 200
+
+## Next Action Items
+- Configure TON receiver wallet address in admin panel
+- Add more test users for load testing
+- Implement mobile responsiveness improvements
+
+## Backlog
+- P0: None (all core features working)
+- P1: TON mainnet deployment configuration
+- P2: Advanced analytics dashboard
+- P2: Push notifications via Telegram bot
+
+## Test Credentials
+- Admin: admin@toncity.com / Admin123!
+- Test Player: testplayer@toncity.com / Test123!

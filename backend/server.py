@@ -6618,14 +6618,27 @@ async def get_credit_banks(current_user: User = Depends(get_current_user)):
 
 # ==================== PROMO CODE ACTIVATION ====================
 
+class PromoActivateRequest(BaseModel):
+    code: str
+
 @api_router.post("/promo/activate")
-async def activate_promo_code(code: str, current_user: User = Depends(get_current_user)):
-    """Activate a promo code and add balance"""
+async def activate_promo_code(
+    data: Optional[PromoActivateRequest] = None,
+    code: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Activate a promo code and add balance. Accepts code in body or query parameter."""
+    # Support both body and query parameter
+    promo_code = code
+    if data and data.code:
+        promo_code = data.code
+    if not promo_code:
+        raise HTTPException(status_code=400, detail="Код промокода обязателен")
     ui = await get_user_identifiers(current_user)
     if not ui["user"]:
         raise HTTPException(status_code=401, detail="Пользователь не найден")
     
-    promo = await db.promos.find_one({"code": code.upper().strip(), "is_active": True})
+    promo = await db.promos.find_one({"code": promo_code.upper().strip(), "is_active": True})
     if not promo:
         raise HTTPException(status_code=404, detail="Промокод не найден или неактивен")
     
