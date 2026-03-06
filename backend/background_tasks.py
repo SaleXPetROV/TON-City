@@ -129,8 +129,8 @@ async def economic_tick():
                     except (ValueError, TypeError):
                         hours_passed = 1.0
                 
-                # Skip if less than 30 min since last tick
-                if hours_passed < 0.5:
+                # Skip if less than 30 seconds since last tick
+                if hours_passed < 0.008:  # ~30 seconds
                     continue
                 
                 # --- Step 1: Apply durability wear ---
@@ -896,12 +896,12 @@ def init_scheduler():
     
     scheduler = AsyncIOScheduler()
     
-    # Main economic tick - every hour
+    # Main economic tick - every minute
     scheduler.add_job(
         economic_tick,
-        trigger=IntervalTrigger(hours=1),
+        trigger=IntervalTrigger(minutes=1),
         id="economic_tick",
-        name="Economic Tick (Hourly)",
+        name="Economic Tick (Every Minute)",
         replace_existing=True,
     )
     
@@ -951,7 +951,7 @@ def init_scheduler():
     )
     
     logger.info("✅ Scheduler initialized with V2.0 economic engine")
-    logger.info("📅 Economic Tick: Every 1 hour")
+    logger.info("📅 Economic Tick: Every 1 minute")
     logger.info("📅 Midnight Decay: Daily at 21:00 UTC (00:00 MSK)")
     logger.info("📅 Durability Wear: Every 6 hours")
     logger.info("📅 Credit Processing: Daily at 22:00 UTC")
