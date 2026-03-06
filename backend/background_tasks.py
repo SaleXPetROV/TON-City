@@ -17,6 +17,11 @@ TICK ORDER:
 11. Bankruptcy check
 12. Events
 13. Save snapshot
+
+DURABILITY RULES:
+- 50-100%: 100% production
+- 1-50%: 70% production
+- 0%: Business stops
 """
 import asyncio
 import logging
@@ -49,6 +54,33 @@ db_name = os.environ.get('DB_NAME', 'ton_city')
 
 # Global scheduler
 scheduler: AsyncIOScheduler = None
+
+# Import telegram notifications
+try:
+    from telegram_notifications import (
+        notify_low_durability, notify_critical_durability, notify_business_stopped,
+        notify_resources_full, get_user_telegram_chat_id, should_notify, clear_notification_state,
+        RESOURCE_NOTIFICATION_THRESHOLD
+    )
+    TELEGRAM_ENABLED = True
+except ImportError:
+    TELEGRAM_ENABLED = False
+    logger.warning("Telegram notifications not available")
+
+
+def get_durability_multiplier(durability: float) -> float:
+    """
+    Get production multiplier based on durability.
+    50-100%: 100% production
+    1-50%: 70% production  
+    0%: 0% production (stopped)
+    """
+    if durability <= 0:
+        return 0.0
+    elif durability < 50:
+        return 0.7
+    else:
+        return 1.0
 
 
 # ==================== MAIN ECONOMIC TICK ====================
@@ -140,6 +172,45 @@ async def economic_tick():
                 # --- Step 1: Apply durability wear ---
                 wear_result = BusinessEconomics.apply_wear(business, hours_passed)
                 new_durability = wear_result["durability"]
+                old_durability = business.get("durability", 100)
+                
+                # --- DURABILITY-BASED NOTIFICATIONS ---
+                if TELEGRAM_ENABLED:
+                    biz_name = config.get("name", {}).get("ru", business_type)
+                    chat_id = await get_user_telegram_chat_id(db, owner)
+                    
+                    if chat_id:
+                        # Business stopped (0% durability)
+                        if new_durability <= 0 and old_durability > 0:
+                            if should_notify(owner, "stopped", business_id):
+                                await notify_business_stopped(chat_id, biz_name)
+                        # Critical durability (<10%)
+                        elif new_durability < 10 and old_durability >= 10:
+                            if should_notify(owner, "critical", business_id):
+                                await notify_critical_durability(chat_id, biz_name, new_durability)
+                        # Low durability (<50%)
+                        elif new_durability < 50 and old_durability >= 50:
+                            if should_notify(owner, "low", business_id):
+                                await notify_low_durability(chat_id, biz_name, new_durability)
+                        
+                        # Clear notifications when repaired
+                        if new_durability >= 50 and old_durability < 50:
+                            clear_notification_state(owner, "low", business_id)
+                            clear_notification_state(owner, "critical", business_id)
+                        if new_durability > 0 and old_durability <= 0:
+                            clear_notification_state(owner, "stopped", business_id)
+                
+                # --- Get durability multiplier ---
+                durability_mult = get_durability_multiplier(new_durability)
+                
+                # If business is stopped (0% durability), skip production
+                if durability_mult == 0:
+                    # Update only durability, no production
+                    await db.businesses.update_one(
+                        {"id": business_id},
+                        {"$set": {"durability": 0, "status": "stopped", "last_tick": now.isoformat()}}
+                    )
+                    continue
                 
                 # --- Step 1b: Production ---
                 business_copy = {**business, "durability": new_durability}
@@ -151,6 +222,9 @@ async def economic_tick():
                     business_type, level, new_durability, patron_bonus
                 )
                 produces = config.get("produces")
+                
+                # Apply durability multiplier (100% or 70%)
+                effective_prod = effective_prod * durability_mult
                 
                 # Scale production by hours passed (production values are per-tick/day)
                 hourly_fraction = hours_passed / 24.0

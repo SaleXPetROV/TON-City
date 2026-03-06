@@ -3595,33 +3595,34 @@ async def get_my_listings(current_user: User = Depends(get_current_user)):
 
 @api_router.get("/my/resources")
 async def get_my_resources(current_user: User = Depends(get_current_user)):
-    """Получить ресурсы пользователя из всех бизнесов"""
-    # Get user
-    user = None
-    if current_user.wallet_address:
-        user = await db.users.find_one({"wallet_address": current_user.wallet_address}, {"_id": 0})
-    if not user and current_user.email:
-        user = await db.users.find_one({"email": current_user.email}, {"_id": 0})
-    
-    if not user:
+    """Получить ресурсы пользователя"""
+    ui = await get_user_identifiers(current_user)
+    if not ui["user"]:
         return {"resources": {}}
     
-    user_id = user.get("id", str(user.get("_id")))
+    user = ui["user"]
     
-    # Get all businesses owned by user
+    # Get resources directly from user document
+    user_resources = user.get("resources", {})
+    
+    # Also aggregate from business storages as backup
+    user_id = user.get("id")
+    user_ids = ui["ids"]
+    
     businesses = await db.businesses.find(
-        {"$or": [{"owner": user_id}, {"owner": current_user.wallet_address}]},
-        {"_id": 0, "storage": 1, "business_type": 1}
+        {"$or": [{"owner": uid} for uid in user_ids]},
+        {"_id": 0, "storage": 1}
     ).to_list(100)
     
-    # Aggregate resources from all businesses
-    resources = {}
     for biz in businesses:
         storage = biz.get("storage", {})
         items = storage.get("items", {})
         for resource, amount in items.items():
             if amount > 0:
-                resources[resource] = resources.get(resource, 0) + int(amount)
+                user_resources[resource] = user_resources.get(resource, 0) + int(amount)
+    
+    # Filter out zero and negative values
+    resources = {k: round(v, 2) for k, v in user_resources.items() if v > 0}
     
     return {"resources": resources}
 
@@ -4080,10 +4081,24 @@ async def buy_land_from_market(data: BuyLandRequest, current_user: User = Depend
     else:
         city_name_str = city_name_raw or "TON Island"
     
+    # Determine transaction type based on whether it has business
+    has_business = listing.get("business") is not None
+    tx_type_buyer = "business_purchase" if has_business else "land_purchase"
+    tx_type_seller = "business_sale" if has_business else "land_sale"
+    
+    # Description with business name if applicable
+    if has_business:
+        business_name = listing.get("business", {}).get("name", "Бизнес")
+        description_buyer = f"Покупка бизнеса «{business_name}» на {city_name_str}"
+        description_seller = f"Продажа бизнеса «{business_name}» на {city_name_str}"
+    else:
+        description_buyer = f"Покупка участка [{listing['x']}, {listing['y']}] на {city_name_str}"
+        description_seller = f"Продажа участка [{listing['x']}, {listing['y']}] на {city_name_str}"
+    
     # Записываем транзакцию покупателя (отрицательная сумма - расход)
     tx = {
         "id": str(uuid.uuid4()),
-        "type": "land_purchase",
+        "type": tx_type_buyer,
         "user_id": buyer_id,
         "from_user_id": buyer_id,
         "to_user_id": listing["seller_id"],
@@ -4095,7 +4110,7 @@ async def buy_land_from_market(data: BuyLandRequest, current_user: User = Depend
         "plot_id": listing["plot_id"],
         "city_id": listing["city_id"],
         "listing_id": data.listing_id,
-        "description": f"Покупка участка [{listing['x']}, {listing['y']}] на {city_name_str}",
+        "description": description_buyer,
         "status": "completed",
         "created_at": datetime.now(timezone.utc).isoformat()
     }
@@ -4104,7 +4119,7 @@ async def buy_land_from_market(data: BuyLandRequest, current_user: User = Depend
     # Also create transaction for seller (положительная сумма - доход)
     seller_tx = {
         "id": str(uuid.uuid4()),
-        "type": "land_sale",
+        "type": tx_type_seller,
         "user_id": listing["seller_id"],
         "from_user_id": buyer_id,
         "to_user_id": listing["seller_id"],
@@ -4114,7 +4129,7 @@ async def buy_land_from_market(data: BuyLandRequest, current_user: User = Depend
         "plot_id": listing["plot_id"],
         "city_id": listing["city_id"],
         "listing_id": data.listing_id,
-        "description": f"Продажа участка [{listing['x']}, {listing['y']}] на {city_name_str}",
+        "description": description_seller,
         "status": "completed",
         "created_at": datetime.now(timezone.utc).isoformat()
     }
@@ -7144,6 +7159,37 @@ async def get_business_model_by_type(business_type: str):
         "tier_name": TIER_NAMES.get(tier, ""),
         "levels": get_all_levels_info(business_type)
     }
+
+
+# ==================== TELEGRAM INTEGRATION ====================
+
+@api_router.post("/user/link-telegram")
+async def link_telegram(chat_id: str, current_user: User = Depends(get_current_user)):
+    """Link Telegram chat_id to user account for notifications"""
+    ui = await get_user_identifiers(current_user)
+    if not ui["user"]:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    await db.users.update_one(
+        get_user_filter(ui["user"]),
+        {"$set": {"telegram_chat_id": chat_id}}
+    )
+    
+    return {"status": "linked", "chat_id": chat_id}
+
+@api_router.delete("/user/unlink-telegram")
+async def unlink_telegram(current_user: User = Depends(get_current_user)):
+    """Unlink Telegram from user account"""
+    ui = await get_user_identifiers(current_user)
+    if not ui["user"]:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    await db.users.update_one(
+        get_user_filter(ui["user"]),
+        {"$unset": {"telegram_chat_id": ""}}
+    )
+    
+    return {"status": "unlinked"}
 
 
 # Import auth router
