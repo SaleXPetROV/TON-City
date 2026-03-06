@@ -1,0 +1,62 @@
+{
+  "summary": "Backend only testing completed successfully with 86.7% success rate (13/15 tests passed). All critical admin endpoints working correctly. Network switch functionality operational. Business model endpoint responding properly. Promo once-per-user restriction verified to be working correctly.",
+  
+  "backend_issues": {
+    "minor_issues": [
+      {
+        "endpoint": "/api/promo/activate",
+        "issue": "API expects query parameter 'code' but documentation suggests body parameter",
+        "impact": "Minor API usability issue - endpoint works but parameter format needs clarification",
+        "fix_priority": "LOW",
+        "actual_behavior": "Returns 422 when code is sent in request body instead of query parameter"
+      }
+    ],
+    "working_endpoints": [
+      "/api/auth/login - Admin & Test Player authentication ✅",
+      "/api/admin/stats - Returns treasury and user statistics ✅", 
+      "/api/admin/credits - Returns credits list with seized_building info ✅",
+      "/api/admin/promos - Returns promos list ✅",
+      "/api/admin/users - Returns user list ✅",
+      "/api/admin/transactions - Returns transaction history ✅",
+      "/api/admin/announcements - Returns announcements ✅",
+      "/api/admin/treasury-health - Returns treasury health data ✅",
+      "/api/admin/withdrawals - Returns withdrawal requests ✅",
+      "/api/admin/wallet-settings?network=testnet - Network switch working ✅",
+      "/api/admin/wallet-settings?network=mainnet - Network switch working ✅",
+      "/api/public/business/financial-model - Business model endpoint ✅"
+    ]
+  },
+
+  "frontend_issues": {},
+  
+  "passed_tests": [
+    "Admin authentication (admin@toncity.com / Admin123!) ✅",
+    "Test player authentication (testplayer@toncity.com / Test123!) ✅", 
+    "GET /api/admin/stats - returns 200 ✅",
+    "GET /api/admin/credits - returns 200 ✅",
+    "GET /api/admin/promos - returns 200 ✅",
+    "POST /api/admin/wallet-settings?network=testnet - returns 200 ✅",
+    "POST /api/admin/wallet-settings?network=mainnet - returns 200 ✅",
+    "GET /api/public/business/financial-model - returns 200 ✅",
+    "GET /api/admin/users - returns 200 ✅",
+    "GET /api/admin/transactions - returns 200 ✅",
+    "GET /api/admin/announcements - returns 200 ✅",
+    "GET /api/admin/treasury-health - returns 200 ✅",
+    "GET /api/admin/withdrawals - returns 200 ✅",
+    "Promo once per user functionality verified (correctly blocks reuse) ✅"
+  ],
+
+  "test_report_links": ["/app/backend_test.py"],
+  
+  "action_item_for_main_agent": "Fix promo activation endpoint to accept 'code' parameter in request body instead of requiring query parameter, or update API documentation to specify correct parameter format",
+  
+  "updated_files": ["/app/backend_test.py"],
+  
+  "success_percentage": {
+    "backend": "86.7% (13/15 tests passed)",
+    "frontend": "N/A (not tested per requirements)"
+  },
+  
+  "should_call_test_agent_after_fix": "false",
+  "should_main_agent_test_itself": "true"
+}
