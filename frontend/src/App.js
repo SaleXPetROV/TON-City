@@ -28,8 +28,27 @@ import "@/App.css";
 const manifestUrl = `${window.location.origin}/tonconnect-manifest.json`;
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
 
+// Check if running inside Telegram Mini App
+const isTelegramMiniApp = () => {
+  try {
+    return window.Telegram?.WebApp?.initData?.length > 0;
+  } catch {
+    return false;
+  }
+};
+
+// Get Telegram user data if available
+const getTelegramUser = () => {
+  try {
+    return window.Telegram?.WebApp?.initDataUnsafe?.user || null;
+  } catch {
+    return null;
+  }
+};
+
 function App() {
   const [user, setUser] = useState(null);
+  const [isTgApp, setIsTgApp] = useState(false);
   
   // Function to refresh user balance
   const refreshBalance = useCallback(async () => {
@@ -92,6 +111,24 @@ function App() {
   };
 
   useEffect(() => {
+    // Initialize Telegram Mini App
+    if (isTelegramMiniApp()) {
+      setIsTgApp(true);
+      const tgUser = getTelegramUser();
+      console.log('[App.js] Running as Telegram Mini App, user:', tgUser);
+      
+      // Set Telegram theme colors
+      try {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        tg.setHeaderColor('#0a0a0a');
+        tg.setBackgroundColor('#0a0a0a');
+      } catch (e) {
+        console.warn('[App.js] Telegram theme setup error:', e);
+      }
+    }
+    
     checkAuth();
     
     // Слушатель на изменение localStorage
