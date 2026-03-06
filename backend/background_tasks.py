@@ -133,6 +133,10 @@ async def economic_tick():
                 if hours_passed < 0.008:  # ~30 seconds
                     continue
                 
+                # Skip if business is on sale - no production, no wear
+                if business.get("on_sale") or business.get("status") == "on_sale":
+                    continue
+                
                 # --- Step 1: Apply durability wear ---
                 wear_result = BusinessEconomics.apply_wear(business, hours_passed)
                 new_durability = wear_result["durability"]
@@ -220,6 +224,7 @@ async def economic_tick():
                 # Add produced resources to inventory
                 if can_operate and actual_production > 0 and produces and produces not in ("ton", "profit_ton"):
                     user_update["$inc"][f"resources.{produces}"] = round(actual_production, 2)
+                    logger.info(f"📦 Business {business_id} produced {round(actual_production, 2)} {produces} for {owner}")
                 
                 # Deduct consumed resources
                 if can_operate:

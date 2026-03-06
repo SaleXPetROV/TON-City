@@ -40,9 +40,22 @@ export default function IncomeTablePage({ user }) {
   const [pricePerUnit, setPricePerUnit] = useState(0.01);
   const [result, setResult] = useState(null);
 
+  // Tax settings
+  const [taxRate, setTaxRate] = useState(10);
+  
   useEffect(() => {
     loadBusinesses();
+    loadTaxSettings();
   }, []);
+
+  const loadTaxSettings = async () => {
+    try {
+      const response = await axios.get(`${API}/public/tax-settings`);
+      setTaxRate(response.data.land_business_sale_tax || 10);
+    } catch (error) {
+      console.error('Failed to load tax settings:', error);
+    }
+  };
 
   const loadBusinesses = async () => {
     try {
@@ -72,16 +85,25 @@ export default function IncomeTablePage({ user }) {
     const productionPerDay = baseProduction * levelMult * durabilityMult;
     const productionPerMonth = productionPerDay * 30;
     
-    // Income calculation based on user-defined price
-    const incomePerDay = productionPerDay * pricePerUnit;
-    const incomePerMonth = productionPerMonth * pricePerUnit;
+    // Income calculation based on user-defined price (before tax)
+    const grossIncomePerDay = productionPerDay * pricePerUnit;
+    const grossIncomePerMonth = productionPerMonth * pricePerUnit;
+    
+    // Apply tax
+    const taxMultiplier = 1 - (taxRate / 100);
+    const netIncomePerDay = grossIncomePerDay * taxMultiplier;
+    const netIncomePerMonth = grossIncomePerMonth * taxMultiplier;
     
     setResult({
       productionPerHour: productionPerHour.toFixed(2),
       productionPerDay: productionPerDay.toFixed(2),
       productionPerMonth: productionPerMonth.toFixed(0),
-      incomePerDay: incomePerDay.toFixed(4),
-      incomePerMonth: incomePerMonth.toFixed(2),
+      grossIncomePerDay: grossIncomePerDay.toFixed(4),
+      grossIncomePerMonth: grossIncomePerMonth.toFixed(2),
+      netIncomePerDay: netIncomePerDay.toFixed(4),
+      netIncomePerMonth: netIncomePerMonth.toFixed(2),
+      taxAmount: (grossIncomePerMonth - netIncomePerMonth).toFixed(2),
+      taxRate: taxRate,
       produces: biz.produces,
       businessName: biz.name,
       businessIcon: biz.icon
@@ -273,13 +295,37 @@ export default function IncomeTablePage({ user }) {
 
                       {/* Income Stats */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-xl bg-yellow-900/20 border border-yellow-500/30">
+                          <div className="text-xs text-gray-400 uppercase mb-1 flex items-center gap-1">
+                            <Coins className="w-3 h-3" />
+                            Доход до налога
+                          </div>
+                          <div className="text-xl font-bold text-yellow-400">
+                            {result.grossIncomePerDay} TON/день
+                          </div>
+                          <div className="text-sm text-yellow-400/80">
+                            {result.grossIncomePerMonth} TON/мес
+                          </div>
+                        </div>
+                        <div className="p-4 rounded-xl bg-red-900/20 border border-red-500/30">
+                          <div className="text-xs text-gray-400 uppercase mb-1">
+                            Налог ({result.taxRate}%)
+                          </div>
+                          <div className="text-xl font-bold text-red-400">
+                            -{result.taxAmount} TON/мес
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Net Income Stats */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-4 rounded-xl bg-green-900/30 border border-green-500/30">
                           <div className="text-xs text-gray-400 uppercase mb-1 flex items-center gap-1">
                             <Coins className="w-3 h-3" />
-                            Доход в сутки
+                            Чистый доход в сутки
                           </div>
                           <div className="text-2xl font-bold text-green-400">
-                            {result.incomePerDay} TON
+                            {result.netIncomePerDay} TON
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
                             При цене {pricePerUnit} TON за единицу
@@ -288,22 +334,22 @@ export default function IncomeTablePage({ user }) {
                         <div className="p-4 rounded-xl bg-green-900/30 border border-green-500/30">
                           <div className="text-xs text-gray-400 uppercase mb-1 flex items-center gap-1">
                             <TrendingUp className="w-3 h-3" />
-                            Доход в месяц
+                            Чистый доход в месяц
                           </div>
                           <div className="text-2xl font-bold text-green-400">
-                            {result.incomePerMonth} TON
+                            {result.netIncomePerMonth} TON
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
-                            ~{(parseFloat(result.incomePerMonth) * 12).toFixed(2)} TON/год
+                            ~{(parseFloat(result.netIncomePerMonth) * 12).toFixed(2)} TON/год
                           </div>
                         </div>
                       </div>
 
                       {/* Info Note */}
-                      <div className="p-3 rounded-xl bg-amber-900/20 border border-amber-500/30 flex items-start gap-2">
-                        <Info className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-                        <div className="text-xs text-amber-200/80">
-                          Расчёт не учитывает налоги и комиссии маркетплейса. 
+                      <div className="p-3 rounded-xl bg-cyan-900/20 border border-cyan-500/30 flex items-start gap-2">
+                        <Info className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
+                        <div className="text-xs text-cyan-200/80">
+                          Расчёт учитывает налог на продажу ({result.taxRate}%). 
                           Фактический доход зависит от реальной цены продажи на рынке и наличия покупателей.
                         </div>
                       </div>

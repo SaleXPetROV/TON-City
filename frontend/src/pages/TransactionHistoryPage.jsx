@@ -299,9 +299,19 @@ export default function TransactionHistoryPage({ user }) {
                 <p className="text-text-muted text-sm mb-2">
                   {selectedTx.type_icon} {selectedTx.type_name}
                 </p>
-                <p className={`text-3xl font-bold ${(selectedTx.amount || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {(selectedTx.amount || 0) >= 0 ? '+' : ''}{(selectedTx.amount || selectedTx.amount_ton || 0).toFixed(2)} TON
-                </p>
+                {(() => {
+                  const amount = selectedTx.amount ?? selectedTx.amount_ton ?? 0;
+                  const isPositive = amount > 0;
+                  const isNegative = amount < 0;
+                  const displayAmount = Math.abs(amount).toFixed(2);
+                  const sign = isPositive ? '+' : isNegative ? '-' : '';
+                  const colorClass = isPositive ? 'text-green-400' : isNegative ? 'text-red-400' : 'text-white';
+                  return (
+                    <p className={`text-3xl font-bold ${colorClass}`}>
+                      {sign}{displayAmount} TON
+                    </p>
+                  );
+                })()}
               </div>
               
               {/* Date */}

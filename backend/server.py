@@ -4180,14 +4180,23 @@ async def cancel_land_listing(listing_id: str, current_user: User = Depends(get_
     
     # Remove on_sale mark from business if exists
     if listing.get("business"):
-        plot_city_id = listing.get("city_id") or "ton_island"
-        await db.businesses.update_one(
-            {"$or": [
-                {"city_id": plot_city_id, "plot_x": listing.get("x"), "plot_y": listing.get("y")},
-                {"island_id": plot_city_id, "plot_x": listing.get("x"), "plot_y": listing.get("y")}
-            ]},
-            {"$unset": {"on_sale": "", "listing_id": ""}, "$set": {"status": "working"}}
-        )
+        # Try to find business by business_id first
+        business_id = listing.get("business_id")
+        if business_id:
+            await db.businesses.update_one(
+                {"id": business_id},
+                {"$unset": {"on_sale": "", "listing_id": ""}, "$set": {"status": "working"}}
+            )
+        else:
+            # Fallback to coordinates
+            plot_city_id = listing.get("city_id") or "ton_island"
+            await db.businesses.update_one(
+                {"$or": [
+                    {"city_id": plot_city_id, "x": listing.get("x"), "y": listing.get("y")},
+                    {"island_id": plot_city_id, "x": listing.get("x"), "y": listing.get("y")}
+                ]},
+                {"$unset": {"on_sale": "", "listing_id": ""}, "$set": {"status": "working"}}
+            )
     
     return {"status": "cancelled", "listing_id": listing_id}
 

@@ -577,8 +577,13 @@ export default function TonIslandPage({ user, refreshBalance, updateBalance }) {
             <Button
               data-testid="recommendations-toggle"
               onClick={() => {
-                setShowRecommendations(!showRecommendations);
-                if (!showRecommendations) fetchRecommendations();
+                const newState = !showRecommendations;
+                setShowRecommendations(newState);
+                if (newState) {
+                  // При открытии рекомендаций скрываем инфо о ячейке
+                  setSelectedCell(null);
+                  fetchRecommendations();
+                }
               }}
               variant="outline"
               size="icon"
@@ -597,12 +602,10 @@ export default function TonIslandPage({ user, refreshBalance, updateBalance }) {
               data-testid="buildings-toggle"
               onClick={() => {
                 if (!showBuildings) {
-                  setShowBuildingsToast(true);
                   toast.warning('В процессе разработки', {
                     description: 'Отображение зданий скоро будет доступно',
                     duration: 3000,
                   });
-                  setTimeout(() => setShowBuildingsToast(false), 3000);
                 } else {
                   setShowBuildings(false);
                 }
@@ -646,22 +649,6 @@ export default function TonIslandPage({ user, refreshBalance, updateBalance }) {
               <Home className="w-4 h-4" />
             </Button>
           </div>
-
-          {/* "В разработке" Toast Indicator */}
-          <AnimatePresence>
-            {showBuildingsToast && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                className="absolute bottom-24 right-4 z-30"
-              >
-                <div className="bg-yellow-500/90 text-black px-4 py-2 rounded-lg font-bold text-sm shadow-lg">
-                  В процессе разработки
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* Legend - City Island 3 Style (без цен) - Hidden on Mobile */}
           <div className="absolute top-4 left-4 hidden lg:block bg-slate-900/90 backdrop-blur-md rounded-xl p-4 text-xs space-y-2 z-20 max-w-[160px] border border-slate-700/50 shadow-xl">
