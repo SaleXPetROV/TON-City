@@ -1862,6 +1862,9 @@ async def instant_withdrawal(
     )
     withdrawal["bank_id"] = bank_id
     withdrawal["bank_owner"] = bank.get("owner")
+    withdrawal["type"] = "withdrawal"  # For transaction history
+    withdrawal["amount"] = -amount  # Negative - money leaving
+    withdrawal["description"] = f"Мгновенный вывод {amount} TON через банк"
     
     # Deduct from user
     user_filter = get_user_filter(user)
@@ -1869,6 +1872,10 @@ async def instant_withdrawal(
         user_filter,
         {"$inc": {"balance_ton": -amount}}
     )
+    
+    # Get new balance
+    updated_user = await db.users.find_one(user_filter, {"_id": 0, "balance_ton": 1})
+    new_balance = updated_user.get("balance_ton", 0) if updated_user else 0
     
     # Pay bank fee to bank owner
     bank_fee = withdrawal["bank_fee"]
@@ -1887,7 +1894,8 @@ async def instant_withdrawal(
         "amount": amount,
         "net_amount": withdrawal["net_amount"],
         "bank_fee": bank_fee,
-        "platform_commission": withdrawal["platform_commission"]
+        "platform_commission": withdrawal["platform_commission"],
+        "new_balance": new_balance
     }
 
 @api_router.get("/withdrawals/queue")
@@ -4007,8 +4015,33 @@ async def buy_land_from_market(data: BuyLandRequest, current_user: User = Depend
     if buyer["balance_ton"] < listing["price"]:
         raise HTTPException(status_code=400, detail=f"Insufficient balance. Need {listing['price']} TON")
     
-    # Налог с продавца (10%)
-    seller_tax = listing["price"] * BASE_TAX_RATE
+    # Проверяем лимит участков (максимум 3)
+    buyer_ids = [buyer_id]
+    if current_user.wallet_address:
+        buyer_ids.append(current_user.wallet_address)
+    
+    # Count owned plots
+    owned_plots_count = await db.plots.count_documents({
+        "$or": [{"owner": uid} for uid in buyer_ids],
+        "on_sale": {"$ne": True}
+    })
+    
+    # Also count from island cells
+    island = await db.islands.find_one({"id": "ton_island"})
+    if island and 'cells' in island:
+        for cell in island['cells']:
+            if cell.get('owner') in buyer_ids and not cell.get('on_sale'):
+                owned_plots_count += 1
+    
+    MAX_PLOTS_PER_USER = 3
+    if owned_plots_count >= MAX_PLOTS_PER_USER:
+        raise HTTPException(status_code=400, detail=f"У вас уже лимит участков ({MAX_PLOTS_PER_USER}). Продайте один из участков чтобы купить новый.")
+    
+    # Налог с продавца - берём из админ настроек
+    tax_settings = await db.admin_settings.find_one({"type": "tax_settings"}, {"_id": 0})
+    tax_rate = (tax_settings.get("land_business_sale_tax", 10) if tax_settings else 10) / 100
+    
+    seller_tax = listing["price"] * tax_rate
     seller_receives = listing["price"] - seller_tax
     
     # Обновляем баланс покупателя (по id)
@@ -4323,8 +4356,11 @@ async def sell_business(business_id: str, data: SellBusinessRequest, current_use
     if data.price < min_price:
         raise HTTPException(status_code=400, detail=f"Minimum price: {min_price:.2f} TON")
     
-    # Рассчитываем налог для отображения
-    tax = data.price * RESALE_COMMISSION
+    # Рассчитываем налог из админ настроек для отображения
+    tax_settings = await db.admin_settings.find_one({"type": "tax_settings"}, {"_id": 0})
+    tax_rate = (tax_settings.get("land_business_sale_tax", 10) if tax_settings else 10) / 100
+    
+    tax = data.price * tax_rate
     seller_receives = data.price - tax
     
     # Получаем город
@@ -4468,6 +4504,7 @@ async def create_withdraw(
 
     withdrawal = {
         "id": str(uuid.uuid4()),
+        "type": "withdrawal",  # Correct type for transaction history
         "tx_type": "withdrawal",
         "user_id": user.get("id"),
         "user_username": user.get("username"),
@@ -4476,9 +4513,11 @@ async def create_withdraw(
         "to_address": raw_address,
         "to_address_display": display_address,
         "from_address_display": display_address,
+        "amount": -data.amount,  # Negative - money leaving account
         "amount_ton": data.amount,
         "commission": commission,
         "net_amount": net_amount,
+        "description": f"Вывод {data.amount} TON на {display_address[:12]}...",
         "status": "pending",
         "tx_hash": None,
         "created_at": datetime.now(timezone.utc).isoformat()
@@ -4490,6 +4529,10 @@ async def create_withdraw(
         user_filter,
         {"$inc": {"balance_ton": -data.amount}}
     )
+    
+    # Get new balance
+    updated_user = await db.users.find_one(user_filter, {"_id": 0, "balance_ton": 1})
+    new_balance = updated_user.get("balance_ton", 0) if updated_user else 0
 
     await db.transactions.insert_one({**withdrawal, "tx_type": "withdrawal"})
 
@@ -4498,7 +4541,8 @@ async def create_withdraw(
         "withdrawal_id": withdrawal["id"],
         "net_amount": net_amount,
         "to_address": display_address,
-        "to_address_raw": raw_address
+        "to_address_raw": raw_address,
+        "new_balance": new_balance
     }
 
 @api_router.post("/admin/withdrawals/{withdraw_id}/reject")

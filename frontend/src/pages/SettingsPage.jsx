@@ -12,6 +12,8 @@ import { languages, useTranslation } from '@/lib/translations';
 import { toast } from 'sonner';
 import Sidebar from '@/components/Sidebar';
 
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
+
 export default function SettingsPage({ user: propUser, setUser: setAppUser, onLogout }) {
   const navigate = useNavigate();
   const [tonConnectUI] = useTonConnectUI();
